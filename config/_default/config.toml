@@ -13,6 +13,6 @@ DefaultContentLanguage = "en"
 hasCJKLanguage = false
 
 # Change it to your Disqus shortname before using
-disqusShortname = "hugo-theme-stack"
+disqusShortname = "yuanchieh"
 
 googleAnalytics = "UA-82837682-4"

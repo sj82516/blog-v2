@@ -1,5 +1,5 @@
 ---
-title: '「領域驅動設計與簡潔架構入門實作班」上課筆記與心得：關於敏捷、 DDD、 Event Storming 與 Clean Architecture - 上'
+title: '「領域驅動設計與簡潔架構入門實作班」上課筆記與心得：關於敏捷、 DDD 與 Event Storming - 上'
 description: 結論 - 要學 DDD 直接報名 Teddy 的課程絕對是投資報酬率最高的方式
 date: '2022-01-14T01:21:40.869Z'
 categories: ['架構', 'DDD']

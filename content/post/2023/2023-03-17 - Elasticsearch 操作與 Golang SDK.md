@@ -114,7 +114,7 @@ func search(res *opensearchapi.Response, client *opensearch.Client, key string, 
 ```
 
 以上是大致的 API 操作，呼叫起來不太麻煩，只是文件有點簡陋需要不停的查找，建議可以開著 Kibana 的後台對應查詢與回應，有 hint 蠻方便的
-![](/posts/2023/img/0319/kibana.png)
+![](/post/2023/img/0319/kibana.png)
 
 有兩個地方需要特別留意
 1. 如果是本地端測試，記得在 create document 後 `client.Indices.Refresh()` 強制 refresh index，因為 ES 收到建立請求後需要一段時間處理才能夠查詢，所以要強制 refresh 才能直接查!  

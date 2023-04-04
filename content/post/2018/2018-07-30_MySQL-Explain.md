@@ -129,11 +129,11 @@ users / orders Table目前只有 id是 primary key，比對以下兩個語句，
 在這個案例中， 後者的執行速度會遠快於前者因為後者先loop orders，接著拿 orders.user_id去 users中比對users.id，而 user.id是 primary key所以速度非常快；  
 反之 orders.user_id沒有索引，只能全表掃描。
 
-![`explain select * from users right join orders on orders.user_id = users.id;`](/posts/img/1__vXNThgMlQU72iv7kH3dXiw.png)
+![`explain select * from users right join orders on orders.user_id = users.id;`](/post/img/1__vXNThgMlQU72iv7kH3dXiw.png)
 
 `explain select * from users right join orders on orders.user_id = users.id;`
 
-![`explain select * from users right join orders on orders.user_id = users.id;`](/posts/img/1__fp99dWZ32mfR0yvRKL2Xfw.jpeg)
+![`explain select * from users right join orders on orders.user_id = users.id;`](/post/img/1__fp99dWZ32mfR0yvRKL2Xfw.jpeg)
 
 `explain select * from users right join orders on orders.user_id = users.id;`
 
@@ -148,10 +148,10 @@ users / orders Table目前只有 id是 primary key，比對以下兩個語句，
 
 第一點的問題是在子查詢 `(select user_id, count(distinct orders.id) as order_count` 不可避免的要跑一次全表搜尋，但是暫存成 temp Table做INNER JOIN 又會在跑一次，等同於全表搜尋 orders兩次
 
-![1](/posts/img/1__Jeto7u4zaq9XDJ3fwSppRw.jpeg)
+![1](/post/img/1__Jeto7u4zaq9XDJ3fwSppRw.jpeg)
 1
 
 為了避免多一次無謂的全表搜尋，先JOIN在 GROUP BY 效率就好很多。
 
-![2](/posts/img/1__yMDa4b2rpLrDLnY26N19ZQ.jpeg)
+![2](/post/img/1__yMDa4b2rpLrDLnY26N19ZQ.jpeg)
 2

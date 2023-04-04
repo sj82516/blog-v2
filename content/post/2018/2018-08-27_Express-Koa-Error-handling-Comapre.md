@@ -54,7 +54,7 @@ app.listen(3000);
 
 Koa 處理的順序是 `fnMiddleware將 app.use()註冊的全部Middleware轉成 Promise chain` -> `hanldeResponse(呼叫 res.end送出 http respond)` / `onerror (處理錯誤)`
 
-Promise chain(自定義的) 是指當 Koa Middleware 呼叫 next() 會遞迴呼叫下一個 Middleware，有興趣可以看我另一篇文章 [Koa2 源碼解析 — 簡潔美麗的框架](http://sj82516-blog.logdown.com/posts/4720279)
+Promise chain(自定義的) 是指當 Koa Middleware 呼叫 next() 會遞迴呼叫下一個 Middleware，有興趣可以看我另一篇文章 [Koa2 源碼解析 — 簡潔美麗的框架](http://sj82516-blog.logdown.com/post/4720279)
 
 這部分的錯誤處理又可拆成兩塊，一個是 app層級 一個是 ctx 層級；  
 在原始碼中 /koa/application.js，有預設基本的 onerror的錯誤處理，基本上就是打印出來，這部分是透過 `app本身繼承 Event Emitter屬性並註冊 app.on(“error”) 事件後處理`
@@ -68,7 +68,7 @@ Promise chain(自定義的) 是指當 Koa Middleware 呼叫 next() 會遞迴呼�
 2.  `ctx.onerror` 會 respond 預設的錯誤處理與 `app.emit(“error”)`
 3.  `app.emit(“error”)` 是由 `app.onerror` 去接收，這部分可以自訂 `app.on(“error”, ()=>{自行處理})`
 
-![](/posts/img/1__9GhLVsWnNyqmW__0yDv6wPg.jpeg)
+![](/post/img/1__9GhLVsWnNyqmW__0yDv6wPg.jpeg)
 
 官方文件有寫到錯誤處理，用戶可註冊 error 事件就會改由用戶自己處理
 

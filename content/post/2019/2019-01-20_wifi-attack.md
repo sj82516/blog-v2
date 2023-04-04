@@ -49,7 +49,7 @@ keywords: []
 
 可以直接用 [**JamWifi**](https://github.com/unixpickle/JamWiFi)  GUI Tool，打開後開始 Scan，Scan 後可以找到 AP 並透過 MAC Address 指定裝置斷線，我在家裡嘗試過是可行的。
 
-![](/posts/img/1__EugN6S__T4PU5Bd5__9eaJ2w.jpeg)
+![](/post/img/1__EugN6S__T4PU5Bd5__9eaJ2w.jpeg)
 
 在同篇文章中有提到後續破解 Wifi 密碼的方式，透過 deauthentication attack 斷開裝置，接著開 `tcpdump`  監聽所有的封包；  
 接著用 `cap2hccapx`將 tcpdump 的資料轉換格式；  

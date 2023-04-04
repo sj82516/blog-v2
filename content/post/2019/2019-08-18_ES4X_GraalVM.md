@@ -12,7 +12,7 @@ keywords: []
 
 作者提到在著名的 framework benchmark 中，JS 的執行效率排名很後面，如果用 FlameChart 分析，會發現絕大多數的時間是在底層也就是 V8 Engine 與 Libuv 上
 
-![](/posts/img/0__8pUeUi9pzwXJ9tkz.png)
+![](/post/img/0__8pUeUi9pzwXJ9tkz.png)
 
 ![](https://blog.zenika.com/2011/04/10/nodejs/)
 
@@ -72,7 +72,7 @@ vertx.executeBlocking(function (promise) {
 GraalVm 是一個提供多語言的運行環境，透過 Graal Compiler 編譯成 Java Bytecode 並執行於 Java HotSpot VM上，所以可以兼容於 JVM-based 的語言如 Java/Scala/Kotlin等；  
 透過 Truffer framework，可以兼容其他的程式語言，如JS/Python/R/Ruby等等
 
-![](/posts/img/0__pH1347fH__vCQeKkD.jpg)
+![](/post/img/0__pH1347fH__vCQeKkD.jpg)
 
 許多程式語言都必須要有一個良好的運行環境 Runtime，但是要打造一個安全、高效的運行環境是非常困難且耗時的，例如說 JS的 V8 Engine 也是 Google多年的投入才有這麼好的成果，其他語言相較之下沒有這麼多資源，自然運行的速度就很慢；  
 所以 GraalVM希望透過通用化虛擬化技術，讓不同的程式語言只要用 Java 透過[Truffle](https://github.com/oracle/graal/tree/master/truffle) Framework 實作該語言的 AST，後續的運行就交給 GraalVM，降低新語言開發的困難

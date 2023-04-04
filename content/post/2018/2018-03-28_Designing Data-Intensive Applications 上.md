@@ -81,7 +81,7 @@ Relation Data Model最為常見，將資料的關聯以tuple的集合儲存(也�
 但現實上資料本身有不同的關聯性，有One to Many 也有 Many to Many，基本上採用何種Data Model可以從資料集多對多的關聯性複雜度來決定；  
 如果資料僅有少部分多對多關聯，可以選擇採用Document Data Model，因為相對應用程式的代碼比較好寫，不需多一層ORM轉換、少有的多對多可以用應用程式代碼自己實踐Join功能；  
 如果注重物件的多對多關聯性則可用 Relation Data Model；  
-如果物件的關聯性相當複雜可以考慮 Graph Data Model，這也是我第一次接觸到此觀念，資料模型改以圖形化方式呈現，資料可分成vertice與edge，vertice比較像是儲存單體的資料，而edge則儲存vertice間的關係，透過圖形化的特性可以表達相當複雜、遞迴的關係，這部分可以參考我之前嘗試 [neo4j的筆記](http://sj82516-blog.logdown.com/posts/5823130)。
+如果物件的關聯性相當複雜可以考慮 Graph Data Model，這也是我第一次接觸到此觀念，資料模型改以圖形化方式呈現，資料可分成vertice與edge，vertice比較像是儲存單體的資料，而edge則儲存vertice間的關係，透過圖形化的特性可以表達相當複雜、遞迴的關係，這部分可以參考我之前嘗試 [neo4j的筆記](http://sj82516-blog.logdown.com/post/5823130)。
 
 當然上述只是單純以資料關聯與對應的模型來衡量，現實的技術採納需要有更全面通盤的考量。
 
@@ -116,7 +116,7 @@ schema-on-read有點像是動態語言，資料的檢查在應用程式本身；
 
 ### Sorted String Table
 
-![圖片來源：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)](/posts/img/1__1AvQY5KBV2mRADK07aq4BA.png)
+![圖片來源：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)](/post/img/1__1AvQY5KBV2mRADK07aq4BA.png)
 圖片來源：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)
 
 所以後來有提出新的作法 Sorted String Table (簡稱 SSTable)，差別在於索引改透過 依照字串順序排序後的資料結構儲存，這有點像是字典索引，當我們要查一個單字 hello 我們可以透過前後的字去找到相近的位置；
@@ -129,7 +129,7 @@ schema-on-read有點像是動態語言，資料的檢查在應用程式本身；
 
 但是SSTable並不是最常用的資料系統儲存的方式，而是B Tree，B Tree是個平衡二叉樹，母節點紀錄多個區間值與對應的子節點，每個子節點則紀錄一段連續值。
 
-![圖片連結：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)](/posts/img/1__sGWCREWf3auzlU2H1j6LEw.png)
+![圖片連結：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)](/post/img/1__sGWCREWf3auzlU2H1j6LEw.png)
 圖片連結：[https://tech.liuchao.me/2017/11/ddia-3/](https://tech.liuchao.me/2017/11/ddia-3/)
 
 在儲存方式上不是採用append only，而是將儲存空間切割固定大小的 Page，並把節點的資料放入，如果有新的資料產生會覆寫舊的Page，這點與SSTable大大不同。
@@ -167,4 +167,4 @@ SSTable好處在於 B Tree切割Page容易有空間的破碎化與浪費，且�
 
 ### 下集
 
-[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/posts/2018-04-19_designing-data-intensive-applications-%E4%B8%8B/)，第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點
+[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/post/2018-04-19_designing-data-intensive-applications-%E4%B8%8B/)，第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點

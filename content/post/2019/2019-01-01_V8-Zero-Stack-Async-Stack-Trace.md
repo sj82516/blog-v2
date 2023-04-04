@@ -40,7 +40,7 @@ at bar (<anonymous>:7:9)
 
 目前可以開 Chrome Dev Inspector ( `> node --inspect`)，執行同樣的程式，可以看到完整的 error stack，但這會有很大的性能影響，所以只建議在開發中使用。
 
-![](/posts/img/0__zUDoBxW4TG__IFqDF.jpg)
+![](/post/img/0__zUDoBxW4TG__IFqDF.jpg)
 
 ### 解法
 
@@ -103,14 +103,14 @@ async function bar(x) {
 foo(1).catch(e => console.log(e.stack));
 ```
 
-![](/posts/img/0__FZBjeD6zupannymv.jpg)
+![](/post/img/0__FZBjeD6zupannymv.jpg)
 
 因為 bar(x) 中 await (1)，而 1 不是 promise 所以需要透過 Promise().resolve(1) 多包一層，所以在 Call stack 上 `bar` 被 `await fulfilled` 呼叫；  
 「如果 async stack 功能開啟」，此時會去搜尋 “current microtask”找到 `包裝x的PromiseReactionJob` ，找到的話就會順勢找到 `generator object` ，這個 object 也就是 async function 所轉化而來的，同時包含 async function 的 promise reference。
 
 #### 另一種做法
 
-![](/posts/img/0__p4VtVwlDfBFbtUQq.jpg)
+![](/post/img/0__p4VtVwlDfBFbtUQq.jpg)
 
 另一種做法則是 await 產生的內部 promise ( `.promise`)有辦法找到外部 promise (也就是 async function， `JSPromise`)，如果全部都是用 async await 串連，可以找到 `PromiseReaction` ，裡頭包含兩個特殊的閉包 `Await Rejected` 跟 `Await Fulfilled` ，兩者共同分享一個 Object `AwaitContext` ，這個AwaitContext 是另一個再等待 JSPromise 的`JSGenerator Object` ，也就是 function foo。
 
@@ -164,7 +164,7 @@ Error: err
 
 接著打開 chrome dev tool，記得打開 Discover network targets，點擊進去會跳出下方的 debug視窗，接著要打開 Pause on caught rejection 不然出錯就會結束了
 
-![](/posts/img/1__Z2ZYMsG__OSWF9QF1UWBn3Q.jpeg)
+![](/post/img/1__Z2ZYMsG__OSWF9QF1UWBn3Q.jpeg)
 
 如同上面所說，這種方法只適用於開發。
 

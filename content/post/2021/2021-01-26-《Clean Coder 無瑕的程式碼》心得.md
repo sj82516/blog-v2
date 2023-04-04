@@ -6,7 +6,7 @@ categories: ['閱讀心得']
 keywords: ['Clean Coder']
 ---
 
-![]('/posts/2021/img/0126/cover.jpeg')  
+![]('/post/2021/img/0126/cover.jpeg')  
 
 Clean Code 相信很多人都看過，提供軟體界一個自我審思程式碼品質的標竿，也被許多工程師奉為圭臬，這一本 Clean Coder 更多著重於`身為一名專業人士所需具備的內涵`，包括但不限於程式碼  
 

@@ -15,7 +15,7 @@ Elasticsearch 是常用來做全文搜尋的 NoSQL Database，公司在使用上
 
 Beef 應該可以往前追溯幾年前 Elasticsearch 覺得 AWS 在白嫖開源社群進而更改授權，使得 AWS 決定自己維護 Opensearch (新聞 [AWS分叉Elasticsearch重新命名為OpenSearch](https://www.ithome.com.tw/news/143812))
 
-但有趣的是我測試了一些場景，AWS Opensearch client SDK 可以連線 Elasticsearch (以下簡稱 ES) 與 Opensearch server，所以以下就用 [Opensearch cliend SDK](https://github.com/opensearch-project/opensearch-go) 操作 ES，後續不會針對 ES 本身有太多介紹，可以參考之前的幾篇文章 [Elasticsearch 教學 - API 操作](https://yuanchieh.page/posts/2020/2020-07-15_elasticsearch-%E6%95%99%E5%AD%B8-api-%E6%93%8D%E4%BD%9C/) 和 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/posts/2020/2020-07-08_elasticsearch-%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
+但有趣的是我測試了一些場景，AWS Opensearch client SDK 可以連線 Elasticsearch (以下簡稱 ES) 與 Opensearch server，所以以下就用 [Opensearch cliend SDK](https://github.com/opensearch-project/opensearch-go) 操作 ES，後續不會針對 ES 本身有太多介紹，可以參考之前的幾篇文章 [Elasticsearch 教學 - API 操作](https://yuanchieh.page/post/2020/2020-07-15_elasticsearch-%E6%95%99%E5%AD%B8-api-%E6%93%8D%E4%BD%9C/) 和 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/post/2020/2020-07-08_elasticsearch-%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
 
 ## Client SDK 使用
 以下使用會覆蓋幾個場景
@@ -120,7 +120,7 @@ func search(res *opensearchapi.Response, client *opensearch.Client, key string, 
 1. 如果是本地端測試，記得在 create document 後 `client.Indices.Refresh()` 強制 refresh index，因為 ES 收到建立請求後需要一段時間處理才能夠查詢，所以要強制 refresh 才能直接查!  
 2. 預設 ES 的 string 輸入都會是 `text 型別`，而 text 型別會經過 tokenize 、analyzer 加工後支援`全文搜尋`，這其中的處理包含了去除冗詞贅字、斷詞等等；  
 所以像是我原本預期 `key` 這個欄位是完全匹配，也就是查詢時要完整的命中，但因為預設是全文搜尋，所以會把沒有完全匹配的結果也回傳，如圖下我查詢 "key"="key1"，結果連 "key1.child" 都回傳了
-![](/posts/2023/img/0319/search_text.png)
+![](/post/2023/img/0319/search_text.png)
 
 如果要解決這個問題的話，需要在 Index 建立後增加 Mapping，Mapping 是指定 Index 每個欄位的處理方式，可以切換不同的型別、指定是否要被 indexing 等
 ```golang
@@ -138,4 +138,4 @@ func createMapping(res *opensearchapi.Response, client *opensearch.Client) *open
 需要特別留意 Mapping 必須要在 Index 為空的情況下才能生效，如果已經有 document 就不行，需要重新建立
 
 以下查詢 "key"="key1" 成功回傳一筆資料
-![](/posts/2023/img/0319/search_keyword.png)
+![](/post/2023/img/0319/search_keyword.png)

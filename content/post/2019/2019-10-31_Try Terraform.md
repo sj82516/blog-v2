@@ -26,7 +26,7 @@ Terraform 可以達到以下幾件事：
 6. **DX 很好**  
    Developer Experience 還不賴，官方的文件、教學，以及整體的設計上都很友善，錯誤也會很直接顯示哪一行的哪一部分語法錯誤，學習上 Debug 上都很容易，HashiCorp 員工有分享這是他們在 0.12 很大的修正，讓用戶更快找出錯誤是他們重視的一環
 
-這次目標跟上次的 CDK 研究一樣，部署一個每五分鐘執行的 Lambda，並分佈到多個區域，CDK 教學連結 [AWS-CDK教學 — Infrastructore As Code 用程式碼管理架構](https://yuanchieh.page/posts/2019-01-27_aws-cdk-infrastructore-as-code/)
+這次目標跟上次的 CDK 研究一樣，部署一個每五分鐘執行的 Lambda，並分佈到多個區域，CDK 教學連結 [AWS-CDK教學 — Infrastructore As Code 用程式碼管理架構](https://yuanchieh.page/post/2019-01-27_aws-cdk-infrastructore-as-code/)
 
 # 事前準備
 請先安裝 Terraform，並設定好 AWS configuration，也可以先玩過官方教學 [Terraform getting started](https://learn.hashicorp.com/terraform/getting-started/intro)；
@@ -344,4 +344,4 @@ lambda-arn = arn:aws:lambda:us-east-1:.....
 就這樣完成了單區域的 Lambda 部署與最基本的 Terraform 學習，以下是這次教學的程式碼
 [terraform-investigation](https://github.com/sj82516/terraform-investigation/commit/9106731fcb895c4aa31a1b95670d627fa60e4a4a)
 
-[下一篇](https://yuanchieh.page/posts/2019-11-04_try-terraform-2/)將整個架構模組化，並一鍵部署多個區域
+[下一篇](https://yuanchieh.page/post/2019-11-04_try-terraform-2/)將整個架構模組化，並一鍵部署多個區域

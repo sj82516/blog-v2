@@ -59,7 +59,7 @@ Congestion 壅塞是指 當主機接收的封包量增加，大於發送的量�
     有一個漏洞的桶，桶的尺寸與出口的最大流速固定；  
     只要上方有水注入，桶就會自動從出口出去，如果注入速度高於出口流速，就會開始在桶中累積，如果滿了就溢出。
 
-![](/posts/img/1__JPPMyAsWQM4A6v2ISToeDA.png)
+![](/post/img/1__JPPMyAsWQM4A6v2ISToeDA.png)
 
 [https://www.geeksforgeeks.org/leaky-bucket-algorithm/](https://www.geeksforgeeks.org/leaky-bucket-algorithm/)
 
@@ -70,7 +70,7 @@ Congestion 壅塞是指 當主機接收的封包量增加，大於發送的量�
 \- Leaky Bucket 桶子滿了會開始丟封包，而 Token Bucket 則是丟棄 Token  
 \- 當流量低時，Token Bucket 有機會可以累積 Token，等到高峰時一次性使用掉，而 Leaky Bucket 無法做資源的保留
 
-![](/posts/img/1__ZgZl0hEi3WGl6dKiqtkL1Q.jpeg)
+![](/post/img/1__ZgZl0hEi3WGl6dKiqtkL1Q.jpeg)
 
 [https://gateoverflow.in/39720/gate2016-1-54](https://gateoverflow.in/39720/gate2016-1-54)
 
@@ -167,7 +167,7 @@ qdisc pfifo_fast 0: dev enp0s5 root refcnt 2 bands 3 priomap  1 2 2 2 1 2 0 0 1 
 
 需注意 `enp0s5` 是我自己的 network interface，記得替換成自己裝置上的 network interface
 
-![](/posts/img/1__d566EGgUEX52WNdIpSf__AQ.png)
+![](/post/img/1__d566EGgUEX52WNdIpSf__AQ.png)
 
 [http://linux-ip.net/articles/Traffic-Control-HOWTO/classless-qdiscs.html](http://linux-ip.net/articles/Traffic-Control-HOWTO/classless-qdiscs.html)
 
@@ -221,7 +221,7 @@ $ sudo tc filter add dev enp0s5 protocol ip parent 1:0 prio 1 u32 match ip dst 1
 
 以下使用 classful qdisc HCB。
 
-![](/posts/img/1__yxleicti2yy9F2K0UrpmHA.png)
+![](/post/img/1__yxleicti2yy9F2K0UrpmHA.png)
 
 測試限制 aws s3 上傳的帶寬
 
@@ -245,7 +245,7 @@ $ sudo tc class add dev enp0s5 parent 1: classid 1:1 htb rate 100kbps ceil 100kb
 
 比對 s3 上傳的前後，發現上傳速度確實被限制在 100kbps
 
-![](/posts/img/1__GZhxO8aeHFv0x3qS6lgaBg.jpeg)
+![](/post/img/1__GZhxO8aeHFv0x3qS6lgaBg.jpeg)
 
 如果單純想要限制上傳速度，也可以用 tc-tbf，但 htb 優點是用層狀架構限速，leaf 會受到 root 的限制，例如分配一條帶寬 10 Mbps，可以在之下分配 4 Mbps 給某網域 6 Mbps 給其他網域等等。
 

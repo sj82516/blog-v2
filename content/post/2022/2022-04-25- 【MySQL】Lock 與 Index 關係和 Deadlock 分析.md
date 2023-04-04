@@ -18,7 +18,7 @@ keywords: ['MySQL']
 
 ## Clustered Index
 先來一題簡單的暖身題，以下兩個 Transaction 為什麼會 Deadlock
-![](/posts/2022/img/0425/01.png)
+![](/post/2022/img/0425/01.png)
 要滿足 Deadlock 需要有四個條件
 - no preemption
 - hold and wait
@@ -26,7 +26,7 @@ keywords: ['MySQL']
 - circular waiting  
 
 在上面的案例中，MySQL 在 RR 下要 update 會先取得 exclusive lock，兩個 Transaction 手上都拿了對方想要的資源卻也不都會先放開手上的鎖，導致 Deadlock
-![](/posts/2022/img/0425/01_2.png)
+![](/post/2022/img/0425/01_2.png)
 
 直接從圖片很容易看出彼此 Deadlock，但正式環境中多筆 Transaction 交雜，該如何找出 Deadlock 呢？
 ### 1. 如何 Debug Deadlock
@@ -96,7 +96,7 @@ Record lock, heap no 2 PHYSICAL RECORD: n_fields 6; compact format; info bits 0
 
 ### 2. 取得 Lock 的順序性
 如果查詢的條件命中多筆，那 Lock 會怎麼取得呢？ 接著看以下案例
-![](/posts/2022/img/0425/02.png)
+![](/post/2022/img/0425/02.png)
 
 根據 [MySQL 文件](https://dev.mysql.com/doc/refman/5.7/en/update.html)，會根據 Order By 的指定條件與 Index 本身順序性一行一行鎖起來
 > If an UPDATE statement includes an ORDER BY clause, the rows `are updated in the order specified by the clause`. This can be useful in certain situations that might otherwise result in an error. Suppose that a table t contains a column id that has a unique index. The following statement could fail with a duplicate-key error, depending on the order in which rows are updated
@@ -117,7 +117,7 @@ Record lock, heap no 3 PHYSICAL RECORD: n_fields 6; compact format; info bits 0
 當[建立 MySQL Index](https://dev.mysql.com/doc/refman/5.7/en/create-index.html) 也可以指定順序，但需要注意 MySQL 5.7 會忽視 (全部都是 asc) 只有在 MySQL 8.0 以上才支援，所以以下案例只發生在 MySQL 8.0
 
 我們可以透過 `USE INDEX()` 指定執行時的 Index
-![](/posts/2022/img/0425/02_01.png)
+![](/post/2022/img/0425/02_01.png)
 
 > (5.7 文件) A key_part specification can end with ASC or DESC. These keywords are permitted for future extensions for specifying ascending or descending index value storage. Currently, they `are parsed but ignored`; index values are always stored in ascending order.
 
@@ -129,7 +129,7 @@ id1 > id2 && name1 < name2，例如 (1, "zz") (2, "zx")
 ```
 這樣也會發生 Deadlock!
 
-![](/posts/2022/img/0425/02_02.png)
+![](/post/2022/img/0425/02_02.png)
 
 ### 3. 查詢沒有命中 : Gap Lock
 如果查詢沒有命中，此時 MySQL 在 RR 情況下會取得 Gap Lock，所謂的 Gap 是在已存在欄位之間的縫隙，為了避免幻讀 MySQL 會鎖住 Gap 不讓其他 Transaction 插入資料
@@ -139,7 +139,7 @@ id1 > id2 && name1 < name2，例如 (1, "zz") (2, "zx")
 2. 這兩種 Lock 特別在於不會排擠自己人，例如 `Gap Lock 不會阻擋 Gap Lock` / `Insert Intention Lock 不會阻擋 Insert intention Lock`，但是 `Insert Intention Lock 跟 Gap Lock 互斥`，原因是區間可能很大，為了提升性能，在同一個區間可以同時插入新資料，如果真的有違反 Unique Key 則會有原本的重複性檢查阻擋，Update 也是
 
 有一個場景是「我們希望更新某一筆資料，發現資料不在則寫入」，如以下範例則會造成 Deadlock
-![](/posts/2022/img/0425/03.png)
+![](/post/2022/img/0425/03.png)
 
 因為 id 6 / 10 在 update 時都取得了 Gap Lock，接著要 Insert 取得 Insert Intention Lock 卻因為雙方都還握有 Gap Lock 而無法寫入，讓我們看具體的 Deadlock 細節
 ```md
@@ -168,7 +168,7 @@ Record lock, heap no 1 PHYSICAL RECORD: n_fields 1; compact format; info bits 0
 ```
 
 所以同樣的 query 只是原始資料改變落在不同區間，就不會有 Deadlock 如以下
-![](/posts/2022/img/0425/03_01.png)
+![](/post/2022/img/0425/03_01.png)
 
 ### 4. 範圍查詢：鎖定找過的每筆資料即使條件不合
 接下來看一個 RR 蠻嚇人的一個特性，參考文件 [15.7.2.1 Transaction Isolation Levels](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
@@ -177,7 +177,7 @@ Record lock, heap no 1 PHYSICAL RECORD: n_fields 1; compact format; info bits 0
 也就是說 where condition 假使是範圍搜尋，RR 會把搜尋到的範圍全部鎖死，直到 transaction 結束! 
 
 讓我們看以下案例
-![](/posts/2022/img/0425/04.png)
+![](/post/2022/img/0425/04.png)
 
 Update 的條件沒有命中但是`全部都被 Lock`，要 update / insert 都不行，相對的
 > RC 在檢查不符合條件就會 release，在做大規模的 Update / Delete 記得要用 RC 會比較好
@@ -187,14 +187,14 @@ Update 的條件沒有命中但是`全部都被 Lock`，要 update / insert 都�
 ### 1. 查詢命中：依然會 Gap Lock
 在一開始的範例，如果 Clustered Index 查詢有命中只會鎖那一行 \(ex. update id = 1\)，但如果 Non Unique Index 即使完全命中，也會連同 Gap 一起鎖起來 (Next Key Lock)
 
-![](/posts/2022/img/0425/05.png)
+![](/post/2022/img/0425/05.png)
 這邊 Lock 比較多，需注意 Secondary Index 會被鎖之外，對應的 Clustered Index 也會被鎖，這邊 age 鎖定 10 以及前面的區間，所以要插入 age: 9 就會失敗；運用上面的技巧，age 切換到不同區間就可以成功插入
 
 
 ## Foreign Key：會有 Share Lock
 > If a FOREIGN KEY constraint is defined on a table, any insert, update, or delete that requires the constraint condition to be checked sets shared record-level locks
 
-更新欄位時 Foreign Key 也會被鎖住，之前有紀錄就不贅述 [MySQL Deadlock 問題排查與處理](https://yuanchieh.page/posts/2020/2020-12-26_mysql-deadlock-%E5%95%8F%E9%A1%8C%E6%8E%92%E6%9F%A5%E8%88%87%E8%99%95%E7%90%86/)
+更新欄位時 Foreign Key 也會被鎖住，之前有紀錄就不贅述 [MySQL Deadlock 問題排查與處理](https://yuanchieh.page/post/2020/2020-12-26_mysql-deadlock-%E5%95%8F%E9%A1%8C%E6%8E%92%E6%9F%A5%E8%88%87%E8%99%95%E7%90%86/)
 
 ## 總結與建議
 幾點建議

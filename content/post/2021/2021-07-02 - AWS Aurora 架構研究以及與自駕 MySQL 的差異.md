@@ -67,15 +67,15 @@ Segment 是最小獨立單位 (也就是會壞掉是獨立一個 Segment 壞)，
 
 ## THE LOG IS THE DATABASE
 ### 3.1 The Burden of Amplified Writes
-![](/posts/2021/img/0702/mysql-old.png)
+![](/post/2021/img/0702/mysql-old.png)
 先看第一版 Aurora 嘗試的架構 - 傳統的鏡像同步架構，一台 Primary Instance 負責寫入儲存於 EBS 並同時備份到另一份 EBS 中，有一台 Replica Instance 同步 Primary 的寫入並儲存於兩份 EBS 中，可以看到一個 MySQL 寫入最多會觸發五個 I/O binlog / redo log / frm(metadata) / double-write，要等到全部寫入結束才算是操作成功，這會拉長回應時間，更糟糕的是圖片中步驟 1,3,5 (為什麼有5?) 是同步且順序寫入
 
 ### 3.2 Offloading Redo Processing to Storage
-![](/posts/2021/img/0702/aurora.png)
+![](/post/2021/img/0702/aurora.png)
 相反的 Aurora 透過 Redo Log 同步，讓 Storage level 負責 Redo Log 寫入與更新 Data file，同時分送給 Replica 更新記憶體中 page 的資料；  
 不像過往 MySQL 需要在 Checkpoint / background / cache 空間不足時刷新資料到硬碟中，全部由 Storage Service 負責，大幅降低了 Network I/O  
 
-![](/posts/2021/img/0702/perf.png)
+![](/post/2021/img/0702/perf.png)
 從 Benchmark 可以看到，每筆 Transaction 所需的 I/O 從 7.4 變成 0.9，完成的 Transaction 數也提升了 35 倍
 
 這同時也降低了復原的時間，傳統 DB 需要從 Redo Log 上一次的 checkpoint 開始逐條執行，但 Aurora 的復原是從 Storage level 向其他備份拉 Segment，復原速度可以在一分鐘以內
@@ -83,7 +83,7 @@ Segment 是最小獨立單位 (也就是會壞掉是獨立一個 Segment 壞)，
 ### 3.3 Storage Service Design Points
 Storage Service 核心設計要降低寫入請求的延遲，所以把大部分的儲存工作都移至背景執行，尤其是更好地利用 CPU 去換取 Disk 寫入時間，例如舊的 Page 要垃圾回收可以在背景用 CPU 執行而不要延遲前景在處理寫入請求，所以 Aurora 的背景運作不會影響前景，不同於傳統 DB 如果背景在 Checkpoint 刷新硬碟則會造成前景寫入的延遲
 
-![](/posts/2021/img/0702/storage.png)
+![](/post/2021/img/0702/storage.png)
 Storage Service 收到請求會執行
 1. 放入 Memory 中
 2. 寫入硬碟，寫入請求成功
@@ -132,7 +132,7 @@ Aurora 會同時處理大量的寫入請求，每一筆 redo log 都會產生一
 
 ## 5. PUTTING IT ALL TOGETHER
 接著看完整的架構圖
-![](/posts/2021/img/0702/architech.png)
+![](/post/2021/img/0702/architech.png)
 社群版的 MySQL InnoDB 引擎在寫入操作時會修改 buffer 中的 page 與寫入 WAL redo log buffer，等到 commit 時再把 redo log buffer 寫入硬碟中；而被修改的 page 要則透過 double-write buffer 避免只更新部分 page，page 寫入會發生在背景 / checkpoint / cache 移除時；
 此外還有一些 B+Tree 操作與相關的 mini trasaction (MTR) 如拆分、合併 B+Tree page 需要是原子性操作
 

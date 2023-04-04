@@ -8,7 +8,7 @@ keywords: ['cloud', 'terraform']
 ---
 
 # 介紹
-[上一篇](https://yuanchieh.page/posts/2019-10-31_try-terraform/)完成了用 Terraform 實作單一區域定時執行 Lambda 的部署，這一篇將轉成 module，並使用 for loop / if condition，一次部署到多個區域，同時探索 Terraform 本次教學沒有用到卻也值得留意的功能
+[上一篇](https://yuanchieh.page/post/2019-10-31_try-terraform/)完成了用 Terraform 實作單一區域定時執行 Lambda 的部署，這一篇將轉成 module，並使用 for loop / if condition，一次部署到多個區域，同時探索 Terraform 本次教學沒有用到卻也值得留意的功能
 
 # Module - 模組化
 先前提到，只要在專案根目錄下，任何的 `*.tf` 檔案都是 root module，在 `$terraform apply` 時都會被執行；  
@@ -220,7 +220,7 @@ resource "azurerm_resource_group" "example" {
 多區域部署套用 `module` 獨立宣告，可惜 for_each 尚未支援 module  
 
 以下是 slack 的 log 畫面  
-![](/posts/img/20191104_slack_result.jpeg)
+![](/post/img/20191104_slack_result.jpeg)
 
 對於導入 Terraform 評估蠻正面的，一來有 data source 或 import 與現有架構整合，又可以不擔心搞爛整個架構；  
 二來語法都慢慢完整，可以應付大多數的場景，確實省下很多的管理上的心力，期待之後可以用 Terraform 整合 Kubernetes，並整合 CI/CD，讓開發、整合、部署、維運可以更順暢

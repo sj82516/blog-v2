@@ -21,7 +21,7 @@ keywords: ['MongoDB']
 
 ### 架構圖
 
-![截圖自官網](/posts/img/1__HijPG3lhbfiPMS2sHD9mpg.jpeg)
+![截圖自官網](/post/img/1__HijPG3lhbfiPMS2sHD9mpg.jpeg)
 截圖自官網
 
 主要有三個部分：

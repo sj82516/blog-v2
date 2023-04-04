@@ -13,8 +13,8 @@ keywords: []
 
 事隔一週，稍微調整一下作息與思緒，記錄一些關於划龍舟訓練到比賽的一些心路歷程。
 
-![](/posts/img/1__5ePtnDLzks7AqdOnp2umXg.jpeg)
-![photo credit : 隊上的明德教練與南廷大哥，感謝他們不時幫大家留下美好的回憶](/posts/img/1__qffX3oGgyrKki____mqZKoyg.jpeg)
+![](/post/img/1__5ePtnDLzks7AqdOnp2umXg.jpeg)
+![photo credit : 隊上的明德教練與南廷大哥，感謝他們不時幫大家留下美好的回憶](/post/img/1__qffX3oGgyrKki____mqZKoyg.jpeg)
 photo credit : 隊上的明德教練與南廷大哥，感謝他們不時幫大家留下美好的回憶
 
 為期約三個月的訓練，大致可以拆成三個階段：  
@@ -24,7 +24,7 @@ photo credit : 隊上的明德教練與南廷大哥，感謝他們不時幫大�
 
 首先要聲明一件很多人都會問的事：「划龍舟手臂會不會變很壯？」
 
-![隨手畫畫，不要太在意(PS. 槳面會與船緣垂直，此為示意)](/posts/img/1__yaiUatTM01qw0DzWZP3YDw.jpeg)
+![隨手畫畫，不要太在意(PS. 槳面會與船緣垂直，此為示意)](/post/img/1__yaiUatTM01qw0DzWZP3YDw.jpeg)
 隨手畫畫，不要太在意(PS. 槳面會與船緣垂直，此為示意)
 
 但其實划龍舟主要是全身性的運動，一般龍舟坐定位後前方有塊腳踏板可以撐著(上圖)  
@@ -81,8 +81,8 @@ photo credit : 隊上的明德教練與南廷大哥，感謝他們不時幫大�
 比賽場地我們報了兩組，分別是台北市大佳河濱公園與新北市微風運河，台北與新北的船是不一樣的，前者是木船很沉，後者是塑膠製很輕，也是平常練習的船。  
 我們的主要目標擺在台北市，所以平常都會負重練習，划的阻力大概是2~3倍。
 
-![](/posts/img/1__wXwcAQUrFuAC1CAkyslSLw.jpeg)
-![photo credit：左邊台北市，右邊新北市](/posts/img/1__Er9jX__aCbCkH9jhd3AVMhA.jpeg)
+![](/post/img/1__wXwcAQUrFuAC1CAkyslSLw.jpeg)
+![photo credit：左邊台北市，右邊新北市](/post/img/1__Er9jX__aCbCkH9jhd3AVMhA.jpeg)
 photo credit：左邊台北市，右邊新北市
 
 但一開始練習超崩潰，因為強度拉升的很多，從四月一開始只能3/50槳划，逐步爬升到暖身就要滑800公尺約300槳，強度攀升的很可怕，有時候練習教練都會說跟不上可以收槳休息，內心開始掙扎，但最後還是咬著牙努力緊跟，隨著肌肉跟著適應，慢慢的也開始跟上大夥的步調。

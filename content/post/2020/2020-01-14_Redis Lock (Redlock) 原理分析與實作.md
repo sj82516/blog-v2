@@ -12,8 +12,8 @@ keywords: ['Backend', 'Redis']
 本次部落格會摘錄官方說明 [Distributed locks with Redis](https://redis.io/topics/distlock)，並整理 Martin Kleppmann 提出質疑 [How to do distributed locking](http://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html)與作者再次回復 [Is Redlock safe?](http://antirez.com/news/101)
 
 題外話介紹 Martin Kleppmann，他就是《Designing Data-Intensive Applications》一書的作者，目前仍是我最推薦的工程書籍，可以參考之前的筆記  
-[技術筆記 Designing Data-Intensive Applications 上](https://yuanchieh.page/posts/2018-03-28_designing-data-intensive-applications-%E4%B8%8A/)  
-[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/posts/2018-04-19_designing-data-intensive-applications-%E4%B8%8B/)
+[技術筆記 Designing Data-Intensive Applications 上](https://yuanchieh.page/post/2018-03-28_designing-data-intensive-applications-%E4%B8%8A/)  
+[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/post/2018-04-19_designing-data-intensive-applications-%E4%B8%8B/)
 
 # Redlock 簡介
 當我們在設計分散式 Lock 機制時，有三點原則必須考量到  
@@ -145,7 +145,7 @@ if(votes >= quorum && lock.expiration > Date.now())
 ## Martin Kleppmann 的質疑
 #### 中斷導致 Lock 有效判斷錯誤
 在分散式系統設計中，時間是一個非常難以掌握的因素，程序可能因為各種狀況而導致時間序錯亂，例如說系統時間不準、網路延遲、程式運作遇到垃圾回收、作業系統切換 Process 導致中斷等，所以各種檢查機制都有可能因而出現錯誤，例如以下的例子
-![](/posts/img/unsafe-lock.png)  
+![](/post/img/unsafe-lock.png)  
 1. Client1 取得 Lock 後
 2. 結果遇到 GC 暫停運作
 3. Lock 超過 TTL 自動釋放，此時
@@ -158,7 +158,7 @@ if(votes >= quorum && lock.expiration > Date.now())
 
 實際解法也蠻直覺的，系統全域有個不斷遞增的發號機制，每取一次 Lock 就配一個數字，在 DB 更新的時候，檢查對應的數字是不是有大於上次更新的數字，就可以避免掉上述提到的問題，就是 `Fencing 機制`
 
-![](/posts/img/fencing-tokens.jpeg)  
+![](/post/img/fencing-tokens.jpeg)  
 
 ### 太快樂觀預估時間的複雜性
 TTL 的「時間」計算有實作問題，Redis 目前使用 `gettimeofday` 而非 `monotonic clock` 的時間  

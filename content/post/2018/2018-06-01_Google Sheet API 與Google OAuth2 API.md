@@ -29,14 +29,14 @@ keywords: []
 APP主動觸發，讓用戶登入Google帳號並授權，接著透過 redirect 或其他方式取得code，最後用code去換token。  
 這也是對終端用戶最為常見的授權方式。
 
-![From Google](/posts/img/0__kYLCVa75Nl6Fb3dt.png)
+![From Google](/post/img/0__kYLCVa75Nl6Fb3dt.png)
 From Google
 
 ### Applications on limited-input devices
 
 適用於在沒有螢幕或是輸入的裝置，例如列印機、TV等嵌入式裝置
 
-![From Google](/posts/img/0__ueo8fqWlyUkudIPy.png)
+![From Google](/post/img/0__ueo8fqWlyUkudIPy.png)
 From Google
 
 這裡同樣是 App主動觸發，但變成回傳一個URL連結，用戶必須另外找支援瀏覽器裝置輸入URL並授權；  
@@ -46,7 +46,7 @@ From Google
 
 ### Server-to-Server
 
-![From Google](/posts/img/0__013W__2kCyhYRycgb.png)
+![From Google](/post/img/0__013W__2kCyhYRycgb.png)
 From Google
 
 在Google APIs Console中的憑證欄位，除了API金鑰 / OAuth 2.0 用戶端 ID ，第三個能夠創建的就是 `服務帳戶金鑰`，服務帳號像是創建一個新的用戶，只是此用戶是被用於 Server 端授權，並透過 IAM 管理權限。
@@ -97,14 +97,14 @@ scope部分需要取得 `[https://www.googleapis.com/auth/drive](https://www.goo
 
 1.  首先先到 [Google APIs Console](https://console.cloud.google.com/apis/credentials) 加入憑證，這次要加入的是服務帳號金鑰，記得要下載 json檔的金鑰檔案
 
-![](/posts/img/1__1M5Qa1SGllse7Oghqfwl7Q.png)
+![](/post/img/1__1M5Qa1SGllse7Oghqfwl7Q.png)
 
 2\. 接著到 IAM管理權限，找到剛才的服務帳號 Email，類似於 `….@….iam.gserviceaccount.com`，並加入「Service Management 管理員」權限，才能操作API。
 
 3\. 記得比剛才的服務帳號加入表單的共同編輯者。
 
-![](/posts/img/1__uobyyholII4abCvitAC9fg.png)
-![左圖為IAM管理 / 右圖為表單共用設定](/posts/img/1__W0O65uuktYNrJcugUzVXqg.png)
+![](/post/img/1__uobyyholII4abCvitAC9fg.png)
+![左圖為IAM管理 / 右圖為表單共用設定](/post/img/1__W0O65uuktYNrJcugUzVXqg.png)
 左圖為IAM管理 / 右圖為表單共用設定
 
 需注意 Server-to-Server不會有 refresh_token，token過期就必須重新產生JWT並取得新的token。

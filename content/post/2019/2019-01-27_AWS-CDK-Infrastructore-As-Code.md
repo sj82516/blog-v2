@@ -120,11 +120,11 @@ cdk 部署時有良好的打印訊息，最棒的是 cdk 會自動處理 aws 服
 
 lambda
 
-![](/posts/img/1__mn7RZtoPWTy33Xo9S1TdJg.jpeg)
+![](/post/img/1__mn7RZtoPWTy33Xo9S1TdJg.jpeg)
 
 Slack 訊息，看來歐洲回應時間最長，東北亞最快，結果是也不太意外 XD
 
-![](/posts/img/1__JQxsYZQ2OaTEoMSo3tbhMA.jpeg)
+![](/post/img/1__JQxsYZQ2OaTEoMSo3tbhMA.jpeg)
 
 最後附上完整專案的 github
 

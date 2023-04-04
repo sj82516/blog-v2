@@ -37,7 +37,7 @@ Uber 在乎用戶外出的通勤問題 / Food Panda 在乎用戶肚子餓想點�
 
 DDD 提倡領域專家與開發人員應該要先達成共識，將 Domain 建立出對應的模型 Model，讓雙方將共識轉換為圖形，並在過程中建立 `Ubiquitous Language` 共同語言，等確認後開發人員才去實作 (附圖路徑 B) 
 
-![](/posts/2022/img/0114/domain-model.png)
+![](/post/2022/img/0114/domain-model.png)
 
 比對路徑 A 、B，看似 B 繞了點遠路，但先透過 Domain Model 闡述 Solution 的長相並抽離實作，才能用最小的成本，讓領域專家及早確認解法的方向正不正確
 > Q: 是不是所有問題都要建 Domain Model?   
@@ -58,7 +58,7 @@ Event Storming 是一個建立 Domain Model 的方法，從 High Level 到 Low L
 建模工具使用 [Miro](https://miro.com/app/dashboard/)
 
 進行順序按照階層從 Big Picture 開始與領域專家討論核心的用戶行為，接著到 Process Modeling 補充更多的規則、行動，最後才是 Software Design
-![](/posts/2022/img/0114/event-storming-level.png)
+![](/post/2022/img/0114/event-storming-level.png)
 
 ### 1. Big Picture: 找出 Domain Event
 先拉出一條箭頭表達時間軸，先後順序，將 User Story 中的關鍵事件 (Domain Event) 先條列出來，所謂的`事件是會改變系統狀態`，例如電商系統用戶加購物車、結帳等，反之`讀取不是事件，因為不會改變系統狀態`，不管 Data 讀取幾次都不會有變化
@@ -72,7 +72,7 @@ Event Storming 是一個建立 Domain Model 的方法，從 High Level 到 Low L
 在討論過程中，務必記得
 - 不要出現技術用語，例如資料庫怎麼儲存、實作要套什麼 Design Patten 
 - 不要被 UI 綁架了!
-![](/posts/2022/img/0114/domain-model-impl.png)
+![](/post/2022/img/0114/domain-model-impl.png)
 因為我們是看著 Teddy 已經實作好的 ezKanban，所以 Domain Event 很多，實務上看各自系統規模，而且 `Event Storming 是持續演進，不用求一步到位`
 
 上圖是我們小組建立 Domain Event，其中有三點錯誤
@@ -105,20 +105,20 @@ Domain Event 又可細分成兩種 Core Domain Event / Application Domain Event�
 2. 故事 B: 「用戶今天想要使用看板系統，他先註冊了帳號並登入，接著建立團隊，邀請他的成員加入，大家一起操作看板，接著建立專案，並開始設定團隊的工作流程......」
 
 兩個故事都說得通，但 Teddy 覺得故事 B 更符合他的使用場景，團隊的建立會在工作流程之前，所以調整後的 Domain Event 大致長這樣
-![](/posts/2022/img/0114/domain-model-impl-r.png)
+![](/post/2022/img/0114/domain-model-impl-r.png)
 
 ### 2. Big Picture - 劃分 Bounded Context
 洋洋灑灑列出 Domain Event 後，接下來要來分群，想像成是買房畫隔間，設計圖應該要能清楚辨識出這是一個商務辦公室還是一個小家庭自住用，透過隔間去表達系統的意圖
-![](/posts/2022/img/0114/room.png)
+![](/post/2022/img/0114/room.png)
 *附圖從 Google 搜尋，不用懂室內設計但也大致能看出左右兩張圖的不同
 
 我們小組一開始思考方式是「不然就每個物件一間，Workflow 一間 / Board 一間等」，如圖示
-![](/posts/2022/img/0114/bound-wrong.png)
+![](/post/2022/img/0114/bound-wrong.png)
 
 Teddy 看到我們如此設計，他反問說「你們的隔間有反應出 "看板系統" 這個意圖嗎？如果從外部使用者的角度，他看到 Workflow / Board / Stage 這麼多細節對嗎？」  
 
 正確的隔間應該是
-![](/posts/2022/img/0114/bound-right.png)
+![](/post/2022/img/0114/bound-right.png)
 區分成三塊：
 - Core Domain：Kanban 是我們的核心領域，`千萬不要外包`
 - Generic Domain：User / Team 屬於通用性功能
@@ -129,14 +129,14 @@ Teddy 看到我們如此設計，他反問說「你們的隔間有反應出 "看
 > 大家最關心的微服務，通常是一個 Bounded Context 一個部署的元件
 ### 3. Big Picture - 加入 Role / Externel System
 加入觸發的角色 / 外部系統，這一步驟相對單純，角色是系統中動作的執行者
-![](/posts/2022/img/0114/role.png)
+![](/post/2022/img/0114/role.png)
 HotSpot 是當討論過程卡住、發生意見不同、命名不同時可以貼著註記，避免討論被卡住，最後可以看哪一個區塊是大家最沒有共識的
 
 ### 4. Process Modeling - 加入 Command / Read Model
 這一步相對單純
 - Command 是觸發 Domain Event 的動作，基本上就是把完成式改成現在式表達
 - Read Model 則是完成 Command 所需的參數
-![](/posts/2022/img/0114/command.png)
+![](/post/2022/img/0114/command.png)
 #### a. 建立事件是否要傳入 id
 有趣的小細節是 Create Board 時我們把 board_id 也寫出來，小組討論時會覺得 DB 會自動產生 id 所以不用寫到 read model，但 Teddy 說 `「錯，我哪管你 id 是 DB 產生還是前端用 UUID 產生，這是實作細節，Board 就是需要 id 識別」`，再次強調，不要陷入 UI/DB 的細節
 ### 5. Process Modeling - 加入Policy
@@ -145,7 +145,7 @@ Policy/Rule/Process 是指 `事件完成後觸發的流程`，千萬不要跟動
 - 密碼輸錯三次後，需要封鎖帳號 => 這是 Policy
 
 驗證是實作細節在 Event Storming 中不表達，Policy 才是我們現階段要關注的，以下是舉例「全家推出領取包裹後，可以八折買拿鐵」
-![](/posts/2022/img/0114/policy.png)  
+![](/post/2022/img/0114/policy.png)  
 
 這邊偷夾帶一張白色的便利貼，Teddy 說他確實也遇到有些驗證是重要的商業邏輯，他自己變形增加了白色便利貼，表示 Command 的驗證規則
 
@@ -155,10 +155,10 @@ Policy/Rule/Process 是指 `事件完成後觸發的流程`，千萬不要跟動
 
 ### 6. Software Design - 加入 Model
 接下來進入實作細節，Model 可以想做是物件，比對 Command 應該是哪一個物件負責，條列後最終把 Model 的大致關係也描繪，大致如下
-![](/posts/2022/img/0114/model-wrong.png)
+![](/post/2022/img/0114/model-wrong.png)
 因為 Stage / Swimlane 一者是橫向一者是直向，兩者可以互相包含，所以圖表有點複雜，圖表複雜代表程式碼實作一定也不好寫，該怎麼優化呢？
 
-![](/posts/2022/img/0114/model-right.png)
+![](/post/2022/img/0114/model-right.png)
 - 抽一個 Lane 代表 Stage / Swimlane，這樣關係就單純很多
 - 更精準表達商業邏輯，另外一個重點是 `Workflow 與 Stage 關聯而不是 Lane`，因為 Workflow 預設第一層必須是 Stage，透過圖表表示出核心的設計邏輯
 
@@ -180,7 +180,7 @@ Teddy 帶我們思考的方式是
 > 今天我改動 Model A，那我可不可以同時改動 Model B ? 我在 Workflow name 的時候，可以同時操作 Board 嗎？
 
 切記不要用 Database Relation 思考，例如 User 刪除 Order 也要跟著被刪除，這樣 Aggregate 永遠切不開，更直觀地說 `要包 Transaction 操作的都就放在同一個 Aggregate`  
-![](/posts/2022/img/0114/aggregate-right.png)
+![](/post/2022/img/0114/aggregate-right.png)
 
 找出 Aggregate 後，需要找一個 Model 當作 Root，往後 Aggregate 內的 Model 都由他來控制，`外人不可直接操作內部 Model`，任何跨 Aggregate 操作只能保證最終一致性
 
@@ -188,7 +188,7 @@ Teddy 帶我們思考的方式是
 Teddy 上課一直強調讀取隨便寫就好，怎麼髒都沒關係因為 Command 才會影響系統狀態 XD Query 效能問題等又是 DB 細節，本身也不是 Event Storming 該關注的層級  
 
 但協作上大家還是想把 UI 放到討論中 / Read Model 如果有前端可能也希望在寫得細一點，這些都可以自己延伸，Teddy 也分享有些流程 UI 可以幫助說明的話他也會放進去，例如 Command 後回傳另一張 Read Model / UI 圖示放在 Read Model 旁邊等
-![](/posts/2022/img/0114/ui.png)
+![](/post/2022/img/0114/ui.png)
 
 ### 延伸問題：開發只要這一份文件就好了嗎？
 文件的維護也是我課前很想了解的部分，在 DDD 藍皮書中不斷強調 `Domain Model 跟程式碼實作要高度一致`並持續演進，但工作多年有良好維護文件習慣的人還真的是少數，尤其是文件越多份維護的成本就更高，所以我課後就問 Teddy 他們團隊開發是不是只有這一份文件，他說基本上是，資料庫部分因為他是走 Event Sourcing 所以不用另外的 Schema 設計文件，如果不是頂多再一份 DB Schema 文件就足夠了

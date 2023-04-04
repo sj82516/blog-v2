@@ -1,3 +1,3 @@
 # Permalinks format of each content section
-post = "/posts/:year/:year-:month-:day-:slug/"
+post = "/post/:year/:year-:month-:day-:slug/"
 page = "/:slug/"

@@ -24,7 +24,7 @@ Packer 在建立 AWS Image 時會需要開機器，自動上傳的 AMI 並關閉
 ## 指定基礎 Image
 可以在 [AWS Marketplace](https://aws.amazon.com/marketplace) 上找想要採用的 Image，或直接指定 ami-id，例如我在 us-east-1 使用 Ubuntu 18.04 LTS - Bionic 的 ami-id 是 `ami-0d03e44a2333dea65`，要找到 ami-id 其實有點小麻煩，可以參考下列步驟
 
-![](/posts/img/20200415/amiid.png)  
+![](/post/img/20200415/amiid.png)  
 先找到 Image，點進去後按 "Continue to Subscribe" -> "Continue to Configuration" (沒截圖)，接著選定區域就能看到 ami-id 了  
 
 ## Packer 設定檔
@@ -106,7 +106,7 @@ Packer 大概就是這麼簡單! Do one thing and do it well.
 執行的時候照樣 hashicorp 工具的操作方式，`$packer validate` 先檢查語法正確性，接著 `$packer build` 就完成囉   
 
 最後看一下 Packer 每次 Build 所產生的 instance    
-![](/posts/img/20200415/packer-tm.png)  
+![](/post/img/20200415/packer-tm.png)  
 
 ## 使用經驗談
 以下分享一些實際遇到的問題與解決辦法

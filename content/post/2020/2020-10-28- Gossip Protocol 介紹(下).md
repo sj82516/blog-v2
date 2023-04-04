@@ -9,7 +9,7 @@ keywords: ['Redis', 'Consul']
 # Gossip Protocol
 Gossip Protocol 是一種通訊機制，應用於同一網路內機器與機器間交換訊息使用，原理類似於辦公室傳謠言一樣，一個傳一個，最終每一個機器都擁有相同的資訊，又稱 Epidemic Protocol  
 
-上一篇分享到 [Cassandra 內部如何使用 Gossip Protocol](https://yuanchieh.page/posts/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9%E4%B8%8A/)，影片中有推薦 [Efficient Reconciliation and Flow Control for Anti-Entropy Protocols](https://www.cs.cornell.edu/home/rvr/papers/flowgossip.pdf)，以下摘要此篇論文所探討的內容   
+上一篇分享到 [Cassandra 內部如何使用 Gossip Protocol](https://yuanchieh.page/post/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9%E4%B8%8A/)，影片中有推薦 [Efficient Reconciliation and Flow Control for Anti-Entropy Protocols](https://www.cs.cornell.edu/home/rvr/papers/flowgossip.pdf)，以下摘要此篇論文所探討的內容   
 
 建議可以先讀上篇，有個概略認識後在看理論會比較好懂些  
 
@@ -75,7 +75,7 @@ c   |  c1   | 3
 ```
 如果此時 a 要更新，則版號至少要拉到 4，而且不像 precise-conciliation 會一次送多組間值更新，Scuttlebutt 允許一次可以送一個鍵值，但必須按照 version 大小逐一送
 整個架構必須符合以下狀態
-![](/posts/img/20201028/gossip_equation.png)  
+![](/post/img/20201028/gossip_equation.png)  
 
 也就是說在整個集群下，任一鍵值 k 在節點 p / 節點 q 必須滿足以下任一條件  
 1. 在節點 p 跟節點 q 中同一個 key version 是一樣，代表`資料已經同步`
@@ -86,7 +86,7 @@ c   |  c1   | 3
 來看一個實際案例，目前有三個節點 r,p,q，共有 3 個 key a,b,c，可以看到 t1 時 r 的三個 key 都被更新過，版號分別是 21/22/23；  
 此時 r 要向 p,q 發送 gossip message，他必須先從 a 開始，因為這是 a,b,c 三者中版號最小，且大於` µq(p) / µp(p)` ，這意味著節點 p 和 節點q 都要更新，所以 r 會同時送訊息給 p , q，在 t2 時只有 key a 先被更新   
 
-![](/posts/img/20201028/example.png)
+![](/post/img/20201028/example.png)
 
 > 可以回去看 Gossip 介紹(上)的 GossipDigestSynMessage 部分
 
@@ -98,7 +98,7 @@ c   |  c1   | 3
 #### 實驗結果
 總共 128 participants 與 64 組 key/ value，每秒每個 participant gossip 一次； 
 前 15 sec 暖機，並開始限縮頻寬 / 25 秒開始加倍更新頻率 / 75 秒更新頻率回歸正常 / 120 sec 停止更新，中間 25~75 加大流量主要是想要看演算法在高負載下的表現，以及高峰過去後的恢復速度  
-![](/posts/img/20201028/gossip.png)
+![](/post/img/20201028/gossip.png)
 
 1. 第一張圖表代表這一個時間上，該鍵值自從上次被更新後隔了多久才收到最新資訊，越低者越好
 > staleness of such a mapping µq (p)(k) is the amount of time that has lapsed since µq(p)(k) was last updated
@@ -115,14 +115,14 @@ c   |  c1   | 3
 在一些情況下，participant 交換訊息時更新頻率可能不同，所以會需要一個流量控制的演算法，去平衡一個 participant 想要增加更新頻率而另一個想要降低頻率的可能，要製造出這樣的不同更新頻率，但同時系統必須維持相同的最大交換頻率上限  
 在 participant 交換 gossip 時，會連帶交換彼此預設更新的頻率 (ρp , ρq)以及最大值 (τp,τq )，當兩個 participant 在交換時會順便交換
 
-![](/posts/img/20201028/flow1.png)
+![](/post/img/20201028/flow1.png)
 
 機制有點類似於 TCP 的 Additive Increase Multiplicative Decrease (AIMD)，逐漸增加發送的頻率但遇到錯誤時快速減少；  
 如果要發送的 delta 數量高於 MTU，則線性增加，反之，則倍數減少
 
 
 實驗過程是在 t = 90 時限縮 mtu 從 100 降到 50，可以看到 90 之後 max out of date 大幅增加，之後才慢慢收斂，其中 scuttle-depth 在表現上比較穩定    
-![](/posts/img/20201028/exp2.png)
+![](/post/img/20201028/exp2.png)
 
 這一章節比較不確定，如果有什麼錯誤麻煩指教 🙏
 ## 總結

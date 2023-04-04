@@ -287,7 +287,7 @@ console.log(i16[0]); // 5220，因為是 0x14 0x64
 ![](https://media.prod.mdn.mozit.cloud/attachments/2014/09/16/8629/80522bcbdb9d77c4a4c72a289365ea63/typed_arrays.png)
 
 在 C/C++中，有多種不同長度的型別，例如 char / int / float / double 加上 signed / unsigned 等，就會一一對照到 JS 的 Typed Array
-![](/posts/img/typedarray.jpeg)
+![](/post/img/typedarray.jpeg)
 
 #### Pass Array by pointer
 

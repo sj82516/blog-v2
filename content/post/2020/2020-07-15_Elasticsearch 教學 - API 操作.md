@@ -10,7 +10,7 @@ keywords: ['Elasticsearch']
 
 另外還有一些系統配置與進階功能，看到 Alias 功能覺得十分有趣，讓維運有更多的彈性跟方法去調整資料儲存與硬體架構
 
-如果想之前架構層面，可以參考 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/posts/2020/2020-07-08_elasticsearch-%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
+如果想之前架構層面，可以參考 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/post/2020/2020-07-08_elasticsearch-%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
 
 > 基本名詞解釋，Index = MongoDB 的 Collection / MySQL 的 Table；
 > Document = MongoDB Document / MySQL Row

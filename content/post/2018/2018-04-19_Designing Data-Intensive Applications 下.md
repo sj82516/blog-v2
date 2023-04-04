@@ -8,7 +8,7 @@ categories: ['閱讀心得','資料庫']
 keywords: ['Designing Data-Intensive Applications']
 ---
 
-上集:[Designing Data-Intensive Applications 上](https://yuanchieh.page/posts/2018-03-28_designing-data-intensive-applications-%E4%B8%8A/)  
+上集:[Designing Data-Intensive Applications 上](https://yuanchieh.page/post/2018-03-28_designing-data-intensive-applications-%E4%B8%8A/)  
 
 隨著軟體應用程式的發展，應用的侷限(bottleneck)從CPU移轉至資料的處理，資料的巨量、複雜性與改變的速度變成棘手的問題，也就是作者所定義的「Data-Intensive」資料密集的應用程式。
 
@@ -88,7 +88,7 @@ Timeout設定也很重要，太短會導致網路波動就造成不必要的Lead
 
 寫入和讀取都一次使用多個節點，透過量來保證資料的正確性與系統容錯性，例如總共有5個node(n)，只要我們可以寫入3個以上節點(w)與讀取時讀到3個節點以上(r)，在符合 w + r > n的情況下，就可以保證會讀取到最新的資料，此時系統可以容忍 n-w 個節點失效。
 
-![[https://tech.liuchao.me/2017/12/ddia-5/](https://tech.liuchao.me/2017/12/ddia-5/)](/posts/img/1__ud8JMaGfu__JywzSmo0kLWw.png)
+![[https://tech.liuchao.me/2017/12/ddia-5/](https://tech.liuchao.me/2017/12/ddia-5/)](/post/img/1__ud8JMaGfu__JywzSmo0kLWw.png)
 [https://tech.liuchao.me/2017/12/ddia-5/](https://tech.liuchao.me/2017/12/ddia-5/)
 
 ## Ch6. Partition
@@ -97,7 +97,7 @@ Partition分片主要是提升系統的Scalability，當大量的資料可以被
 
 在實作上，Partition常與Replication做搭配，將資料分片並複製到其他節點上增加容錯空間
 
-![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/posts/img/1__e5hRNbqh8dOc4lXntcu1ug.png)
+![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/post/img/1__e5hRNbqh8dOc4lXntcu1ug.png)
 [https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)
 
 有個良好的資料分片機制很重要，如果分片的方式不夠號，如遇上 hot-key產生歪斜skewed，導致資料不平均分散到節點上，會導致系統的性能無法得到顯著的提升，以下有兩種常見的分片機制
@@ -126,7 +126,7 @@ Cassandra嘗試透過組合Key來融合上面兩種方式，Key的前半段用Ha
 在個別partition中自行維護各自資料的 Secondary index table，所以用戶的讀取請求需要送到每個partition中並整合，也就是 scatter /gather。  
 缺點就是讀取效率很差，因為可能某些partition回復比較慢整個請求就會被卡住。
 
-![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/posts/img/1__3OY9Re3mGd__GuWpjogmvOA.png)
+![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/post/img/1__3OY9Re3mGd__GuWpjogmvOA.png)
 [https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)
 
 ### Partitioning Secondary Indexes by Term
@@ -135,7 +135,7 @@ Cassandra嘗試透過組合Key來融合上面兩種方式，Key的前半段用Ha
 
 至於該筆 Secondary index要記錄在哪可以透過前述的兩種方式分散到不同node上。
 
-![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/posts/img/1__yaaNNaAUaHSUFmodO0Dhtw.png)
+![[https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)](/post/img/1__yaaNNaAUaHSUFmodO0Dhtw.png)
 [https://tech.liuchao.me/2017/12/ddia-6/](https://tech.liuchao.me/2017/12/ddia-6/)
 
 這種方式提升讀取的效能，但缺點是寫入變得十分複雜，修改單一筆資料需要同步更新不同partition中的 Secondary Index，這在分散式中會有很多隱藏的問題。
@@ -172,7 +172,7 @@ client隨機發送請求到某節點，每個節點都有分片依據的紀錄�
 統一一個負責routing的節點；  
 client端自行判斷紀錄分片的依據。
 
-![](/posts/img/1__1HtoefsjWPhIJav0Zj__21g.png)
+![](/post/img/1__1HtoefsjWPhIJav0Zj__21g.png)
 
 ## Ch8. The Trouble with Distributed Systems
 

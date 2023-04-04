@@ -69,7 +69,7 @@ MongoDB 3.6+ 提供 writeConcern:majority / readConcern:majory 外加因果性�
 
 ## Write Concern 與 Read Concern
 
-![截自 MongoDB 官方文件 [https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/](https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/)](/posts/img/1__F__a3X__box50qZOllKb__D1g.jpeg)
+![截自 MongoDB 官方文件 [https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/](https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/)](/post/img/1__F__a3X__box50qZOllKb__D1g.jpeg)
 截自 MongoDB 官方文件 
 
 [https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/](https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/)
@@ -131,7 +131,7 @@ Write Concern 主要是指 `當 Client 送出寫入請求後，Server會在什�
 
 ### 讀取的實例說明
 
-![截自 MongoDB 官方文件](/posts/img/1__YKPt3WxP__8WzvsmvFwZSKw.jpeg)
+![截自 MongoDB 官方文件](/post/img/1__YKPt3WxP__8WzvsmvFwZSKw.jpeg)
 截自 MongoDB 官方文件
 
 #### readConcern: majority

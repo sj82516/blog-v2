@@ -73,7 +73,7 @@ Because they come at the end of my day these meetings are never an interruption.
 ## 自我實踐
 以下分享我自己的生產力管理方式，主要透過 Heptabase 這套筆記軟體，使用 Heptabase 的好處是，我可以用圖形化的方式一目瞭然相關的紀錄  
 我主要會分成 年 / 季 / 月 / 週 / 日，我會希望四者的目標是環環相扣，當我在安排每日工作事項，會想要知道這有沒有緊扣我每週的目標，而每週的目標制訂時要緊扣每月的目標，以此類推  
-![](/posts/2023/img/0401/overview.png)
+![](/post/2023/img/0401/overview.png)
 
 ### 目標管理
 在制定每年的目標上，去年我跟老婆花了一天的時間，採用 [Year Compass](https://yearcompass.com/)模板，我覺得蠻不錯的，覆蓋的範圍蠻完整  
@@ -83,7 +83,7 @@ Because they come at the end of my day these meetings are never an interruption.
 - 專案管理流程，是否一堆隕石跟 BDD (Boss Driven Design)
 
 針對每日任務上，我是直接用 Heptabase 最近支援的 Journal card 去規劃
-![](/posts/2023/img/0401/daily.png)
+![](/post/2023/img/0401/daily.png)
 - 拆成兩個時段工作前與工作中，各安排 3 ~ 5 個項目
 - 提前展開未來幾天的卡片，想到就先寫成具體的執行項目，不要當天要執行時才想實作的細節  
 例如說今天安排刷題，可以的話前一天就把題目挑出來 / 如果今天要看書，就先把書的頁碼或章節標記出來，有具體的項目讓執行時會更順暢
@@ -99,7 +99,7 @@ Because they come at the end of my day these meetings are never an interruption.
 這個理論在《卡片盒筆記》也有提起，我目前的做法是當研究某個主題出現有趣的分支時，先開成卡片標記成 todo，接著先專注在原本的主題研究，避免太過於發散
 
 而這個 todo 清單就會變成我安排工作時可以檢索的項目，Heptabase 有 tag 的功能 (大部分的筆記軟體應該都會有)
-![](/posts/2023/img/0401/tag.png)
+![](/post/2023/img/0401/tag.png)
 另外推薦 tag 的用法，我是參考 [電腦玩物 - 2021覆盤：如何用標籤管理上萬則筆記？Evernote, Notion, obsidian 都適用](https://www.playpcesor.com/2021/12/2021evernote-notion-obsidian.html)，tag 應該是以功能性為導向而非內容，todo 就是一種功能性，代表尚未完成的代排事項
 
 除了打上 todo tag，我會另外標記任務的類型與難易度，主要是我會希望均衡的執行，我不希望某個禮拜都在閱讀而沒有產出、或是都挑簡單的任務而沒有高難度的任務執行

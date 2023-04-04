@@ -14,7 +14,7 @@ keywords: ['Coturn', 'WebRTC']
 4. 補充 NAT 與 STUN/TURN 關係   
 
 如果想知道更詳細的協定介紹，請參考
-1. [RFC 5398 - STUN](https://yuanchieh.page/posts/2020-09-22_rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/) 
+1. [RFC 5398 - STUN](https://yuanchieh.page/post/2020-09-22_rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/) 
 
 如果想要用 Container 架設，可以參考我用 docker-compose 架設的方式 [Running Coturn + Promethes + Grafana in Docker](https://github.com/sj82516/coturn-with-prometheus-grafana-on-docker)
 
@@ -95,7 +95,7 @@ $ turnutils_stunclient <server ip>
 第二個會回傳主機 public ip (如果前面沒有 NAT 的話)，也就是 STUN 最主要的功用  
 
 #### 2. 用瀏覽器開啟 WebRTC samples Trickle ICE  
-![](/posts/img/20200922/trickle-ice.png)  
+![](/post/img/20200922/trickle-ice.png)  
 輸入 server domain 時記得要加 `turn:{domain name}`，就可以成功拿到 STUN (srflx) / TURN (relay) 的紀錄   
 
 測試了一下，Chrome / Firefox 不支援 no auth 設定，Chrome 不支援 ip based 的 server   

@@ -55,9 +55,9 @@ keywords: ['Infrastucure as Code', 'Hashicorp', '技術教學']
 ## 實作
 看完對於整個部署流程與工具更加的理解了，此時當然要挑戰自己動手搭建整個環境，以 API Server + DB 的架構去挑戰 Hashicorp 全套工具鍊，希望用一個月左右時間完成，以下是完整的教學記錄，希望能夠幫助到大家  
 
-[Vagrant 教學-一鍵啟動配置開發環境](https://yuanchieh.page/posts/2020-04-12_vagrant-%E6%95%99%E5%AD%B8-%E4%B8%80%E9%8D%B5%E5%95%9F%E5%8B%95%E9%85%8D%E7%BD%AE%E9%96%8B%E7%99%BC%E7%92%B0%E5%A2%83/)   
-[Packer 教學- 打造 Image](https://yuanchieh.page/posts/2020-04-15_packer-%E6%95%99%E5%AD%B8-%E6%89%93%E9%80%A0-image-copy/)    
-[Vault 教學-集中化管理機敏資料 (上)](https://yuanchieh.page/posts/2020-04-20_vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99-%E4%B8%8A/)
+[Vagrant 教學-一鍵啟動配置開發環境](https://yuanchieh.page/post/2020-04-12_vagrant-%E6%95%99%E5%AD%B8-%E4%B8%80%E9%8D%B5%E5%95%9F%E5%8B%95%E9%85%8D%E7%BD%AE%E9%96%8B%E7%99%BC%E7%92%B0%E5%A2%83/)   
+[Packer 教學- 打造 Image](https://yuanchieh.page/post/2020-04-15_packer-%E6%95%99%E5%AD%B8-%E6%89%93%E9%80%A0-image-copy/)    
+[Vault 教學-集中化管理機敏資料 (上)](https://yuanchieh.page/post/2020-04-20_vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99-%E4%B8%8A/)
 ...待續
 
 

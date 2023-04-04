@@ -47,8 +47,8 @@ accept = application/dns-message
 > kdig -d @1.1.1.1 yuanchieh.page
 
 透過 Wireshark 擷取封包結果
-![dns over DoH](/posts/img/20200229/dns_doh.jpeg)
-![dns](/posts/img/20200229/dns.jpeg)
+![dns over DoH](/post/img/20200229/dns_doh.jpeg)
+![dns](/post/img/20200229/dns.jpeg)
 前者走一般 HTTPS 流程，後者走 DNS 流程，可以看到傳輸量與傳輸速度的差異
 
 ## 爭議之處

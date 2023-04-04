@@ -34,7 +34,7 @@ CMD [ "node", "server.js" ]
 
 後來找到這一篇文章[10 best practices to containerize Node.js web applications with Docker](https://snyk.io/blog/10-best-practices-to-containerize-node.js-web-applications-with-docker/)覺得十分實用，也解決安全性上的疑慮，以下摘要重點  
 
-![daily](/posts/img/20210121/synk_docker.png)  
+![daily](/post/img/20210121/synk_docker.png)  
 
 ## 1. 選擇正確的 Base Image 並透過 Build Stage 精簡產出
 > tldr; 

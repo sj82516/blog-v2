@@ -5,7 +5,7 @@ date: '2023-01-28T01:21:40.869Z'
 categories: []
 keywords: []
 ---
-上一篇 [驗證與授權的差別，淺談 OAuth 2.0 與 OpenID Connect](https://yuanchieh.page/posts/2023/2023-01-20-%E9%A9%97%E8%AD%89%E8%88%87%E6%8E%88%E6%AC%8A%E7%9A%84%E5%B7%AE%E5%88%A5%E6%B7%BA%E8%AB%87-oauth2.0-%E8%88%87-openid-connect/) 淺談到 OAuth 2.0 與 OIDC 的差異，我們是以 Client 的角度去理解如果像第三方取得驗證與授權，但如果今天我們要 Google 一樣自己處理授權的設計，思考的方式就會有所不同  
+上一篇 [驗證與授權的差別，淺談 OAuth 2.0 與 OpenID Connect](https://yuanchieh.page/post/2023/2023-01-20-%E9%A9%97%E8%AD%89%E8%88%87%E6%8E%88%E6%AC%8A%E7%9A%84%E5%B7%AE%E5%88%A5%E6%B7%BA%E8%AB%87-oauth2.0-%E8%88%87-openid-connect/) 淺談到 OAuth 2.0 與 OIDC 的差異，我們是以 Client 的角度去理解如果像第三方取得驗證與授權，但如果今天我們要 Google 一樣自己處理授權的設計，思考的方式就會有所不同  
 
 參考以下的文章，分享這幾天研究微服務下該如何設計驗證的機制
 - [Best Practices for Authorization in Microservices](https://www.osohq.com/post/microservices-authorization-patterns)
@@ -53,14 +53,14 @@ end
 ### 1. 將資料放在原位，透過 API 呼叫
 假設今天獨立一個 document service，每個 document 隸屬於某個組織 org 下，而 org 管理是屬於 user service 的範疇
 則 user service 可以開一條 API 專門查詢 user 所隸屬的 org
-![](/posts/2023/img/0128/service_api.png)
+![](/post/2023/img/0128/service_api.png)
 這是最簡單且有效的方式，但如果服務越變越多，則會有幾個問題
 - 服務間判端可能有重複呼叫 (例如 document 往上多一層 folder，變成要判斷 user 是否有權限操作 document 與 folder)
 - API 呼叫會有延遲
 - 如果驗證方式改變，多個 service 也要跟著改動 (例如 service A / service B 都是用 org 驗證，但之後突然變成要用 user 本身驗證)
 
 ### 2. 在 Gateway 注入授權驗證所需的資料
-![](/posts/2023/img/0128/gateway.png)
+![](/post/2023/img/0128/gateway.png)
 既然服務都需要 user org 這個資訊，那我們在 request 近來時就透過 gateway 把 user 資訊塞好塞滿，好處有
 - 減少多餘 request，所有下游的 service 都能讀取到 user org 參數
 - 如果授權的參數很有限，例如只有切分幾種 role，那 gateway 會是最方便的
@@ -68,7 +68,7 @@ end
 缺點是 Gateway 會需要知道所有 service 需要的資料，如果今天驗證方式改變 Gateway 也要跟著改變
 
 ### 3. 獨立的授權驗證服務
-![](/posts/2023/img/0128/authz_service.png)
+![](/post/2023/img/0128/authz_service.png)
 有一個獨立的 AuthZ service，其他 service 收到 request 都直接向 AuthZ service 驗證授權，將`驗證與商業邏輯拆開並集中管理授權邏輯`   
 特別適用於微服務眾多且需要互相溝通的情況 / 有第三方廠商要分享資料時，例如 Google / Airbnb / Netflix
 
@@ -85,7 +85,7 @@ Zanzibar 是中心化的 AuthZ 服務，提供統一的 data model 與 config la
 - 可用性：99.999%
 
 實際設定可能像以下圖示 (非 google 官方，參考自 [zanzibar.academy](https://zanzibar.academy/))
-![](/posts/2023/img/0128/demo.png)
+![](/post/2023/img/0128/demo.png)
 
 ### 為什麼需要中心化的 AuthZ 服務
 1. 提供統一的語意和用戶體驗
@@ -148,7 +148,7 @@ Zanzibar 會有一個閥值，當發現請求比較慢時，會發送給其他�
 Open Policy Agent (簡稱 OPA) 針對 cloud native 架構設計驗證規則的解法，`中心化管理驗證規則與其他邏輯解耦，整個架構統一一套驗證規則語言`，支援 Kubernetes / Envoy / Terraform (決定用戶是否能用 tf 調整某種資源) / Kafka 等，也開放 HTTP API 所以應用程式層也可以使用，另外也有提供 Golang Libary 與 WASM 可以整合
 
 流程大概是
-![](/posts/2023/img/0128/opa-service.svg)
+![](/post/2023/img/0128/opa-service.svg)
 1. Client 發出請求
 2. OPA agent 根據請求找到對應的 policy (用 rego 語言撰寫)，結合 data 判斷 client 是否有足夠權限
 

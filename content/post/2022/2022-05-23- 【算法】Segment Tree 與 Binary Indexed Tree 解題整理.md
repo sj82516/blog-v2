@@ -23,7 +23,7 @@ keywords: ['leetcode']
 Segment Tree 與 BIT 的概念雷同，原本我用 prefix sum 遇到更新時要用 O(n) 整個重建，但如果我把`區間切小，每次更新只要影響到部分區間`，對應的讀取要篩選符合的區間讀取，妥協後 `讀取與更新都控制在 log(N)`，但區間該怎麼切以及如何實作呢？ 這就是 Segment Tree 與 BIT 不同之處
 
 Segment Tree 用陣列儲存區間值，需要`兩倍額外記憶體空間`，原陣列放在新陣列的最後，接著往前跟新區間 (parent = idx/2)，如下圖 (從影片截圖而來)
-![](/posts/2022/img/0522/segment_tree.png)  
+![](/post/2022/img/0522/segment_tree.png)  
 所以區間是 2 -> 4 -> 8 這樣往上疊加  
 
 初始化程式碼為
@@ -86,7 +86,7 @@ int sumRange(int left, int right) {
 }
 ```
 這一段程式碼有點神奇，用圖示大致如下
-![](/posts/2022/img/0522/segment_tree_explain.png)
+![](/post/2022/img/0522/segment_tree_explain.png)
 
 左右分別原陣列長度為 2 , 3 時，如果想要查詢整段區間的指標移動，我們可以觀察出一個重點
 >  偶數 index 都在區間的左側 / 奇數 index 是在區間的右側
@@ -183,10 +183,10 @@ private:
 1994 年的論文 [A New Data Structure for Cumulative
 Frequency Tables](https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=B6DEEDCB6E5C3DE95856CE6E24EB8C53?doi=10.1.1.14.8917&rep=rep1&type=pdf) / 我覺得講得很好的影片 [Fenwick Tree (Binary Index Tree) - Quick Tutorial and Source Code Explanation](https://www.youtube.com/watch?v=uSFzHCZ4E-8)  
 
-![](/posts/2022/img/0522/bit.png)
+![](/post/2022/img/0522/bit.png)
 這張圖是從論文截圖而來，實作技巧非常巧妙，他利用 `Last Significant Bit (LSB) 來決定區間的範圍`，如果 LSB 是 xxx1，則只儲存當前一個數，如果 LSB 是 xx10，則儲存當前兩個數，以此類推，所以可以看到 `1, 3 等只會儲存當前 1 個數、8 會儲存往前 8 個數`
 
-![](/posts/2022/img/0522/bit_update.png)
+![](/post/2022/img/0522/bit_update.png)
 所以更新時會需要更新所有相關區間，上面這張圖是代表當你更新 index i 時，需要往上調整的 bit index，例如更新 idx 1 時，因為 bit\[2\]、bit\[4\]、bit\[8\] 都有包含 idx 1，所以都要一併更新
 
 實作方面非常簡單，透過 `2 補數 i & -i 即可取得 LSB`
@@ -203,7 +203,7 @@ int getParent(int i) {
 ```
 
 讓我們看查詢會變得如何：
-![](/posts/2022/img/0522/bit_iterate.png)
+![](/post/2022/img/0522/bit_iterate.png)
 圖片表達如果你要某個 prefix sum，你必須往前輪詢的 index，例如要找 idx 1~9 的 prefix sum，則需要 `bit[9] + bit[8]`，搭配上一張圖 bit\[9\] 只有儲存 idx 9 這個元素，而 bit\[8\] 儲存了 idx 1-8 個元素 
 
 實作方面同樣透過 2 補數，只是變成往下減

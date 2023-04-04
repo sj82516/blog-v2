@@ -37,7 +37,7 @@ Parallelism 並發，強調的是多個Task被分配到多個實體CPU上，同�
 
 以下是我參考作者範例程式碼改寫的，主要比對原先的做法與async iife的差別，挑戰任務間相依的狀態如下
 
-![](/posts/img/1__v7aRZMMz__1__hTYVEGc4quQ.jpeg)
+![](/post/img/1__v7aRZMMz__1__hTYVEGc4quQ.jpeg)
 
 原本就有的寫法是描述Task橫向的並行，所以我們會用 Promise.all([])將 TaskB/TaskC並行處理，但是這種寫法可讀性差，而且架構的方向也是不好的，`因為 Task相依應該是垂直`  ，像是 TaskD明明就只要等 TaskC完成就可以開始執行，但因為寫法所以要等到 TaskB也執行完成後，TaskD與TaskE才並行處理。
 

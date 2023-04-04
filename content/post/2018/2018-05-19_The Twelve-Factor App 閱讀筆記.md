@@ -113,7 +113,7 @@ HTTP只是其中一個可以綁定埠口的協定，其他像是 XMPP / Redis Pr
 
 看說明作者舉 [Foreman](http://blog.daviddollar.org/2011/05/06/introducing-foreman.html) 當做例子(下圖輔助說明)，這樣的好處是重要的任務可以分配較多的資源
 
-![](/posts/img/0__jvIkj4Cf__DgPZRRt.png)
+![](/post/img/0__jvIkj4Cf__DgPZRRt.png)
 
 但這並不排除執行緒內部多工處理、VM內部處理線程分配、又或是像 非同步/事件觸發的NodeJS，但是單一VM能夠容量有限，應用程式須可拓展多個執行緒到多台實體主機上。
 

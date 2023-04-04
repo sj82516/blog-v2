@@ -15,7 +15,7 @@ keywords: ['Clean Architeucture']
 ## Clean Architecture 的解讀
 【Clean Architecture】一書談了非常多的觀念，整理後自己的解讀是 `架構是為了降低後續的開發、維運成本並最大化工程師的產能`，而在這樣的原則下提出了以下的依賴原則
 
-![](/posts/2022/img/0911/dep.png)
+![](/post/2022/img/0911/dep.png)
 
 1. 離 IO 越遠的元件越是核心，而核心不應該因為外層的改變而受到影響，就好比說用戶不會在意資料庫是用 MySQL 還是 MongoDB (IO)，他只會在意他購買的品項與折扣對不對 (業務規則)
 2. 依賴的物件不可以跨層，所以 Adapter 不能直接存取 Entity  
@@ -24,7 +24,7 @@ keywords: ['Clean Architeucture']
 
 
 ### 六角架構
-![](/posts/2022/img/0911/hex.png)
+![](/post/2022/img/0911/hex.png)
 由 Alistair Cockburn 提出的六角架構，剛好與 Clean Architecture 觀點呼應，外部 IO (Adapter) 如果要與內層 (Entity / Use Case) 互動必須通過 `Port`，這些 Port 會透過依賴反轉當作隔離層，避免內層被外層的變動而改變
 
 Port 方向依照核心的對應有兩種
@@ -39,7 +39,7 @@ Port 方向依照核心的對應有兩種
 但是如果每一層之間都需要 DTO 轉換，那程式碼會很多重複宣告，因為我們透過`重複取代耦合`，在【Clean Architecture 實作篇】有整理幾種方式，供大家取捨
 
 ### 1. No Mapping 跨層不轉換
-![](/posts/2022/img/0911/no_mapping.jpeg)
+![](/post/2022/img/0911/no_mapping.jpeg)
 先看跨層完全不轉換的方式，參考我用 golang 實作的版本 [github/no-mapping](https://github.com/sj82516/clean-architecture-mapping/tree/feat/no-mapping/internal)，這邊我的 Entity 宣告混雜了 Controller 的 json tag 與 ORM 的 tag
 
 ```go
@@ -96,7 +96,7 @@ func (c *OrderController) CreateOrder(ctx *gin.Context) {
 所以建議還是少用
 
 ### 2. Two way mapping
-![](/posts/2022/img/0911/two-way_mapping.jpeg)
+![](/post/2022/img/0911/two-way_mapping.jpeg)
 [github/two-way mapping](https://github.com/sj82516/clean-architecture-mapping/tree/feat/two-way-mapping) 則是 Controller / Gateway 獨立宣告自己的物件，建立出 Entity後再傳入 Use Case 中
 
 ```golang
@@ -192,7 +192,7 @@ func (r *PostgresRepository) updateGood(ctx context.Context, db sqlContextGetter
 ```
 
 ### 3. Full Mapping
-![](/posts/2022/img/0911/full_mapping.jpeg)
+![](/post/2022/img/0911/full_mapping.jpeg)
 [github/full-mapping](https://github.com/sj82516/clean-architecture-mapping/tree/feat/full-mapping) 這次嚴格遵守 Clean Architecture，在 two-mapping 上增加`跨層都要有 DTO 的轉換`，所以 Controller -> Use Case 不能直接用 Entity，多宣告一個 Command Object 
 ```golang
 // CreateOrder Use Case 改吃 CreateOrderCommand 當作參數而非 Entity
@@ -311,7 +311,7 @@ return output
 ```
 
 ## 總結
-![](/posts/2022/img/0911/overview.png)
+![](/post/2022/img/0911/overview.png)
 總結整體架構大致是
 1. Controller 有獨立的 Request / Response Object
 2. Controller 會去建立 In Port Command，並呼叫 Use Case

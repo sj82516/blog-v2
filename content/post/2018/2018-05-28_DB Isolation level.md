@@ -34,7 +34,7 @@ Isolation，關聯式資料庫的基本要素之一，描述當同時有多筆�
 
 ### Lost Update
 
-![](/posts/img/1__itWWv776OilCVdD0NghGUg.jpeg)
+![](/post/img/1__itWWv776OilCVdD0NghGUg.jpeg)
 
 兩個Transaction都是走 `先讀取某值 -> 基於某值運算 -> 更新原資料` ，例如說購票流程，必須先檢查票種的剩餘票券，如果有剩就建立訂單並扣除名額。
 

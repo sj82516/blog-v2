@@ -15,7 +15,7 @@ JS 基於事件驅動，大量的 Promise 充斥在應用程式中，其後在 E
 
 [https://v8.dev/blog/fast-async#fn2](https://v8.dev/blog/fast-async#fn2)
 
-![圖片來自 v8 官網](/posts/img/1__YyZo6l5__VFtYWyILzqHCnQ.jpeg)
+![圖片來自 v8 官網](/post/img/1__YyZo6l5__VFtYWyILzqHCnQ.jpeg)
 圖片來自 v8 官網
 
 V8 在執行 async await時，會通過一個轉換，流程大概是
@@ -36,7 +36,7 @@ V8 在執行 async await時，會通過一個轉換，流程大概是
 大多數 await 後面接的都是 promise，那為什麼要在多浪費一個 Promise 呢？  
 直接改用 promiseResolve()，如果原本是 Promise 就直接回傳，如果不是在多包一層 Promise，如此就可能優化掉一個 Promise 還兩個 MicroTasks！
 
-![](/posts/img/1__VZ6rECQaskS2v__wQ3LEgKQ.jpeg)
+![](/post/img/1__VZ6rECQaskS2v__wQ3LEgKQ.jpeg)
 
 直接回傳Promise 跟多包一層 Promise 有什麼差別呢？
 
@@ -64,7 +64,7 @@ f().then(v => console.log(v));
 
 ### 去掉 internal promise ：throwaway
 
-![](/posts/img/1__IvdP7Fh9NYfmsxIKu7V21A.jpeg)
+![](/post/img/1__IvdP7Fh9NYfmsxIKu7V21A.jpeg)
 
 在文章中提到 throwaway 之所以存在是為了滿足 Spec 對於performPromiseThen API的操作   
 (only there to satisfy the API constraints of the internal `performPromiseThen` operation in the spec.)

@@ -15,7 +15,7 @@ keywords: []
 
 ### persistent connection 簡介
 
-![](/posts/img/1__TCGmEtiKtghxQ6yG28J2Sg.png)
+![](/post/img/1__TCGmEtiKtghxQ6yG28J2Sg.png)
 
 [https://en.wikipedia.org/wiki/HTTP_persistent_connection#/media/File:HTTP_persistent_connection.svg](https://en.wikipedia.org/wiki/HTTP_persistent_connection#/media/File:HTTP_persistent_connection.svg)
 
@@ -43,7 +43,7 @@ server.listen(3000);
 
 如果直接使用 nodejs http module或是其他二次開發的模組，預設是採用 http 1.1 且不能修改，此時必須使用更底層的 net 模組發送 http 1.0 request
 
-![](/posts/img/1____VxpaLipngwfWOh74Ye__CA.jpeg)
+![](/post/img/1____VxpaLipngwfWOh74Ye__CA.jpeg)
 
 Server 很明確知道此次 connection 沒有要復用所以就可以直接斷開連結。
 
@@ -51,7 +51,7 @@ Server 很明確知道此次 connection 沒有要復用所以就可以直接斷�
 
 http 1.1 request 預設會使用 persistent connection，程式碼把上面的 `Http/1.0` 改成 `Http/1.1` 即可，觀察 wireshark server 的回應就有所不同
 
-![](/posts/img/1__4g8eFUFSBgKKQZjqSVsBkA.jpeg)
+![](/post/img/1__4g8eFUFSBgKKQZjqSVsBkA.jpeg)
 
 觀察到 http 1.1 預設支援 persistent connection，所以 server 會等到 keep-alive timeout (nodejs 8.0 後預設 5秒)才會斷開連結，從封包顯示是由 client 斷開連結。
 
@@ -62,7 +62,7 @@ http 1.1 request 預設會使用 persistent connection，程式碼把上面的 `
 在 nodejs中，http request 如果要使用 keep-alive，`必須透過 http agent 發送`，http agent 會生成 socket pool 並控制 socket 的復用與關閉時機；  
 如果不使用 http agent，即使 header 或預設支援 keep-alive，每個 request 結束後client都會主動發送 [FIN,ACK] 斷開連結。
 
-![](/posts/img/1__HPu__O06NHGGpqpfwTg__pYg.jpeg)
+![](/post/img/1__HPu__O06NHGGpqpfwTg__pYg.jpeg)
 
 觀察到 tcp 少了一次完整的交握 (建立與結束)，省了 9 個 tcp packets 來回的時間。
 
@@ -70,7 +70,7 @@ http 1.1 request 預設會使用 persistent connection，程式碼把上面的 `
 
 預設 server 是五秒，那如果 client 第二個 request 超過五秒發送會發生什麼事？
 
-![](/posts/img/1__FcolIW8__fD4jCIwMu6oWyw.jpeg)
+![](/post/img/1__FcolIW8__fD4jCIwMu6oWyw.jpeg)
 
 根據觀察結果，在第一個 request 完成後，每隔一秒(秒數可調整)會從 client 發送 [[ TCP Keep-Alive ]](http://www.tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/#whatis) 封包，五秒到 server 主動斷開連線；  
 下一個 http request 就必須重新建立 tcp 連線。
@@ -93,8 +93,8 @@ docker run -v /Users/zhengyuanjie/Desktop/Nodejs/persistent-connection/ka_nginx.
 
 分別查看 wireshark 封包
 
-![](/posts/img/1__fcMFyqRZQpyVIH3F2iBIQg.jpeg)
-![左圖為 client ← → nginx / 右圖為 nginx ← → server](/posts/img/1__F9tpw9gqLudFmq65vjZ6zA.jpeg)
+![](/post/img/1__fcMFyqRZQpyVIH3F2iBIQg.jpeg)
+![左圖為 client ← → nginx / 右圖為 nginx ← → server](/post/img/1__F9tpw9gqLudFmq65vjZ6zA.jpeg)
 左圖為 client ← → nginx / 右圖為 nginx ← → server
 
 因為 nginx keep-alive 設置 timeout 為 65秒，所以 `client <---> nginx` 處於 persistent connection；  
@@ -104,8 +104,8 @@ docker run -v /Users/zhengyuanjie/Desktop/Nodejs/persistent-connection/ka_nginx.
 
 簡單修改一下 nginx conf，讓 `nginx <---> server` 這段也走 persistent connection
 
-![](/posts/img/1__BAM9__7LQjtNIRDSBLn0SOQ.jpeg)
-![](/posts/img/1__8pTNIDN7hnuI6uFToEdVZg.jpeg)
+![](/post/img/1__BAM9__7LQjtNIRDSBLn0SOQ.jpeg)
+![](/post/img/1__8pTNIDN7hnuI6uFToEdVZg.jpeg)
 
 觀察到一個現象是 client ← → nginx 已經由 client 主動斷開連線，但是 nginx 到 server 卻要等到其中一者 timeout 才會斷開連線，雙方都不會主動發送 `Connection:close`；
 

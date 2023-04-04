@@ -67,7 +67,7 @@ sums[j+1] - sums[i] = sums[i] + ... sums[j]
 sums [0, 1, 3, 6, 10]
 idx 1~2 = sums[3] - sums[1] = 5
 ```
-![](/posts/2022/img/0326/prefix-sum.png)
+![](/post/2022/img/0326/prefix-sum.png)
 實際運行，index 會差 1 因為 sums[0] 需要儲存初始值 0，sums[1] 才會是 nums[0]，否則會無法求出區段為 idx 0 的第一小段，程式碼如下
 ```cpp
 class Solution {

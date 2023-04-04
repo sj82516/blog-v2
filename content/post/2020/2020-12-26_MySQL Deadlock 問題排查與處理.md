@@ -188,4 +188,4 @@ Debug 資訊乍看很多，但仔細看還蠻好理解的
 ## 補充資料 - 關於 MySQL Lock
 [解决死锁之路（终结篇） - 再见死锁](https://www.aneasystone.com/archives/2018/04/solving-dead-locks-four.html) 強力推薦這篇文章，後來與同事在工作上排查死鎖，發現 update 單筆資料竟然也有死鎖的狀況，才知道 lock 需要鎖定對應的 Index 並且在沒有命中時會使用區間鎖 (如果 isolation level 在 Repeatable Read 以上)，還是有機會造成死鎖
 
-透過上述的參考資料，並重新翻閱 MySQL 文件，整理了另一篇 [【MySQL】Lock 與 Index 關係和 Deadlock 分析](https://yuanchieh.page/posts/2022/2022-04-25-mysqllock-%E8%88%87-index-%E9%97%9C%E4%BF%82%E5%92%8C-deadlock-%E5%88%86%E6%9E%90/)
+透過上述的參考資料，並重新翻閱 MySQL 文件，整理了另一篇 [【MySQL】Lock 與 Index 關係和 Deadlock 分析](https://yuanchieh.page/post/2022/2022-04-25-mysqllock-%E8%88%87-index-%E9%97%9C%E4%BF%82%E5%92%8C-deadlock-%E5%88%86%E6%9E%90/)

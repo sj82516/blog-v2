@@ -45,7 +45,7 @@ Cloudflare在全球各大洲部署多個資料中心，會自動將DNS / Cached�
 
 從Cloudflare到Server這段有不同層級的設定，可以於後台設定
 
-![](/posts/img/1__by4l7dHy5wi__pWEzz0cl9w.jpeg)
+![](/post/img/1__by4l7dHy5wi__pWEzz0cl9w.jpeg)
 
 1.  Off：  
     全部走HTTP
@@ -70,7 +70,7 @@ Cloudflare在全球各大洲部署多個資料中心，會自動將DNS / Cached�
 
 這時候同樣的 [https://domain.com](https://domain.com) 會自動變成 Cloudflare Universal 憑證
 
-![](/posts/img/1__DhAfWG__CN45Me0tMhpyb9Q.png)
+![](/post/img/1__DhAfWG__CN45Me0tMhpyb9Q.png)
 
 以上是 Client <--> Cloudflare這段
 
@@ -78,13 +78,13 @@ Cloudflare在全球各大洲部署多個資料中心，會自動將DNS / Cached�
 
 #### 3\. SSL 設為 Flexible
 
-![](/posts/img/1__Rg8Jz3FZZx8adrfbYt0heA.png)
+![](/post/img/1__Rg8Jz3FZZx8adrfbYt0heA.png)
 
 從 Cloudflare(用 whois 172.68.47.149查詢後確認) 到 Server是走 80 port
 
 #### 4\. SSL 設為 Full / Full (strict)
 
-![](/posts/img/1__5MvJS8IszULHOhDNeGlKbw.png)
+![](/post/img/1__5MvJS8IszULHOhDNeGlKbw.png)
 
 後台設定切換後等個三、五秒就立即改走 port 443
 
@@ -95,7 +95,7 @@ Full (strict)差別在於會檢查憑證是否為公開的第三方CA頒布的�
 a. 在 Full 狀態下改用其他網域的SSL憑證 => 可以!  
 b. 在 Full (strict) 狀態下改用其他網域的SSL憑證 => 不行，會檢查
 
-![](/posts/img/1__6JOG8bEc9kDeqexWERRBbA.jpeg)
+![](/post/img/1__6JOG8bEc9kDeqexWERRBbA.jpeg)
 
 如果是自簽憑證，記得要上傳 CSR到Cloudflare，不然一樣會出錯。
 

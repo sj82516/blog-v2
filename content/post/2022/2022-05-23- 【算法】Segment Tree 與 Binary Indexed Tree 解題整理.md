@@ -18,12 +18,12 @@ keywords: ['leetcode']
 4. [327. Count of Range Sum](https://leetcode.com/problems/count-of-range-sum/)
 
 ## Segment Tree
-教學影片：[Segment Tree Data Structure - Min Max Queries](https://www.youtube.com/watch?v=xztU7lmDLv8)  
+教學影片：[Segment Tree Data Structure - Min Max Queries](https://www.youtube.com/watch?v=xztU7lmDLv8)    
 
 Segment Tree 與 BIT 的概念雷同，原本我用 prefix sum 遇到更新時要用 O(n) 整個重建，但如果我把`區間切小，每次更新只要影響到部分區間`，對應的讀取要篩選符合的區間讀取，妥協後 `讀取與更新都控制在 log(N)`，但區間該怎麼切以及如何實作呢？ 這就是 Segment Tree 與 BIT 不同之處
 
-Segment Tree 用陣列儲存區間值，需要`兩倍額外記憶體空間`，原陣列放在新陣列的最後，接著往前跟新區間 (parent = idx/2)，如下圖 (從影片截圖而來)
-![](/post/2022/img/0522/segment_tree.png)  
+Segment Tree 用陣列儲存區間值，需要`兩倍額外記憶體空間`，原陣列放在新陣列的最後，接著往前跟新區間 (parent = idx/2)，如下圖 (從影片截圖而來)  
+![](/post/2022/img/0522/segment_tree.png)    
 所以區間是 2 -> 4 -> 8 這樣往上疊加  
 
 初始化程式碼為
@@ -60,7 +60,10 @@ private:
 ```
 透過 `O(N)` 即可完成初始化，我們將原陣列放在最後，並往上疊加出多個區間，Update 需要 `O(logN)`，因為要往前把相關的區間都要更新一次  
 
-接著重點是 range query，傳入 left / right (閉區間) 如何在 `O(logN)` 解決
+接著重點是 range query，傳入 left / right (閉區間) 要在 `O(logN)` 解決，重點，
+- 如果我們查找的範圍會涵蓋完整區間，往上找區間值
+- 反之，則取得當下的值，並往下一個區間邁進
+![](/post/2022/img/0522/segment_tree_explain.png)
 ```c++
 int sumRange(int left, int right) {
     int nodeLeftIndex = left + offset_;
@@ -85,23 +88,24 @@ int sumRange(int left, int right) {
     return count;
 }
 ```
-這一段程式碼有點神奇，用圖示大致如下
-![](/post/2022/img/0522/segment_tree_explain.png)
 
-左右分別原陣列長度為 2 , 3 時，如果想要查詢整段區間的指標移動，我們可以觀察出一個重點
+如果想要查詢整段區間的指標移動，我們可以觀察出一個重點
 >  偶數 index 都在區間的左側 / 奇數 index 是在區間的右側
 
 因為我們是用 left / right 去找區間和，所以我們要找`left 往右找與 right 往左找的共同區間`，總共分成 4 種情況考慮
 1. left 指向偶數：   
 代表我們會`拿整個區間`，因為區間的左側是偶數，當目前 left 就指向偶數，代表要取出整個區間   
-1. left 指向奇數：  
+2. left 指向奇數：  
 代表我們`不可以拿區間當作代表，因為奇數是區間的右側`，再往下就到另一個區間，所以我們要直接取值  
-1. right 指向偶數：    
+3. right 指向偶數：    
 right 跟 left 邏輯剛好相反，我們`只能拿 right 往左的區間，因為偶數是 parent 左側`，再往下移就到下個區間，所以要拿當前值 
 4. right 指向奇數：  
 因為`奇數是區間的右側`，代表我們可以拿整個區間為當前值
 
-這部分非常 tricky，簡而言之就是當指針指向的位置可以包含整段區間，則往上指向區間，直到無法包含整段區間則取值，break down 成 2, 3 的案例就比較好理解
+以上圖為例
+1. 左指針指向 -2，此時是區間的右側，符合條件 2，拿完 -2 往下一個區間走 / 右指針只在區間右側符合條件4，往上一個區間
+2. 左指針持續指向區間左側符合條件1、右指針指向區間右側符合條件4，一路往上指到同一個區塊，直接拿完整段區間 (8~-5)
+
 
 影片參考資料是左閉右開的計算方式，但這樣我覺得再取出區間和比較不好做，所以參考 leetcode 解答調整成目前的閉區間算法
 

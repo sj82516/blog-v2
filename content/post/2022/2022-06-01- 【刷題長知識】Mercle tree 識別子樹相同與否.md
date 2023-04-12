@@ -1,5 +1,5 @@
 ---
-title: '【刷題長知識】Mercle Tree - O(n) 識別子樹相同與否'
+title: '【刷題長知識】Mercle tree 識別子樹相同與否'
 description: Leetcode 549 要找出是否有重複子樹，在解答區有人分享 Mercle Tree 解法，在 O(n) 的時間與空間複雜度下解決問題，延伸了解到 Mercle Tree 被廣泛應在許多地方，如 Git / Dynamo DB 等
 date: '2022-06-01T01:21:40.869Z'
 categories: ['Algorithm']

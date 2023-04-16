@@ -167,4 +167,4 @@ SSTable好處在於 B Tree切割Page容易有空間的破碎化與浪費，且�
 
 ### 下集
 
-[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/post/2018-04-19_designing-data-intensive-applications-%E4%B8%8B/)，第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點
+[技術筆記 Designing Data-Intensive Applications 下](https://yuanchieh.page/posts/2018/2018-04-19-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8B/)，第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點

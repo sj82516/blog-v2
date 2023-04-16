@@ -5,7 +5,7 @@ date: '2023-01-28T01:21:40.869Z'
 categories: []
 keywords: []
 ---
-上一篇 [驗證與授權的差別，淺談 OAuth 2.0 與 OpenID Connect](https://yuanchieh.page/post/2023/2023-01-20-%E9%A9%97%E8%AD%89%E8%88%87%E6%8E%88%E6%AC%8A%E7%9A%84%E5%B7%AE%E5%88%A5%E6%B7%BA%E8%AB%87-oauth2.0-%E8%88%87-openid-connect/) 淺談到 OAuth 2.0 與 OIDC 的差異，我們是以 Client 的角度去理解如果像第三方取得驗證與授權，但如果今天我們要 Google 一樣自己處理授權的設計，思考的方式就會有所不同  
+上一篇 [驗證與授權的差別，淺談 OAuth 2.0 與 OpenID Connect](https://yuanchieh.page/posts/2023/2023-01-20-%E9%A9%97%E8%AD%89%E8%88%87%E6%8E%88%E6%AC%8A%E7%9A%84%E5%B7%AE%E5%88%A5%E6%B7%BA%E8%AB%87-oauth-2.0-%E8%88%87-openid-connect/) 淺談到 OAuth 2.0 與 OIDC 的差異，我們是以 Client 的角度去理解如果像第三方取得驗證與授權，但如果今天我們要 Google 一樣自己處理授權的設計，思考的方式就會有所不同  
 
 參考以下的文章，分享這幾天研究微服務下該如何設計驗證的機制
 - [Best Practices for Authorization in Microservices](https://www.osohq.com/post/microservices-authorization-patterns)

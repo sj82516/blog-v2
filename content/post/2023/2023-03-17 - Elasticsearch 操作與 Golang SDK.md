@@ -15,7 +15,7 @@ Elasticsearch 是常用來做全文搜尋的 NoSQL Database，公司在使用上
 
 Beef 應該可以往前追溯幾年前 Elasticsearch 覺得 AWS 在白嫖開源社群進而更改授權，使得 AWS 決定自己維護 Opensearch (新聞 [AWS分叉Elasticsearch重新命名為OpenSearch](https://www.ithome.com.tw/news/143812))
 
-但有趣的是我測試了一些場景，AWS Opensearch client SDK 可以連線 Elasticsearch (以下簡稱 ES) 與 Opensearch server，所以以下就用 [Opensearch cliend SDK](https://github.com/opensearch-project/opensearch-go) 操作 ES，後續不會針對 ES 本身有太多介紹，可以參考之前的幾篇文章 [Elasticsearch 教學 - API 操作](https://yuanchieh.page/post/2020/2020-07-15_elasticsearch-%E6%95%99%E5%AD%B8-api-%E6%93%8D%E4%BD%9C/) 和 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/post/2020/2020-07-08_elasticsearch-%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
+但有趣的是我測試了一些場景，AWS Opensearch client SDK 可以連線 Elasticsearch (以下簡稱 ES) 與 Opensearch server，所以以下就用 [Opensearch cliend SDK](https://github.com/opensearch-project/opensearch-go) 操作 ES，後續不會針對 ES 本身有太多介紹，可以參考之前的幾篇文章 [Elasticsearch 教學 - API 操作](https://yuanchieh.page/posts/2020/2020-07-15-elasticsearch-%E6%95%99%E5%AD%B8-api-%E6%93%8D%E4%BD%9C/) 和 [Elasticsearch 系統介紹與評估](https://yuanchieh.page/posts/2020/2020-07-08-elasticsearch-%E7%B3%BB%E7%B5%B1%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/)
 
 ## Client SDK 使用
 以下使用會覆蓋幾個場景

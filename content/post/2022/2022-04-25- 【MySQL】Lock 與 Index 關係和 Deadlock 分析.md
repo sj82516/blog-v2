@@ -194,7 +194,7 @@ Update 的條件沒有命中但是`全部都被 Lock`，要 update / insert 都�
 ## Foreign Key：會有 Share Lock
 > If a FOREIGN KEY constraint is defined on a table, any insert, update, or delete that requires the constraint condition to be checked sets shared record-level locks
 
-更新欄位時 Foreign Key 也會被鎖住，之前有紀錄就不贅述 [MySQL Deadlock 問題排查與處理](https://yuanchieh.page/post/2020/2020-12-26_mysql-deadlock-%E5%95%8F%E9%A1%8C%E6%8E%92%E6%9F%A5%E8%88%87%E8%99%95%E7%90%86/)
+更新欄位時 Foreign Key 也會被鎖住，之前有紀錄就不贅述 [MySQL Deadlock 問題排查與處理](https://yuanchieh.page/posts/2020/2020-12-26-mysql-deadlock-%E5%95%8F%E9%A1%8C%E6%8E%92%E6%9F%A5%E8%88%87%E8%99%95%E7%90%86/)
 
 ## 總結與建議
 幾點建議

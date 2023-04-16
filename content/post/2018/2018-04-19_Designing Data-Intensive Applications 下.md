@@ -8,7 +8,7 @@ categories: ['閱讀心得','資料庫']
 keywords: ['Designing Data-Intensive Applications']
 ---
 
-上集:[Designing Data-Intensive Applications 上](https://yuanchieh.page/post/2018-03-28_designing-data-intensive-applications-%E4%B8%8A/)  
+上集:[Designing Data-Intensive Applications 上](https://yuanchieh.page/posts/2018/2018-03-28-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8A/)  
 
 隨著軟體應用程式的發展，應用的侷限(bottleneck)從CPU移轉至資料的處理，資料的巨量、複雜性與改變的速度變成棘手的問題，也就是作者所定義的「Data-Intensive」資料密集的應用程式。
 

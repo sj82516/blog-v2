@@ -220,7 +220,7 @@ class AggregateRootRepository < Repository
   end
 end
 ```
-這邊的商務邏輯只有判斷是否可以購買，其餘的 DB 操作封裝在 repository 中，這邊取名叫做 Aggregate Root 是想呼應 DDD 裡面的想法「由 Aggregate Root 操作保證底下多個 Aggregate 的一致性」
+這邊的商務邏輯只有判斷是否可以購買，其餘的 DB 操作封裝在 repository 中，這邊取名叫做 Aggregate Root 是想呼應 DDD 裡面的想法「由 Aggregate Root 操作保證底下多個 Aggregate 的一致性」，靈感是來自之前上 Teddy 的課程與 [FB 討論](https://www.facebook.com/groups/teddy.tw/permalink/5329440543789659/)
 
 ### 比較兩者差異
 1. **usecase 乾淨程度(方法二勝)：**  

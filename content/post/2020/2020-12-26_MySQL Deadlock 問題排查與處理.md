@@ -4,6 +4,7 @@ description: 週末寫點簡單的 SQL 遇到了 Deadlock，才發現 foreign ke
 date: '2020-12-26T08:21:40.869Z'
 categories: ['資料庫']
 keywords: ['MySQL', 'Deadlock']
+url: '/posts/2020/2020-12-26_mysql-deadlock-問題排查與處理/'
 ---
 
 寫了一個簡單的購物流程 SQL，在一個 transaction 中執行

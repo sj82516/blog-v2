@@ -4,6 +4,7 @@ description: Redlock 是一種 Redis 作者 antirez 基於 Redis 設計的分散
 date: '2020-01-14T05:21:40.869Z'
 categories: ['資料庫']
 keywords: ['Backend', 'Redis']
+url: '/posts/2020/2020-01-14_redis-lock-redlock-原理分析與實作/'
 ---
 先前公司遇到 Client 在不明狀況下連續呼叫註冊用戶的 API 兩次，導致用戶被重複建立，導致後續的 API 操作與資料分析異常，所以決定加上 Lock 機制避免重複建立的問題  
 
@@ -209,5 +210,3 @@ TTL 的「時間」計算有實作問題，Redis 目前使用 `gettimeofday` 而
 
 符合這三點 Redlock 就是安全的  
 正因為我們沒有其他方法避免 Race Condition，才會採用 Redlock 或是其他樂觀鎖的處理機制
-
-

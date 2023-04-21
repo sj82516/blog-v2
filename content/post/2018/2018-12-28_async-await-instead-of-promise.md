@@ -1,5 +1,5 @@
 ---
-title: "愛用 async / await 而非 promise!"
+title: "愛用 async await 而非 promise!"
 description: 近期看不到少關於 async / await 的好文章，這裡特別摘錄兩篇總結
 date: '2018-12-28T01:39:30.852Z'
 categories: ['Javascript']

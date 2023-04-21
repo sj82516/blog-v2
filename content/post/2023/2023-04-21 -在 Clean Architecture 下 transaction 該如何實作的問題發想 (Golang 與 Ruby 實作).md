@@ -130,7 +130,7 @@ func (r *PostgresRepository) UpdateTwoGoods(
     return g1, g2, nil
 }
 ```
-## 重新思考 repository 職責與 Transaction 目的
+## 重新思考
 重新抽象化一下遇到的困境
 ```
 usecase

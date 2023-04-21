@@ -3,7 +3,7 @@ title: '在 Clean Architecture 下 transaction 該如何實作的問題發想 (G
 description: 在學習 Clean Architecture 時最困擾的問題莫過於 transaction 到底該算是商務邏輯由 usecase 控制還是要下放到 repository 包含一些商務判斷內不外洩 ?! 以下用電子商務的場景，透過實作驗證不同的解決方式
 date: '2023-04-21T02:21:40.869Z'
 categories: []
-keywords: []
+keywords: ['Clean Architecture']
 ---
 在套用 Clean Architecture (後續簡稱 CA)過程，最常討論的問題莫過於「Transaction 如果跨多個 repository，該怎麼處理？如果 Transaction 由 Use Case 控制會不會違反 CA 原則？如果放到 Repository 那有一些判斷的邏輯是不是也混雜進去？」  
 這個問題確實有點棘手，網路上也常看到各種不同的作法，決定今天重新整理一下，檢視不同的作法與考量，並透過實際的案例去驗證不同作法的優劣，使用動態語言 Ruby / 靜態語言 Golang 確保實作是真實可行

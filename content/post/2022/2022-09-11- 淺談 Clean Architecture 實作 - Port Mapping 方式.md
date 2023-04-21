@@ -3,7 +3,7 @@ title: '淺談 Clean Architecture 實作 - Port Mapping 方式'
 description: 目前聽過幾個不同版本的 Clean Architecture 實作，最有趣的地方莫過於在外層在與 usecase 層互動時該採用什麼方式，以下整理出幾種不同模式
 date: '2022-09-11T01:21:40.869Z'
 categories: ['架構設計']
-keywords: ['Clean Architeucture']
+keywords: ['Clean Architecture']
 ---
 
 在一月初時上 Teddy 的 DDD 課程時，第一次見識到 DDD 結合 Clean Architecture，可以將設計跟實作完美的結合，打造出彈性、易懂、好維護的程式碼，就一直對 Clean Architecture 很感興趣 ([課程 ezKanban 原始碼](https://gitlab.com/-/ide/project/TeddyChen/dddcleankanban/tree/master/-/board/))；   

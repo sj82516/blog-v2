@@ -161,7 +161,7 @@ client.Batch().ObjectsBatcher().
 ```
 
 ### 搜尋與篩選
-完整的搜尋與篩選
+完整查詢有三個部分 搜尋 + 篩選 + 欄位過濾
 ```golang
 // 文字搜尋
 nearText := client.GraphQL().NearTextArgBuilder().

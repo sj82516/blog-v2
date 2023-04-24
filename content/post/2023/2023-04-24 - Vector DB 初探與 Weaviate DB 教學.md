@@ -30,7 +30,8 @@ Vector DB 就是要解決這樣的問題，主要透過
 ## Weaviate DB 基本介紹
 Weaviate DB 有以下幾個特色
 - 便利性：  
-module 支援常見的 AI model，包含 transformer、openai 等，透過參數可以直接調整，但有些 AI model 部分需要自己架設 server，Weaviate DB 核心並不包含 AI model
+module 支援常見的 AI model，包含 transformer、openai 等，透過參數可以直接調整，但有些 AI model 部分需要自己架設 server，Weaviate DB 核心並不包含 AI model，只是會直接透過 interface 調用
+![](https://weaviate.io/assets/images/weaviate-module-apis-3a56351def9cd3a66f6cd0186875d2c4.svg)
 - 搜尋與過濾：  
 除了 vector 搜尋外，在文字上會結合 inverted index 增加搜尋的精準度與效率，並提供 `filter 可以透過屬性篩選`
 - API 接口支援 REST 與 GraphQL

@@ -15,7 +15,7 @@ Vector DB 就是要解決這樣的問題，主要透過
 - 改用 ANN (approximate nearest neighbors) 取代 kNN，用相似度查詢換取執行速度
 - 提供 database 功能，包含持久化保存、水平擴展 (sharding)、高可用性、API 封裝等功能
 
-![](/posts/2023/img/0424/vector_db.png)
+![](/post/2023/img/0424/vector_db.png)
 
 目前搜尋市面上有幾個常見的選擇
 - [Pinecone](https://www.pinecone.io/)：閉源專案，就先略過不用
@@ -25,7 +25,7 @@ Vector DB 就是要解決這樣的問題，主要透過
 
 這次 Demo 選擇用 Weaviate，主要是有支援 module 直接整合 AI model，這樣我就不用另外想 embedding vector 該如何產生
 
-![](/posts/2023/img/0424/weaviate-module-diagram.svg)
+![](/post/2023/img/0424/weaviate-module-diagram.svg)
 
 ## Weaviate DB 基本介紹
 Weaviate DB 有以下幾個特色

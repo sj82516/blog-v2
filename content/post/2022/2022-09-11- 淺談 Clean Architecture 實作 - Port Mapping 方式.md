@@ -2,7 +2,7 @@
 title: '淺談 Clean Architecture 實作 - Port Mapping 方式'
 description: 目前聽過幾個不同版本的 Clean Architecture 實作，最有趣的地方莫過於在外層在與 usecase 層互動時該採用什麼方式，以下整理出幾種不同模式
 date: '2022-09-11T01:21:40.869Z'
-categories: ['架構設計']
+categories: ['Program']
 keywords: ['Clean Architecture']
 ---
 

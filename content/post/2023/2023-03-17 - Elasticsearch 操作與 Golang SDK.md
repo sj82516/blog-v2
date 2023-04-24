@@ -2,8 +2,8 @@
 title: 'Elasticsearch 操作： Golang Opensearch SDK 使用筆記'
 description: 最近在用 Golang 做 Elasticsearch 相關的專案，在看文件到實際使用上有一段落差，寫個簡單的筆記補上 Golang 與 Elasticsearch 互動的方式
 date: '2023-03-17T02:21:40.869Z'
-categories: []
-keywords: []
+categories: ['DB']
+keywords: ['Elastisearch', 'Golang']
 ---
 ## 前言
 Elasticsearch 是常用來做全文搜尋的 NoSQL Database，公司在使用上有自架也有用 AWS Opensearch 託管服務

@@ -3,7 +3,7 @@ title: 'Rails 部署優化: 魔改 data-migration 實作 post sync 機制'
 description: 公司一開始在 pre sync 階段採用 data-migration 在部署前觸發事件，例如回補資料等，但後來在一些場景需要在 post sync 機器部署後也觸發事件，分享自己簡單魔改 data-migration 完成需求
 date: '2023-03-28T02:21:40.869Z'
 categories: []
-keywords: []
+keywords: ['Rails', 'CD']
 ---
 ## 前言
 公司當前是透過 GitOps ArgoCD 這套工具來管理持續部署的流程，ArgoCD 有個方便的 hook 機制 `pre sync` 和 `post sync`，可以在機器部署前與部署後執行對應的腳本

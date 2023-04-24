@@ -2,7 +2,7 @@
 title: '【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱'
 description: Ruby 提供 Module 用來跨 class reuse code (Mixin)，但如果隨意使用會造成可讀性與維護性困難，淺談問題與分享解法
 date: '2022-08-27T01:21:40.869Z'
-categories: ['應用開發']
+categories: ['Program']
 keywords: ['RoR', 'Module', 'Mixin', 'OOP']
 ---
 

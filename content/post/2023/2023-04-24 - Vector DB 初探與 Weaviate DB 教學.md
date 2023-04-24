@@ -2,7 +2,7 @@
 title: 'Vector DB 初探與 Weaviate DB 教學'
 description: 兩週前看到 Fireship 介紹 Vector DB，用來儲存與高效查詢向量 vector，搭配 AI embedded 可以做出許多 AI empower 的功能，包含文字、圖片、影片等多媒體的相似查詢
 date: '2023-04-24T00:21:40.869Z'
-categories: []
+categories: ['DB']
 keywords: ['Database']
 ---
 {{<youtube klTvEwg3oJ4>}}

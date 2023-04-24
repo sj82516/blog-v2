@@ -2,7 +2,7 @@
 title: '開發簡易的 Protobuf plugin'
 description: 透過動手做學習 Protobuf options 與對應 plugin 設計的方式
 date: '2022-11-26T01:21:40.869Z'
-categories: ['程式設計']
+categories: ['Program']
 keywords: ['Protobuf', 'Golang']
 ---
 

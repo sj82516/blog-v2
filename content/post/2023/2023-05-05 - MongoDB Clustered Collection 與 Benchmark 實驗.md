@@ -66,9 +66,8 @@ client["collection"].create({
 > Clustered collections have additional performance improvements for inserts, updates, deletes, and queries.  
 
 但也不是全然沒有壞處
-1. Secondary Index 變大約 25%，原因是前面提到 Secondary Index B+Tree 中 leaf node 是儲存 recordId(8byte)，而 _id 預設是 12byte，所以就直接影響了 Secondary Index 的尺寸
-2. Secondary Index 效能沒有變化，因為同樣要去 Clustered Index 找 document 實際儲存在 Disk 上的位置
-3. `_id 是用戶可以預設，如果設錯可能會讓效能變差` 
+1. Secondary Index leaf node 會儲存 Clustered Index 的 key，而因為前面提到原本 collection Clustered Index 是用 recordId(8byte)，而 _id 預設是 12byte，所以就直接影響了 Secondary Index 的 size (增加約 20%)
+2. `_id 是用戶可以預設，如果設錯可能會讓效能變差` 
 
 整體來說目前 MongoDB Clustered Collection 儲存方式有點接近 MySQL，同樣都是
 1. 指定 Primary Key 當作 Clustered Index 影響實際儲存的方式
@@ -78,10 +77,10 @@ client["collection"].create({
 
 ## Benchmark
 透過以下幾個實驗來實際檢驗一下 MongoDB v6.0.5 Clustered Collection 的效能
-1. 比對 CRUD 在 Clustered Collection vs 一般 Collection 差異
+1. 比對 CRUD 在 Clustered Collection vs 一般 Collection 差異  
 預期 CRUD 在 Clustered Collection 應該要較好
 2. 針對 Secondary Index，比較實際大小與效能  
-預期 Secondary Index 在 Clustered Collection 儲存空間要比較大，效能部分預期是差不多，如果 Index 還沒有大到塞不進 memory 的狀況下
+預期 Secondary Index 在 Clustered Collection 儲存空間要比較大，如果尺寸沒有大到記憶體塞不下的狀況，效能部分預期是差不多
 3. _id 改用 UUID 對於寫入效能的影響  
 預期 Clustered Collection 會有比較差的表現，因為底層儲存結構的關係
 
@@ -111,13 +110,13 @@ normal email search  0.407986   0.027175   0.435161 (  0.487835)
 ### Secondary Index 大小
 ![](/post/2023/img/0505/sec.png)
 
-可以看出 Secondary Index 在 Clustered Index 確實變大快 25%
+可以看出同樣的 documents 下 Secondary Index 在 Clustered Index 確實變大快 25%
 
 ### UUID 寫入的影響
-![](/post/2023/img/0505/uuid.png)
+![](/post/2023/img/0505/uuid.png)  
 實驗每個 iteration 準備 100 萬筆資料並用 insert_many 批次寫入 1000 筆，兩個 collection 都是 clustered collection，實驗組 _id 設定為 UUID
 
-可以看到 UUID 對於效能的負面影響十分巨大，這也證實了 _id 是 Clustered Index key
+可以看到 UUID 對於效能的負面影響十分巨大
 
 ## 延伸閱讀
 以下是我在閱讀時想到的一些額外問題，覺得蠻有趣也順便記錄一下
@@ -132,6 +131,4 @@ normal email search  0.407986   0.027175   0.435161 (  0.487835)
 > we could gain efficiency (both time and space) by using the primary key directly to index the data. However, as MongoDB puts few restrictions on the primary key, it is common for these primary keys to have a non-trivial size. `This in turn means that all secondary indexes become less efficient. Some users have many indexes, so they'd be negatively affected by such a change.` ......
 
 ## 結語
-整體來說 Clustered Collection 寫入效能確實有好上一些，搜尋部分因為 find with many _id 有 bug 暫時還不確定，如果是單純 find one 看起來沒有差太多
-
-目前不建議採用 Clustered Collection 因為在 search 看起來有 bug，且 Secondary Index 體積變大導致 memory 用量會增加的疑慮，些微的效益比不上這些風險與副作用
+整體來說 Clustered Collection 寫入效能確實有好上一些，搜尋部分因為有 bug 暫時還不確定，而 Secondary Index 體積會有感的變大；目前整題評估下來不建議採用 Clustered Collection，些微的效益比不上這些風險與副作用

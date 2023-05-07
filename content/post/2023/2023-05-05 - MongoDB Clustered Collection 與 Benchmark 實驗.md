@@ -10,12 +10,12 @@ keywords: ['MongoDB']
 其中在 5.3 比較大的改變是引入了 `Clustered Collection` 調整了 Storage Engine 儲存的機制，這也連帶影響 MongoDB 在 Collection 上的效能表現，以下從文章中摘要 Storage Engine 演進，並透過 Benchmark 去驗證看看實際的表現
 ## MongoDB Storage Engine 演進
 ### MMAPv1
-最一開始 MongoDB 的 Storage Engine 是 MMAPv1，採用 B+Tree 架構以 `_id` 為 primary key，leaf node 儲存 `DiskLoc` 直接指向儲存於硬碟上的 file name + offset
+最一開始 MongoDB 的 Storage Engine 是 MMAPv1，採用 B+Tree 架構以 `_id` 為 primary key，leaf node 儲存 `DiskLoc` 直接指向儲存於硬碟上的位置(透過 file name + offset)
 ![](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*M_5Io7l_SDSP_HSeH1iYaQ.png)
 
 MMAPv1 的優點是查詢速度很快，只需要 O(logN) 在 B+Tree 找到 leaf node + O(1) 去硬碟讀取資料即可
 
-但缺點也很明顯
+但有幾個重大缺點
 1. 因為是儲存實際 Disk 位置，所以當 `document 因為 insert / update / delete 而改變 Disk 位置` 時，就需要大規模的改寫 DiskLoc 造成效能的影響
 2. 儲存時沒有壓縮
 3. 一開始只提供 database level / collection level 的 lock，這也導致在 parallel 執行上效率不高  
@@ -33,7 +33,7 @@ MongoDB 在 2014 年收購了 [WiredTiger](https://source.wiredtiger.com/11.0.0/
 
 也因此 WiredTiger 的缺點是查詢變慢一些，因為需要搜尋兩次 B+Tree 才能去 Disk 撈資料
 
-但對應的提供了幾項優點
+但有幾項優點
 1. Insert、Update、Delete 效能比 MMAPv1 穩定
 2. 提供 document level lock，大幅改善 parallel 效能
 3. 壓縮 BSON 在儲存，減少 Disk 用量代表可放進 buffer pool 的資料筆數也增加
@@ -41,15 +41,23 @@ MongoDB 在 2014 年收購了 [WiredTiger](https://source.wiredtiger.com/11.0.0/
 根據這篇文章 [Linkbench for MySQL & MongoDB with a cached database](http://smalldatum.blogspot.com/2015/07/linkbench-for-mysql-mongodb-with-cached.html) 的實驗可以看到 MongoDB WiredTiger 在查詢與寫入都吊打其他的 Storage Engine
 ![](http://3.bp.blogspot.com/-Hrkm07TpHYY/VZqVFtZrgaI/AAAAAAAABm4/LQEN2-HfQDw/s1600/image%2B%25288%2529.png)
 
-但有趣的是 MySQL 寫入、查詢吊打 MongoDB XD 在單機的環境下看起來老牌 RDBMS 就是比較厲害，只是實際選擇還需要再考量到 scalability 等狀況
+有趣的是 MySQL 寫入、查詢吊打 MongoDB XD   
+在單機的環境下看起來老牌 RDBMS 比較厲害，只是實際選擇還需要再考量到 scalability 等狀況
 
 ### WiredTiger Clustered Collection 原理
-接著到了 MongoDB 5.3 的 Clustered Collection，剛剛有提到實際內部儲存是用 `recordId`，那如果直接拿 `_id 當作 Clustered Index 的 key` 是不是就能更加速查詢的效率？這正是 Clustered Collection 所採用的方式，直接拿 _id 當作 Clustered Index
+接著到了 MongoDB 5.3 的 Clustered Collection，剛剛有提到實際內部儲存依據是用 `recordId` 排序，那如果直接拿 `_id 當作 Clustered Index 的 key` 是不是就能更加速寫入跟查詢的效率？這正是 Clustered Collection 所採用的方式，直接拿 _id 當作 Clustered Index
 
 ![](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*zOQO6cVCj9PJ-HOWP6zmfw.png)
 
-根據官方文件，在建立 Clustered Collection 就必須指定用 _id 建立，同時必須是 unique
-```
+根據官方文件，在建立 Clustered Collection 就必須指定用 _id 建立，同時必須是 unique  
+
+```ruby
+client["collection"].create({
+    :clustered_index => {
+        :key => { :_id => 1 },
+        :unique => true,
+    }
+})
 ```
 根據[文件 Clustered Collections](https://www.mongodb.com/docs/upcoming/core/clustered-collections/)所述有幾個優點
 1. 大幅度增加 _id 搜尋速度，尤其是 range scan 上，因為少了一次去查找 recordId index
@@ -66,7 +74,7 @@ MongoDB 在 2014 年收購了 [WiredTiger](https://source.wiredtiger.com/11.0.0/
 1. 指定 Primary Key 當作 Clustered Index 影響實際儲存的方式
 2. Secondary Index leaf node 指向 Clsutered Index
 
-所以如果 _id 是採用 UUID 等亂序，也同樣會有效能上的影響，這部分可以參考 [UUIDs are Popular, but Bad for Performance — Let’s Discuss](https://www.percona.com/blog/uuids-are-popular-but-bad-for-performance-lets-discuss/)，這點後續 benchmark 會驗證
+同樣的如果 _id 是採用 UUID 等亂序，也同樣會有效能上的影響，這部分可以參考 [UUIDs are Popular, but Bad for Performance — Let’s Discuss](https://www.percona.com/blog/uuids-are-popular-but-bad-for-performance-lets-discuss/)，這點後續 benchmark 會驗證
 
 ## Benchmark
 透過以下幾個實驗來實際檢驗一下 MongoDB v6.0.5 Clustered Collection 的效能

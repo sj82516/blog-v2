@@ -107,6 +107,9 @@ normal email search  0.407986   0.027175   0.435161 (  0.487835)
 ```
 可以看到 cluster search 慢到爆，delete_many 有同樣的 issue
 
+![](/post/2023/img/0505/index_issue.png)
+本來以為是不是 driver 問題，但實際用 Mongo Compass 官方 GUI tool 去分析查詢，確實發現只要 $in 裡面的條件超過一筆就會變成 COLLSCAN
+
 ### Secondary Index 大小
 ![](/post/2023/img/0505/sec.png)
 

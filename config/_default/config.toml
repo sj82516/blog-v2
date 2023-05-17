@@ -16,3 +16,7 @@ hasCJKLanguage = false
 disqusShortname = "yuanchieh"
 
 googleAnalytics = "UA-82837682-4"
+
+# config.toml
+[[module.imports]]
+path = "github.com/CaiJimmy/hugo-theme-stack/v3"

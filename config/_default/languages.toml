@@ -5,3 +5,5 @@
 #languagedirection = "ltr"
 #title = "Example Site"
 #weight = 1
+
+DefaultContentLanguage="zt-tw"

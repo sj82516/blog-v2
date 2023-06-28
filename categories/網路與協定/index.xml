@@ -1,0 +1,1507 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>網路與協定 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E7%B6%B2%E8%B7%AF%E8%88%87%E5%8D%94%E5%AE%9A/</link><description>Recent content in 網路與協定 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 02 Feb 2022 01:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E7%B6%B2%E8%B7%AF%E8%88%87%E5%8D%94%E5%AE%9A/index.xml" rel="self" type="application/rss+xml"/><item><title>筆記：CloudFlare 優化封包接收的過程</title><link>https://yuanchieh.page/posts/2022/2022-02-02-%E7%AD%86%E8%A8%98cloudflare-%E5%84%AA%E5%8C%96%E5%B0%81%E5%8C%85%E6%8E%A5%E6%94%B6%E7%9A%84%E9%81%8E%E7%A8%8B/</link><pubDate>Wed, 02 Feb 2022 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2022/2022-02-02-%E7%AD%86%E8%A8%98cloudflare-%E5%84%AA%E5%8C%96%E5%B0%81%E5%8C%85%E6%8E%A5%E6%94%B6%E7%9A%84%E9%81%8E%E7%A8%8B/</guid><description>&lt;p>最近想了解一下作業系統處理 I/O 的過程，翻閱到 CloudFlare 一系列關於作業系統與 Network Packet 處理的實驗與文章，蠻有趣的稍微整理了一下&lt;/p>
+&lt;h2 id="關於-linux-封包處理">關於 Linux 封包處理&lt;/h2>
+&lt;p>主要在量測 Linux 極限可以處理多少 packet per second / 以及如何持續優化&lt;/p>
+&lt;h3 id="linux-單機處理-1m-udp-packet-per-second">Linux 單機處理 1M udp packet per second&lt;/h3>
+&lt;p>文章出自：&lt;a class="link" href="https://blog.cloudflare.com/how-to-receive-a-million-packets/" target="_blank" rel="noopener"
+>How to receive a million packets per second&lt;/a>，在硬體規格&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">1. six core 2GHz Xeon processors.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">2. With hyperthreading &lt;span class="o">(&lt;/span>HT&lt;span class="o">)&lt;/span> enabled that counts to &lt;span class="m">24&lt;/span> processors on each box
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">3. multi-queue 10G network card by Solarflare
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">4. with &lt;span class="m">11&lt;/span> receive queues configured.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以撐到每秒接收一百萬個 udp 小封包(32 bytes)，發送跟接收端在同個區網的不同機器上&lt;/p>
+&lt;p>中間的嘗試迭代過程很有趣&lt;/p>
+&lt;h4 id="1-裸測">1. 裸測&lt;/h4>
+&lt;p>僅能到 0.19~0.35 M，發現 kernel 可能隨機分配 process 到不同 CPU 上，透過 &lt;code>taskset&lt;/code> 指定 CPU 運行，穩定在 0.35 M 上不去，發現只有單一 CPU 忙碌到 100%&lt;/p>
+&lt;h4 id="2-numa-架構優化">2. NUMA 架構優化&lt;/h4>
+&lt;p>多核心處理器為了避免多核心在存取 Memory 的貧頸，會採用 NUMA 架構，讓一至多個 CPU core 共用一塊 memory 組成一個 NUMA node；
+&lt;img src="https://www.motioncontroltips.com/wp-content/uploads/2018/04/NUMA-Architecture.png"
+loading="lazy"
+>&lt;/p>
+&lt;ul>
+&lt;li>圖片出處 &lt;a class="link" href="https://hackmd.io/@lkmem/SkWYoA-TU" target="_blank" rel="noopener"
+>@lkmem/SkWYoA-TU&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>NUMA 好處是如果 CPU 都只存取 local memory 效率會非常好，如果要存取到不同區域的 memory 或是任務在不同 NUMA node CPU 中 context switch 則效率會很差，作者進行以下比較：&lt;/p>
+&lt;ol>
+&lt;li>如果 RX queue 和應用程式是在同一個 NUMA node 的不同 core 上，效能是最好的&lt;/li>
+&lt;li>如果是在不同的 NUMA node 上，則效能差且不穩定&lt;/li>
+&lt;li>如果是在同個超執行緒(HT)上，則效能只剩一半&lt;/li>
+&lt;/ol>
+&lt;h4 id="3-增加-nic-的-rx-queue-數量">3. 增加 NIC 的 RX queue 數量&lt;/h4>
+&lt;p>過往 NIC 只有一個 RX queue 用來存放接收到的封包，而&lt;code>一個 RX queue 只能由一個 CPU 讀取&lt;/code>限制了多核心機器的效能，所以 NIC 目前都會有多條 RX queue&lt;/p>
+&lt;p>但是有了多條 queue，NIC 需要把同一個 connection 的多個 packet 送到同一個 queue 中讓同一個 CPU 處理，否則會遇到 packet order 亂掉的問題，此時可以透過 hashing 解決，hash function 為 {ip, port}&lt;/p>
+&lt;p>後來因為實驗的 NIC 無法調整 hash 機制，所以改用增加 IP 的方式，但目的也是要把 &lt;code>packet 分散到多個 RX queue 上&lt;/code>，此舉增加到 0.47M&lt;/p>
+&lt;h4 id="4-加開-recv-thread">4. 加開 recv thread&lt;/h4>
+&lt;p>原本是用 single thread 接收，嘗試開啟 multi thread 但反而性能下降，原因是多個 thread 共用同一個 file descriptor 需要額外 lock&lt;/p>
+&lt;p>但好在 Linux 在 3.9 後加入了 &lt;code>SO_REUSEPORT&lt;/code> 可以讓多個socket descriptor 綁定到同一個 port 上，所以讓多個 thread 可以分擔讀取的工作，但作者同樣觀察到 SO_REUSEPORT 這一層同樣有分散不平均的問題，只有幾個 CPU 特別忙碌&lt;/p>
+&lt;blockquote>
+&lt;p>One of the features merged in the 3.9 development cycle was TCP and UDP support for the SO_REUSEPORT socket option; that support was implemented in a series of patches by Tom Herbert. The new socket option allows &lt;code>multiple sockets on the same host to bind to the same port&lt;/code>, and is intended to improve the performance of &lt;code>multithreaded network server&lt;/code> &amp;hellip;..&lt;/p>
+&lt;p>&amp;hellip;. Incoming connections and datagrams are distributed to the server sockets using a &lt;code>hash based on the 4-tuple of the connection&lt;/code>—that is, the peer IP address and port plus the local IP address and port.&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="小結">小結&lt;/h4>
+&lt;p>單機 Linux 優化後可以做到每秒接收 1M UDP packet&lt;/p>
+&lt;ol>
+&lt;li>記得將 packet 分散到 RX queue&lt;/li>
+&lt;li>接收端應用程式要打開 SO_REUSEPORT 並透過 multi thread 讀取&lt;/li>
+&lt;li>要有多的 CPU 負責從 RX queue 讀取&lt;/li>
+&lt;li>如果是 NUMA 架構，RX queue / 應用程式的 CPU 要在同一個 Node 性能比較好&lt;/li>
+&lt;/ol>
+&lt;h3 id="為什麼我們需要-linux-kernel-處理-tcp-stack">為什麼我們需要 Linux kernel 處理 TCP stack?&lt;/h3>
+&lt;p>文章出自：&lt;a class="link" href="https://blog.cloudflare.com/why-we-use-the-linux-kernels-tcp-stack/" target="_blank" rel="noopener"
+>Why we use the Linux kernel&amp;rsquo;s TCP stack&lt;/a>&lt;/p>
+&lt;h4 id="為什麼我們需要-os">為什麼我們需要 OS&lt;/h4>
+&lt;p>試想一個問題，如果我們一台 server 上只跑一個專用的應用程式，那為什麼我們需要先額外安裝一個上千萬行的 OS 去代理執行我們的應用程式？&lt;/p>
+&lt;p>OS 主要提供幾個好處：&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>抽象化硬體、提供統一介面：&lt;/strong>&lt;br>
+OS 會抽象化底層的硬體，讓應用程式專注於開發而不用管實際執行的硬體為何，帶來更好的移植性&lt;/li>
+&lt;li>&lt;strong>資源管理：&lt;/strong>&lt;br>
+OS 可以透過排程讓一個硬體於多個應用程式間切換使用，而不會有一個應用程式霸佔整個硬體資源，例如網卡可同時處理 server request 也可用於 ssl sesson&lt;/li>
+&lt;/ol>
+&lt;h4 id="為什麼需要-userspace-tcp-stack">為什麼需要 userspace TCP stack&lt;/h4>
+&lt;p>如果透過 OS 則讀寫硬體資源時需要涉及 user space / kernel space 資料的複製與 context switch，這會帶來額外的 latency / CPU performance 影響&lt;/p>
+&lt;p>例如 Google、Cloudflare 這種網路流量非常大的公司，就會有動機去客製化 TCP stack，所謂的 userspace TCP stack 就是 &lt;code>繞過(bypass) OS Kernel&lt;/code>直接存取網卡，這張網卡就專門被單一的應用程式所使用，OS 的監控工具 (iptable/netstat) 等都無法使用，其他應用程式也都不能&lt;/p>
+&lt;p>Cloudflare 有提到透過 Linux iptable 大概可以處理&lt;code>每秒一百萬的 packets&lt;/code>，而 Cloudflare 在遭遇攻擊時流量會在 &lt;code>單台 server 每秒三百萬的 packets&lt;/code>，這也是他們需要繞過 kernel 自行處理的動機&lt;/p>
+&lt;p>但目前沒有穩定的 open-source userspace TCP stack 可以使用，要自己維護開發，除了執行外周邊的 debug、monitor 工具都要自己想辦法&lt;code>成本很高&lt;/code>，所以 Cloudflare 採取&lt;code>半繞過&lt;/code>的方式，只有 &amp;ldquo;RX queue&amp;rdquo; 會繞過 kernel，這帶來的好處是享有一定的效能提升且其餘 packets 處理能仰賴既有的工具如 iptables/netstat&lt;/p>
+&lt;h3 id="優化-latency">優化 latency&lt;/h3>
+&lt;p>文章出自：&lt;a class="link" href="https://blog.cloudflare.com/how-to-achieve-low-latency/" target="_blank" rel="noopener"
+>How to achieve low latency with 10Gbps Ethernet&lt;/a>&lt;br>
+前面優化了 throughput，現在要來看 latency 如何被優化，量測的基準線從平均 47.5 us 開始&lt;/p>
+&lt;h4 id="1-提高-read-的頻次">1. 提高 read 的頻次&lt;/h4>
+&lt;p>Linux 3.11 開始增加了 &lt;code>SO_BUSY_POLL&lt;/code> 的 socket 選項，在指定的時間內 kernel 就會去讀取 packet 提升讀取的頻次，透過增加 CPU 使用率降低 latency 7 us&lt;/p>
+&lt;p>同樣的道理可以套用在 user space ，透過 non-blocking read &lt;code>fd.recvmsg(MSG_DONTWAIT)&lt;/code> 再往下降低 4 us&lt;/p>
+&lt;h4 id="2-pin-process">2. pin process&lt;/h4>
+&lt;p>透過指定 process 在特定的 CPU 上執行減少 context switch，降低 1 us；&lt;br>
+但如同先前提到，預設一個 RX queue 只能有單一 CPU 讀取，如果剛好應用程式也在最忙碌的 CPU 上，則延遲反而會增加 2 us&lt;/p>
+&lt;h4 id="3-將-rx-queue-綁定到指定-cpu">3. 將 RX queue 綁定到指定 CPU&lt;/h4>
+&lt;p>為了避免上面問題，可以透過 Indirection Table 調整 RX queue 如何分配到 CPU 讀取，作者限定只有在同一個 NUMA node 的 CPU 才能讀取 RX queue&lt;/p>
+&lt;p>同樣的做法也可以用 Flow steering 實作，指定特定的 flow 到特定的 RX queue 上面，額外用途是確保在高流量情況下指定的封包還能被特定的 CPU 處理，如 SSH/BGP，也可以用來防堵 DDoS 攻擊&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">client$ sudo ethtool -N eth2 flow-type udp4 dst-ip 192.168.254.1 dst-port &lt;span class="m">65500&lt;/span> action &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在傳送端也可以指定類似的事情，調整 TX queue 透過哪個 CPU 發送的機制&lt;/p>
+&lt;h4 id="小結-1">小結&lt;/h4>
+&lt;p>再通過一些優化，從原本 47 us 降到 26 us；如果是透過 bypass kernel 則近一步下降到 &lt;code>17 us&lt;/code>&lt;/p></description></item><item><title>RFC 5389 - STUN 協定介紹</title><link>https://yuanchieh.page/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/</link><pubDate>Tue, 22 Sep 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/</guid><description>&lt;p>STUN 應用於處理 NAT 穿越技術 (如 ICE ) 下的一種工具，本身並非 NAT 穿越的解決方案，主要功能為&lt;code>確認兩個在 NAT 背後節點的 IP / Port&lt;/code>，本篇為 &lt;a class="link" href="https://tools.ietf.org/html/rfc5389" target="_blank" rel="noopener"
+>RFC 5389&lt;/a> 的閱讀心得，分享 STUN 背後的設計原理與結構&lt;/p>
+&lt;p>STUN 之上還有擴增一個 TURN 協定，提供 relay 連線的功能，一般的 TURN Server 會同時提供 STUN 的服務，如果想知道 TRUN Server 架設，可以參考另一篇文章 &lt;a class="link" href="https://yuanchieh.page/post/2020-09-21_aws-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8/" target="_blank" rel="noopener"
+>AWS Coturn server架設教學&lt;/a>&lt;/p>
+&lt;p>如果你有以下疑惑，那這篇文章應該可以幫助到你&lt;/p>
+&lt;ol>
+&lt;li>STUN Server 究竟是如何運作&lt;/li>
+&lt;li>STUN Server 是否有驗證機制&lt;/li>
+&lt;li>想知道 Coturn config 中的參數含義，如 Fingerprint / Realm / Nonce&lt;/li>
+&lt;/ol>
+&lt;h2 id="與舊版-stun-的差異">與舊版 STUN 的差異&lt;/h2>
+&lt;p>先前有一版 STUN 的定義 &lt;a class="link" href="https://tools.ietf.org/html/rfc3489" target="_blank" rel="noopener"
+>RFC-3489&lt;/a>，當時的 STUN 被定義成完整的 NAT 穿越解決方案，但是遭遇了以下問題才改用這一版 5389 取代了舊版&lt;/p>
+&lt;ol>
+&lt;li>無法正確區分 NAT 類型，導致可能連線有問題&lt;br>
+NAT 共有四種類型，其中 symmetric NATs 是每次通訊沒有固定的 Public IP / Port，所以只能透過 TURN 來解決雙節點的連線問題&lt;br>
+但是舊版 STUN 演算法設計無法區分 NAT 類型，所以有可能造成部分的連線異常&lt;/li>
+&lt;li>支援 TCP / DTLS:&lt;br>
+舊版只支援 UDP&lt;/li>
+&lt;li>Security 考量&lt;/li>
+&lt;/ol>
+&lt;p>新版 STUN 不再是完整的 NAT traversal 解決方案，只專注於&lt;code>找出節點外層 NAT 對外的 Public IP/Port&lt;/code>，完整的解決方案如 ICE / SIP Outbound 等等&lt;/p>
+&lt;blockquote>
+&lt;p>也因此 STUN SERVER 預設 port 是 3489 / TLS port 是 5398&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="架構介紹">架構介紹&lt;/h2>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20200922/stun.png"
+loading="lazy"
+>&lt;br>
+可以看到 STUN Client 躲在兩層 NAT 之後，而 STUN Server 就是要通知 STUN Client 最外層 NAT 所對應的 Public IP / Port&lt;/p>
+&lt;p>STUN 採用 client/server 架構，支援兩種溝通方式(transaction)&lt;/p>
+&lt;ol>
+&lt;li>request / response&lt;/li>
+&lt;li>indicate (送出去不等回覆)&lt;/li>
+&lt;/ol>
+&lt;p>每個 transaction 都有 96bit random id&lt;/p>
+&lt;h3 id="傳送機制">傳送機制&lt;/h3>
+&lt;p>每個 Transaction 會定義類型 (Action)，目前 Spec 僅定義 Binding action&lt;/p>
+&lt;p>運作機制如下&lt;/p>
+&lt;ol>
+&lt;li>client 送出 request&lt;/li>
+&lt;li>NAT 會修改 client package 封包的 IP，並自主管理 client private ip port 與 NAT 對應出去的 ip / port&lt;/li>
+&lt;li>一路到 server 手上只會拿到 NAT 的 public ip / port，稱之為 &lt;code>server reflexive transport address (srflx)&lt;/code>，如果有用過 WebRTC 應該有看過 srflx ，這就是代表用戶走 STUN&lt;/li>
+&lt;li>接著 server 把這個 public ip / port 當作內容 &lt;code>XOR-MAPPED-ADDRESS&lt;/code> 傳回去給 client&lt;/li>
+&lt;li>NAT 接著會一路改 ip port，但因為內文不改所以 client 會知道最外層 NAT 的 public ip + port&lt;/li>
+&lt;/ol>
+&lt;h4 id="packet-format">Packet Format&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span>&lt;span class="m">0&lt;/span> 0&lt;span class="p">|&lt;/span> STUN Message Type &lt;span class="p">|&lt;/span> Message Length &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Magic Cookie &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Transaction ID &lt;span class="o">(&lt;/span>&lt;span class="m">96&lt;/span> bits&lt;span class="o">)&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>封包格式介紹&lt;/p>
+&lt;ol>
+&lt;li>最前方兩個 bit 固定為 0 ，主要是用來區分是不是 STUN 的 packet&lt;/li>
+&lt;li>Message Type 包含 Transaction 類型 / response 成功或失敗&lt;/li>
+&lt;li>magic cookie 固定為 0x2112A442&lt;/li>
+&lt;li>Transaction ID 用來區分 STUN transaction&lt;/li>
+&lt;li>STUN message 不可以超過 MTO&lt;/li>
+&lt;li>如果傳輸透過 UDP:&lt;br>
+Client 要自己處理 retransmit，預設 timeout 500ms ~ 3000 ms 間，之後每次 retry Timeout double&lt;/li>
+&lt;li>如果傳輸透過 TCP:&lt;br>
+不要增加而外的 framing / demultiplexing
+已經保障資料可靠性，預設 Timeout 為 39.5s
+Server 應該等 Client 主動斷線，除非遇到 timeout&lt;/li>
+&lt;/ol>
+&lt;h3 id="驗證訊息">驗證訊息&lt;/h3>
+&lt;p>Server 收到訊息後，會先做基本的驗證，如果有開啟 fingerprint extension 則驗證，如果發現有不支援的屬性則回傳錯誤；
+Server 回傳錯誤時，必須&lt;code>指定 error code，並挾帶 error code attribute&lt;/code>，例如說有不支援的屬性則回傳 420 + UNKNOWN-ATTRIBUTES，如果是 401 驗證失敗則必須對應回傳驗證方式，這邊的 error code 參考 HTTP 所以會有種似曾相似的分類；&lt;br>
+如果訊息成功則夾帶 &lt;code>XOR-MAPPED-ADDRESS&lt;/code> 回傳&lt;/p>
+&lt;h3 id="fingerprint">FINGERPRINT&lt;/h3>
+&lt;p>再Multiplexing 下，會有多個不同 protocol 的 packet 傳送到相同位址的，例如說 RTP，加上 &lt;code>fingerprint&lt;/code> 可以方便 STUN Server 區分 STUN message&lt;/p>
+&lt;h3 id="dns">DNS&lt;/h3>
+&lt;p>透過 SRV 紀錄回傳 STUN Server 相關的服務，SRV 格式如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">_service._proto.name. TTL class SRV priority weight port target.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果是以 STUN Server 開放 TCP / UDP ，假設 STUN Server domain name 是 &lt;code>stun.example.com&lt;/code>的話&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">_stun._udp.example.com &lt;span class="m">86400&lt;/span> IN SRV &lt;span class="m">0&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">3489&lt;/span> stun.example.com.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">_stun._tcp.example.com &lt;span class="m">86400&lt;/span> IN SRV &lt;span class="m">0&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">3489&lt;/span> stun.example.com.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>使用 SRV 好處是可以改變預設的 Port；&lt;br>
+如果不用 SRV，也可以用 A / AAAA 紀錄返回 IP List，但 Port 就只能用預設的&lt;/p>
+&lt;h3 id="身份驗證與訊息完整性檢查">身份驗證與訊息完整性檢查&lt;/h3>
+&lt;p>共有兩種身份驗證的方式，&lt;/p>
+&lt;h4 id="短期">短期&lt;/h4>
+&lt;p>Client / Server 會預先共享同一個 secret，後續 Client 產生一個有時間限制的 credential (password)，Server 收到後會用相同的 secret 做驗證；&lt;br>
+確保訊息完整性則透過 &lt;code>MESSAGE-INTEGRITY&lt;/code> 欄位，此欄位產生的方式是把 STUN Message 做 HMAC_SHA1；&lt;/p>
+&lt;p>Server 收到STUN Message 後的驗證流程如下&lt;/p>
+&lt;ol>
+&lt;li>沒有 MESSAGE-INTEGRITY 和 USERNAME 欄位則回傳 401&lt;/li>
+&lt;li>檢查 USERNAME 是否合法&lt;/li>
+&lt;li>用 passwrod 與 username 計算出 message intergrity 的值並比對&lt;/li>
+&lt;li>都通過則產生 response，response 同樣要包含 MESSAGE-INTEGRITY&lt;/li>
+&lt;/ol>
+&lt;p>Client 收到 response 也需要檢查 MESSAGE-INTEGRITY&lt;/p>
+&lt;p>因為 credential 有時間限制，所以不會遇到回放(replay)攻擊&lt;/p>
+&lt;h4 id="長期">長期&lt;/h4>
+&lt;p>Server / Client 固定長期使用&lt;code>相同的 username / password&lt;/code>&lt;/p>
+&lt;p>步驟&lt;/p>
+&lt;ol>
+&lt;li>Client 不帶任何 credential 發起&lt;/li>
+&lt;li>Server reject，並分配 realm (指引 client 選擇 credential) 與 nonce (類似於 cookie，指定 duration / client identity 等) 多一層保護&lt;/li>
+&lt;li>Client retry ，戴上 credential 與 nonce + message-integrity (對整個 request 做 HMAC)&lt;/li>
+&lt;li>Server 檢查 auth 與 integrity&lt;/li>
+&lt;/ol>
+&lt;p>Server 收到訊息時會依序檢查&lt;/p>
+&lt;ol>
+&lt;li>MESSAGE-INTEGRITY: 沒有回傳 401&lt;/li>
+&lt;li>如果沒有 username / password / realm / nonce ，回傳 400&lt;/li>
+&lt;li>Nonce 過期了，438&lt;/li>
+&lt;li>Username 無效，401&lt;/li>
+&lt;li>Message-integrity 錯誤，回傳 401&lt;/li>
+&lt;li>ALTERNATE-SERVER Mechanism
+如果 Server 希望 Redirect Client 去別的 Server，可以回傳 error code 300 並指定 ALTERNATE-SERVER
+Client 收到後，用相同的 transport protocol / credential 對新的 Server 重啟 transaction&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>之所以開頭要產生一次 auth failed 的 request是要了去跟 Server 拿 Nonce，主要是為了避免&lt;code>回放攻擊&lt;/code>；&lt;br>
+回放攻擊主要是 如果有中間人，他拿到 Client request 記錄下來，把同樣的 request 往 Server 送，因為 credential 是長期有效所以中間人也能夠通過驗證，即使是有 TLS 保護 / 中間人不知道 username, password 回放攻擊都有用；&lt;br>
+所以才需要 Nonce 一個由 Server 核發一次性的 Token，包裝在 STUN Message 中，超出時間就會被認定無效，從而避免回放攻擊&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="stun-attributes">STUN Attributes&lt;/h3>
+&lt;p>再 STUN Header 之後，可以接零至多個 attribute，attribute 採用 TLV encode&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Type &lt;span class="p">|&lt;/span> Length &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Value &lt;span class="o">(&lt;/span>variable&lt;span class="o">)&lt;/span> ....
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果 response 中有重複的 attribute，只有 &lt;code>第一個&lt;/code> 會被考慮，其餘會被捨棄
+Type 再 0x0000 and 0x7FFF 是必須要被處理的，如果 STUN agent 無法處理則會失敗
+0x8000~0xFFFF 則是 optional
+以下舉幾個常見的 attribute&lt;/p>
+&lt;h4 id="mapped-address">MAPPED-ADDRESS&lt;/h4>
+&lt;p>主要是為了兼容舊版 STUN，顯示 Client 最後一個 Public NAT 的 ip / port&lt;/p>
+&lt;h4 id="xor-mapped-address">XOR-MAPPED-ADDRESS&lt;/h4>
+&lt;p>雷同於上者，但是 ip / port 都是跟 magic-cookie 前 16 bits 做 XOR 儲存 (ipv4 / ipv6 xor 方式不同)，原因是發現有些 NAT 如果看到 payload 是自己的 public IP 會去修改，xor 之後就沒這個問題&lt;/p>
+&lt;blockquote>
+&lt;p>原文解釋
+deployment experience found that some NATs rewrite the 32-bit binary payloads containing the NAT&amp;rsquo;s public IP address, such as STUN&amp;rsquo;s MAPPED-ADDRESS attribute, in the well-meaning but misguided attempt at providing a generic ALG function.&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="username">USERNAME&lt;/h4>
+&lt;p>用來驗證用的，必須是用 utf-8 encode 並小於 513 bets SASLprep&lt;/p>
+&lt;h4 id="message-integrity">MESSAGE-INTEGRITY&lt;/h4>
+&lt;p>對 STUN Message 取 HMAC-SHA1，固定長度為 20 bytes (因為 sha1 )
+HMAC key 會因為 credential 不同而有所不同&lt;/p>
+&lt;ol>
+&lt;li>Long term: &lt;code>key = MD5(username “:” realm “:” SASLprep(password))&lt;/code>&lt;/li>
+&lt;li>Short term: &lt;code>key = SASLprep(password)&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>需注意 hash 包含整個 STUN Message，同時也包含了 Message length，所以在產生 hash 前，MESSAGE-INTEGRITY 也必須先安插進去 STUM Message 中並帶 dummy content，其他在之後的屬性則被排除在外
+驗證時也必須遵守相同的流程&lt;/p>
+&lt;h4 id="fingerprint-1">Fingerprint&lt;/h4>
+&lt;p>對整個 STUN Message (排除自己) 取 CRC-32，接著與 0x5354554e
+做 XOR ( 避免其他 packet 也用 CRC-32
+Fingerprint 必須是最後一個屬性&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">the FINGERPRINT attribute MUST be the last attribute in the message, and thus will appear after MESSAGE-INTEGRITY.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="error-code">Error Code&lt;/h4>
+&lt;p>包含數值的 error code 從 300~699，保持與 SIP / HTTP 相似的羽翼
+再加上 rease: utf-8的文字描述 ，主要是讓用戶可以理解&lt;/p>
+&lt;h4 id="realm">REALM&lt;/h4>
+&lt;p>如果 STUN Server 同時支援多個 domain，透過 REALM 可以區分不同 domain 使用的設定&lt;/p>
+&lt;h4 id="nonce">NONCE&lt;/h4>
+&lt;p>用於每次連線避免 replay 問題的方式，類似於 web 的 cookie&lt;/p>
+&lt;h4 id="unknown-attributes">UNKNOWN-ATTRIBUTES&lt;/h4>
+&lt;p>再 error code 420 時出現&lt;/p>
+&lt;h4 id="software">SOFTWARE&lt;/h4>
+&lt;p>描述軟體的版本 / 製造商等資訊&lt;/p>
+&lt;h4 id="alternate-server">ALTERNATE-SERVER&lt;/h4>
+&lt;p>Server 要求轉換時&lt;/p>
+&lt;h3 id="security">Security&lt;/h3>
+&lt;p>以下條列幾種被攻擊的可能與防範措施&lt;/p>
+&lt;ol>
+&lt;li>Attacker 可能竄改 STUN 訊息:&lt;br>
+但可以用 message integrity 驗證防止&lt;/li>
+&lt;li>Attacker 可以居中回傳 error response&lt;br>
+在某些如驗證失敗的訊息，這個就不好防堵，除非使用 TLS 才能杜絕問題&lt;/li>
+&lt;li>HMAC可能遭受字典攻擊:&lt;br>
+因為 STUN 利用 HMAC，可能遭受字典攻擊，請確保 password 足夠複雜，或是用 TLS 防止問題；不排除 SHA1 之後被攻破，未來可能增加新的欄位與新的 hash 機制&lt;/li>
+&lt;li>DoS 部分: &lt;br>
+STUN server 是 &lt;code>stateless&lt;/code>，所以比較不會被 DoS 打垮；&lt;br>
+Attacker 可能假冒 source IP，讓 STUN server 去攻擊受害者，攻擊不會被跨大，要從 ingress 去過濾 ip；&lt;/li>
+&lt;li>SOFTWARE 揭露版本資訊，可能變成潛藏的落點&lt;br>
+STUN Server 應該要有對應的設定去關閉此選項&lt;/li>
+&lt;li>修改 source ip&lt;br>
+Attack 居中的話，可以攔截client 的 source ip 並修改，server 收到錯的 ip 就會用 XOR-MAPPED-ADDRESS 回傳回，&lt;code>這幾乎不可能阻擋&lt;/code>，因為正常的 NAT 也會去修改 source ip；&lt;br>
+只能在更上層的協議，例如 ICE 去驗證 address 的正確性&lt;/li>
+&lt;/ol></description></item><item><title>DNS over HTTPs 分享</title><link>https://yuanchieh.page/posts/2020/2020-02-29-dns-over-https-%E5%88%86%E4%BA%AB/</link><pubDate>Sat, 29 Feb 2020 07:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-02-29-dns-over-https-%E5%88%86%E4%BA%AB/</guid><description>&lt;p>會看到 DNS over HTTPs(DoH) 是因為閱讀到 &lt;a class="link" href="https://blog.mozilla.org/blog/2020/02/25/firefox-continues-push-to-bring-dns-over-https-by-default-for-us-users/" target="_blank" rel="noopener"
+>Firefox 在 2/26 於美國用戶推出預設採用 DoH 的文章&lt;/a>，早在 Firefox@62 時就已經內置這項設定，其餘地區用戶可以透過設定開啟；&lt;br>
+目前 &lt;a class="link" href="https://www.ithome.com.tw/news/133004" target="_blank" rel="noopener"
+>Chrome 於 78 之後預設開啟&lt;/a>，&lt;a class="link" href="https://www.ithome.com.tw/news/134278" target="_blank" rel="noopener"
+>Windows 10 也宣布即將整合 DoH&lt;/a>，公開 DNS 解析服務商也越來越多支援 DoH，早先 Firefox 與 Cloudflare 合作，後續 Google Public DNS / AdGuard 等也加入支援&lt;/p>
+&lt;p>DNS 是歷史悠久的網路通訊協定，基於 UDP/TCP 查詢域名對應的紀錄，但這一切在網路傳輸都是明文，沒有任何的隱密性與安全性，後來有了 &lt;code>DNSSEC&lt;/code> 可以確保 DNS 紀錄沒有被竄改，但可惜在推廣上需要改 DNS Server，受到實作限制並沒有全面實施&lt;/p>
+&lt;p>Mozilla 與 Google 於前陣子提出 &lt;code>DNS over HTTPs&lt;/code>，將 DNS 查詢放在 HTTPs 當中，如此一來除了可以防止被惡意竄改等中間人攻擊外，更可以保護用戶隱私，ISP 等中間的網路設施提供商就&lt;code>比較難追蹤用戶的網路瀏覽&lt;/code>&lt;/p>
+&lt;p>這一篇文章會先大略技術介紹，接著整理網路上對於 DNS over HTTPs 的正反兩方討論，先說結論是&lt;/p>
+&lt;blockquote>
+&lt;p>沒有所謂的 100% 安全，但我們能盡力做到最好&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="技術實作">技術實作&lt;/h2>
+&lt;p>DoH 其實就是透過 HTTPs 查詢 DNS 紀錄，一般 DNS 在查詢記錄時會需要反覆多次，從頂級域名開始一路查到子域名，在這過程中全部的服務商與網路中介設備都知道你在查詢哪個網站&lt;/p>
+&lt;p>DoH 希望改透過 Trusted Recursive Resolver(TRR) 去查詢，交由 TRR 做到解析域名這件事，這樣就無法回溯到使用者本身的 IP，達到保密性的效果；&lt;br>
+同時由 DNS 域名商提供的 TRR 服務時，會參考用戶的 IP 位置，避免一些透過 Geo DNS 的服務造成影響&lt;/p>
+&lt;h2 id="spec-概覽rfc-8484">Spec 概覽：RFC-8484&lt;/h2>
+&lt;p>&lt;a class="link" href="https://tools.ietf.org/html/rfc8484" target="_blank" rel="noopener"
+>RFC8484&lt;/a>，簡單抓出幾個有趣的地方&lt;/p>
+&lt;h3 id="mime-type">MIME Type&lt;/h3>
+&lt;p>DoH Client 可以用 &lt;code>application/dns-message&lt;/code>，表明是要用 dns 格式查詢，也可以用 json 等方式，看 DoH Server 提供，如 &lt;a class="link" href="https://developers.cloudflare.com/1.1.1.1/dns-over-https/wireformat/" target="_blank" rel="noopener"
+>Cloudflare 有提供 json 格式&lt;/a>&lt;/p>
+&lt;h3 id="http-method">HTTP Method&lt;/h3>
+&lt;p>支援 GET / POST 兩種方式查詢&lt;br>
+例如說要查詢 &lt;a class="link" href="https://www.example.com" target="_blank" rel="noopener"
+>www.example.com&lt;/a> 長這樣&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">:method = GET
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">:scheme = https
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">:authority = dnsserver.example.net
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">:path = /dns-query?dns=AAABAAABAAAAAAAAA3d3dwdleGFtcGxlA2NvbQAAAQAB
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">accept = application/dns-message
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="建議-http2-為最低版本">建議 HTTP2 為最低版本&lt;/h3>
+&lt;p>對比 DNS 採用的 UDP/TCP 來說，HTTP 開銷大很多，採用 HTTP2 有一些性能上優化的部分，例如重用連結、重整封包順序、Header 壓縮等，相比更舊的 HTTP 版本已儘可能減輕通訊上的負擔&lt;/p>
+&lt;h2 id="實際使用與測試">實際使用與測試&lt;/h2>
+&lt;p>要實際使用的方式有幾種，一種是在自己電腦裝上 DoH Client，接著將 DNS 查詢指向 DoH Client 經由他代理查詢，好處是透過代理不用擔心應用程式的支援問題，這部分可以安裝 cloudflare 提供的 &lt;a class="link" href="https://developers.cloudflare.com/1.1.1.1/dns-over-https/cloudflared-proxy/" target="_blank" rel="noopener"
+>cloudflared&lt;/a>&lt;/p>
+&lt;p>但這次實驗只是要快速測試功能，與利用 Wireshark 實地看封包重送的過程，所以安裝另一個 command line 工具 &lt;a class="link" href="https://www.knot-dns.cz/docs/2.6/html/installation.html" target="_blank" rel="noopener"
+>kdig&lt;/a>，kdig 可以直接指定 DoH Client 查詢 dns 紀錄，比 dig 功能再多一些，安裝完成後比較兩個指令&lt;/p>
+&lt;blockquote>
+&lt;p>$ kdig -d @1.1.1.1 +tls-ca +tls-host=cloudflare-dns.com yuanchieh.page
+vs
+kdig -d @1.1.1.1 yuanchieh.page&lt;/p>
+&lt;/blockquote>
+&lt;p>透過 Wireshark 擷取封包結果
+&lt;img src="https://yuanchieh.page/post/img/20200229/dns_doh.jpeg"
+loading="lazy"
+alt="dns over DoH"
+>
+&lt;img src="https://yuanchieh.page/post/img/20200229/dns.jpeg"
+loading="lazy"
+alt="dns"
+>
+前者走一般 HTTPS 流程，後者走 DNS 流程，可以看到傳輸量與傳輸速度的差異&lt;/p>
+&lt;h2 id="爭議之處">爭議之處&lt;/h2>
+&lt;p>這篇新聞整理了許多專家對於 DoH 的反對意見：&lt;a class="link" href="https://www.zdnet.com/article/dns-over-https-causes-more-problems-than-it-solves-experts-say/" target="_blank" rel="noopener"
+>DNS-over-HTTPS causes more problems than it solves, experts say&lt;/a>，其中幾點蠻值得更深入探討&lt;/p>
+&lt;h3 id="doh-不能防止-isp-業者窺視用戶的瀏覽紀錄可以解決">DoH 不能防止 ISP 業者窺視用戶的瀏覽紀錄(可以解決)&lt;/h3>
+&lt;p>DoH 確實能夠防止 ISP 業者看到 DNS 查詢記錄，但如果用戶是用 HTTP，那走不走 DoH 他的網頁瀏覽紀錄還是會被發現；&lt;br>
+即使用戶走 HTTPS，基於現有的 HTTPS 缺失，不是每個 request 都是加密的，例如 &lt;code>SNI&lt;/code> 跟 &lt;code>OSCP&lt;/code>&lt;/p>
+&lt;p>SNI 是 Client 先跟 Server 説他要連線的 hostname 是哪個，因為同個 IP 上可能有多個 Server (Virtual host) 需要回傳對應的憑證；&lt;br>
+OSCP 是 Client 收到 Server 回傳的憑證，並需再去 CA 驗證憑證的有效性；&lt;br>
+這兩個 Request 都是明文，所以都會被記錄到。&lt;/p>
+&lt;p>再者，ISP 業者還是會知道 Client 要送封包到哪個 IP，IP 位置不是很時常更動，透過反查就知道 Client 是在看什麼網站&lt;/p>
+&lt;p>上述條件無關乎 DoH 的問題，但確實讓 DoH 毫無用武之地&lt;/p>
+&lt;h3 id="公司管理困擾">公司管理困擾&lt;/h3>
+&lt;p>如果公司防火牆透過在 DNS 階段過濾，碰上 DoH 就會很頭疼，造成管理上的漏洞&lt;/p>
+&lt;h3 id="過度集中於-dns-解析商">過度集中於 DNS 解析商&lt;/h3>
+&lt;p>再發起 DoH 時，會需要指定 HTTPs 聯繫的對象，這通常是由 DNS 解析商所提供，這導致權利集中於幾間大公司手裡，例如 Firefox 瀏覽器內預設使用 Cloudflare / NextDNS，雖然也可以加入自定義，但如果一般的用戶不慎熟悉，這會導致 DNS 解析商反而有很大的影響&lt;/p>
+&lt;p>專家建議是基於 DNS 本身機制外加加密方式，而不是把作法綁到幾間解析商手上。&lt;/p>
+&lt;blockquote>
+&lt;p>內文有提到「某些公司為了讓自己看起來很在意用戶隱私，才推出這種半殘的協定，是非常不負責任的」&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="結論-not-the-end">結論&amp;hellip; not the end!&lt;/h2>
+&lt;p>DoH 看似解決了部分問題，又有 Firefox / Chrome / Windows / Google DNS / Cloudflare 等多家世界級產品與 DNS 服務商的推廣與背書，但確實反對者提出的質疑也很有說服力，只能說如果在意 DNS 有沒有被竄改，使用 DoH 或許可以，但不能期望 DoH 完全抹去個人的網頁瀏覽紀錄&lt;/p>
+&lt;h2 id="tls-13">TLS 1.3&lt;/h2>
+&lt;p>TLS 1.3 改變了加密流程，由最一開始的 &lt;code>Client 發出 ClientHello 就加密了&lt;/code>，此時加密的方式是從 DNS 紀錄拿到 Server 的 Public Key，並採用 Diffie-Hellman 交換金鑰方式，用「非對稱加密的公鑰」加密「對稱加密的金鑰」，用「對稱加密的金鑰」加密指定的 Server name&lt;/p>
+&lt;p>目前僅剩唯一個問題 IP 位置，但如果 Server 是在 CDN 後面，讓 ISP 只能追蹤到 CDN，後面的就無法追蹤到&lt;/p>
+&lt;p>此外 TLS 1.3 將握手機制減少一個 RTT 變成只要一個 RTT 就能完成交握，效率大幅提升&lt;/p>
+&lt;h2 id="結論">結論&lt;/h2>
+&lt;p>TLS 1.3 需要 DNS 支援，就可以從交握開始就全程加密；&lt;br>
+而為了避免 DNS 被攻擊或是竄改紀錄，記得要使用 DNSSEC；&lt;br>
+最後加上 DoH，讓 DNS 紀錄查詢這一段也不會被 ISP 追蹤&lt;/p>
+&lt;p>整段補上後，就能增加用戶的隱私與安全性，可惜 AWS 的 Route53 跟 Cloudfront 不支援&amp;hellip; :/&lt;br>
+看了一些文章，目前覺得 Cloudflare 在安全性這部分著墨很多，支援度也都很夠，或許該考慮看看&lt;/p>
+&lt;h2 id="參考資料">參考資料&lt;/h2>
+&lt;p>&lt;a class="link" href="https://hacks.mozilla.org/2018/05/a-cartoon-intro-to-dns-over-https/" target="_blank" rel="noopener"
+>A cartoon intro to DNS over HTTPS&lt;/a>: 非常仔細講解過程
+&lt;a class="link" href="https://blog.sean-wright.com/dns-over-tls-dns-over-https-is-it-the-privacy-magic-bullet-2/" target="_blank" rel="noopener"
+>DNS over TLS / DNS over HTTPS - Is it the privacy magic bullet?&lt;/a>&lt;/p></description></item><item><title>SDP Spec 閱讀筆記</title><link>https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</link><pubDate>Wed, 02 Oct 2019 00:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</guid><description>&lt;h1 id="介紹">介紹&lt;/h1>
+&lt;p>SDP 是一種標準化的資訊傳達方式，用來表達多媒體的內容、傳輸的位址及其他傳遞所需的 metadata，主要應用場景於多媒體傳輸的前置溝通，例如說視訊會議、VoIP(Voice over IP) 通話、影音串流等會話(Session)
+在規範中並沒有定義 SDP 該怎麼被傳輸，可以自由選用 HTTP / XMPP / RTSP / Email 等傳輸協定等&lt;/p>
+&lt;p># 名詞定義&lt;/p>
+&lt;ol>
+&lt;li>Conference:
+兩個以上的用戶正在相互通信的集合&lt;/li>
+&lt;li>Session:
+有一個發送者，一個接收者，兩者間建立一條多媒體串流的通道，資料由發送者寄發到接收者&lt;/li>
+&lt;li>Session Description：
+讓其他人可以成功加入 Conference 的資訊&lt;/li>
+&lt;/ol>
+&lt;h1 id="要求與建議">要求與建議&lt;/h1>
+&lt;p>SDP 主要功用為傳遞多媒體會話中多媒體串流的資訊，溝通會話的存在 / 及讓其他非參與者知道如何加入此會話(主要用於廣播 multicast)，內容大概分成幾個&lt;/p>
+&lt;ol>
+&lt;li>名稱跟目的&lt;/li>
+&lt;li>會話有效的時間&lt;/li>
+&lt;li>會話中涵蓋的多媒體&lt;/li>
+&lt;li>要如何接收串流的資訊 (如 位址、Port、格式等)&lt;/li>
+&lt;li>會話需要的帶寬資訊&lt;/li>
+&lt;li>個人的聯絡資料&lt;/li>
+&lt;/ol>
+&lt;h2 id="媒體與傳輸資訊">媒體與傳輸資訊&lt;/h2>
+&lt;p>這部分包含了&lt;/p>
+&lt;ol>
+&lt;li>媒體形式 (影片、聲音等)&lt;/li>
+&lt;li>傳輸協定 (RTP/UDP/IP等)&lt;/li>
+&lt;li>媒體格式 (H. 264/MPEG等)&lt;/li>
+&lt;/ol>
+&lt;p>另外還會包含位址與埠口的資訊，SDP 傳輸形式包含單播(unicast)跟多播(multicast)，多播則包含多播的群組位址，單播則是單一台的位址&lt;/p>
+&lt;h2 id="時間資訊">時間資訊&lt;/h2>
+&lt;ol>
+&lt;li>任意數量的開始與結束時間組合&lt;/li>
+&lt;li>週期性表示 (如每週三早上十點一小時)
+時間表示是全球統一格式，不包含時區或是日光節約時間&lt;/li>
+&lt;/ol>
+&lt;h2 id="私人會話">私人會話&lt;/h2>
+&lt;p>SDP 本身不涉及 public 或 private session，如果需要加密或是限定，則在傳輸時自行決定&lt;/p>
+&lt;h2 id="其他">其他&lt;/h2>
+&lt;p>SDP 本身就應該夾帶足夠的資訊讓參與者知道是否該加入 session，但如果有其他額外資訊要夾帶，可以放在另外的 URI 中；&lt;/p>
+&lt;h1 id="sdp-spec">SDP Spec&lt;/h1>
+&lt;p>文字編碼上，SDP 採用 ISO 10646 字符集並用 UTF-8 編碼方式，但是在屬性/欄位上採用 UTF-8 的子集合 US-ASCII，只有在文字欄位可以使用完整的 ISO 10646 字符集&lt;/p>
+&lt;p>SDP 是由這樣格式的文字組成&lt;/p>
+&lt;blockquote>
+&lt;p>&amp;lt;type&amp;gt;=&amp;lt;value&amp;gt;&lt;/p>
+&lt;/blockquote>
+&lt;p>type 必須是單一個大小寫區分的字元；
+value 則是相對應有結構的文字，多個值可以用空白分隔；
+切記在 = 兩側不可以有空白&lt;/p>
+&lt;p>SDP 中包含了 session-level 區段與多個 media-level 區段，session-level 區段以 &lt;code>v=&lt;/code> 開始，其屬性套用在所有的 media 區段上，但如果 media 區段有相同屬性則會被覆蓋；
+而 media-level 則是 &lt;code>m=&lt;/code>開始直到下一個 media level 區段開始&lt;/p>
+&lt;p>在 SDP 定義的順序很重要，主要是幫助更快的錯誤偵測與容易實作 parser&lt;/p>
+&lt;p>有些欄位是必填有些是選擇性，但重點是一定要按照順序，選擇性欄位以 * 註記，屬性欄位大致介紹含義，不會完整介紹&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">Session description
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> v= (protocol version)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> o= (originator and session identifier)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> s= (session name)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> i=* (session information)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> u=* (URI of description)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> e=* (email address)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> p=* (phone number)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> c=* (connection information -- not required if included in
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> all media)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> b=* (zero or more bandwidth information lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> One or more time descriptions (&amp;#34;t=&amp;#34; and &amp;#34;r=&amp;#34; lines; see below)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> z=* (time zone adjustments)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> k=* (encryption key)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=* (zero or more session attribute lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Zero or more media descriptions
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Time description
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> t= (time the session is active)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> r=* (zero or more repeat times)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Media description, if present
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> m= (media name and transport address)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> i=* (media title)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> c=* (connection information -- optional if included at
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> session level)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> b=* (zero or more bandwidth information lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> k=* (encryption key)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=* (zero or more media attribute lines
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>a= 屬性機制主要是擴展 SDP，由各個使用 SDP 的協定去使用
+有些屬性有制式的含義，有些則基於應用程式的解讀，例如&lt;/p>
+&lt;p>有些定義在 Session-level 的屬性如 連線相關 c= 或是屬性相關 a= 會套用在 Session 底下所以的 Media，除非被特別指定覆寫&lt;/p>
+&lt;p>如以下範例，所有的 media 都會被冠上 recvonly 的屬性&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">v= 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">o=jdoe 2890844526 2890842807 IN IP4 10.47.16.5
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">s=SDP Seminar
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">i=A Seminar on the session description protocol
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">u=http://www.example.com/seminars/sdp.pdf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">e=j.doe@example.com (Jane Doe)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.17.12/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">t=2873397496 2873404696
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=recvonly
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=audio 49170 RTP/AVP 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=video 51372 RTP/AVP 99
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:99 h263-1998/900000
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>文字欄位如 session 名稱和資訊等可以是包含任意位元組的字串除了以下 0x00 Nul 、 0x0a (new line) 、 0x0d (carriage return) ；
+字串以 CRLF(0x0d0a) 當作斷行，但 parser 也應該將 newline 視為斷行的標誌；
+如果沒有 a=charset 屬性指定字符集，則預設為 ISO-10646 字符集搭配 UTF-8 編碼方式&lt;/p>
+&lt;p>如果是包含 domain name，則必須確保符合 ASCII Compatible Encoding (ACE)，也就是要經過編碼跳脫字元，因為有些 SDP 相關協定定義早於國際化 domain name，所以不能直接用 UTF-8 表示&lt;/p>
+&lt;p>欄位介紹&lt;/p>
+&lt;h3 id="協定版本-v">協定版本 (v=)&lt;/h3>
+&lt;p>沒有其他版本號，就是 v=0&lt;/p>
+&lt;h3 id="來源-o">來源 (o=)&lt;/h3>
+&lt;p>描述Session 的發起者資料&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">o=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">username&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">sess-id&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">sess-version&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">nettype&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">addrtype&lt;/span>&lt;span class="p">&amp;gt;&amp;lt;&lt;/span>&lt;span class="nt">unicast-address&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>sess-id：數字組成的字串，由&lt;username> &lt;sess-id> &lt;sess-version> &lt;nettype> 四者組成的字串必須是全域唯一的 (globally unique)，sess-id 的產生可自行定義，但建議採用 NTP 格式的 timestamp 保證唯一性&lt;/li>
+&lt;li>sess-version：此 Session 描述的版號，在改變 SDP 內容時確保版號是遞增的，同樣建議用 NTP 格式 timestamp&lt;/li>
+&lt;li>nettype：採用網路類型&lt;/li>
+&lt;li>addrtype：指定 address 的類型，例如 IP4 / IP6 等&lt;/li>
+&lt;li>unicast-address：
+創建 session 機器的位址，可以是 domain name 或是 IP 表示法，不可使用 local ip 因為不確定對方是否在 local 範圍內&lt;/li>
+&lt;/ol>
+&lt;p>如果有隱私問題， username / unicast-address 可以被混淆，只要不影響全域唯一性&lt;/p>
+&lt;h3 id="session-名稱-s">Session 名稱 (s=)&lt;/h3>
+&lt;p>文字欄位，表示 Session 名稱，每份 Session description 中只能有一個，不能為空值且必須採用 ISO-10646 字元 (除非有另外指定字符集)，如果沒有要特別指定 Session 名稱，可以用空白代替如 (s= )&lt;/p>
+&lt;h3 id="session-資訊-i">Session 資訊 (i=)&lt;/h3>
+&lt;p>文字欄位，每份 session description 中每個 session 最多只能有一個，每個 media 最多也只能宣告一個；
+這資訊主要是寫給人類閱讀的，用來表示 session 或是 media stream 的用處&lt;/p>
+&lt;h3 id="uri-u">URI (u=)&lt;/h3>
+&lt;p>選擇性欄位，用來表示關於Session額外資訊的位址連結，最多只能有一個，必須放置在 media 欄位之前&lt;/p>
+&lt;h3 id="email-及電話號碼-e--p">Email 及電話號碼 (e= , p=)&lt;/h3>
+&lt;p>聯絡人的 email 跟電話號碼&lt;/p>
+&lt;h3 id="連線資訊-c">連線資訊 (“c=“)&lt;/h3>
+&lt;p>&lt;code>c=&amp;lt;nettype&amp;gt; &amp;lt;addrtype&amp;gt; &amp;lt;connection-address&amp;gt;&lt;/code>
+一份 session description 必須包含一個或是 media description 至少一個&lt;/p>
+&lt;ol>
+&lt;li>nettype：
+採用網路類型，IN 表示 internet，但未來可能有其他的支援&lt;/li>
+&lt;li>addrtype：
+位址類型，可以是非 IP 家族的&lt;/li>
+&lt;li>connection address：
+依據位址類型，顯示不同的格式&lt;/li>
+&lt;/ol>
+&lt;p>如果是應用在多播的場景下，IPv4 需要在網址後加上 TTL，而 IPv6 沒有 TTL 的概念
+在階層式的編碼下，資料串流可能被依照不同頻寬拆分成不同的來源，可以在位址加上來源數量，IP 位置會以連續的方式呈現
+例如說&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127/3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">這等同於在 media description 中如此表示
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.2/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.3/127
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="頻寬-b">頻寬 (b=)&lt;/h3>
+&lt;p>顯示預計使用的頻寬，根據不同的 bwtype 有不同含意
+&lt;code>b=&amp;lt;bwtype&amp;gt;:&amp;lt;bandwidth&amp;gt;&lt;/code>&lt;/p>
+&lt;ol>
+&lt;li>CT：conference total
+全部 Conference 帶寬上限，可能一個 Conference 包含多個 session，則建議所有 session 使用的帶寬加總合&lt;/li>
+&lt;li>AS：application specifivc&lt;/li>
+&lt;/ol>
+&lt;h3 id="timing-t">Timing (t=)&lt;/h3>
+&lt;p>&lt;code>t=&amp;lt;start-time&amp;gt; &amp;lt;stop-time&amp;gt;&lt;/code>
+表示 Session 的開始結束時間
+如果沒有指定 stop-time，則 Session 為 unbounded，表示在 start-time 之後 Session 一直保持活躍
+如果連 start-time 也沒指定，則表示 Session 是永久存在&lt;/p>
+&lt;p>建議不要採用 unbounded Session，因為 client 不知道 Session 何時結束，也不知道如何排程&lt;/p>
+&lt;h3 id="重複次數-r">重複次數 (r=)&lt;/h3>
+&lt;p>&lt;code>r=&amp;lt;repeat interval&amp;gt; &amp;lt;active duration&amp;gt; &amp;lt;offsets from start-time&amp;gt;&lt;/code>
+這會搭配 t 做使用，例如說一個節目是每次播放一小時，於週一 10am 開播，接著每週二 11am 每週播放持續三個月，則表示法為&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">t=3034423619 3042462419
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">r=604800 3600 0 90000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">// 或這樣表示
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">r=7d 1h 0 25h
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>3034423619 是開始時間，也就是某週一 10am
+3042462419 是結束時間，也就是開播三個月後的週二 11am&lt;/p>
+&lt;p>7d 是播放間隔，所以是 7天的秒數
+1h 是播放的時長
+0 25h 是距離 start time 的時間間隔，也就是(週二 11am - 週一 10am)&lt;/p>
+&lt;p>如果是以月或年重複的播放，則不能使用 r 表示，需要改用多個的 t 表示播放時間&lt;/p>
+&lt;h3 id="時區-z">時區 (z=)&lt;/h3>
+&lt;p>這欄位會影響 t 跟 r
+&lt;code>z=&amp;lt;adjustment time&amp;gt; &amp;lt;offset&amp;gt; &amp;lt;adjustment time&amp;gt; &amp;lt;offset&amp;gt; ....&lt;/code>
+如果是一個重複播放的 Session，可能會遇到日光節約日，所以要主動減去一小時，又因為不同的國家與地區對於日光節約日的計算不同，所以保留表示的彈性，如
+&lt;code>z=2882844526 -1h 2898848070 0&lt;/code>
+在重複播放時間是 2882844526 要減去一小時，但是在 2898848070 就恢復正常&lt;/p>
+&lt;h3 id="加密金鑰-k">加密金鑰 (k=)&lt;/h3>
+&lt;p>如果 SDP 是在已安全以及可被信任的方式傳遞下，可以考慮傳遞加密的金鑰(加密 media stream 而非 session description 本身)，這個欄位不傳達加密的演算法、金鑰類型等，這些全留給採用 SDP的協定去規範&lt;/p>
+&lt;p>目前支援以下幾種定義&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>k=clear:&amp;lt;encryption key&amp;gt;&lt;/code>：key 沒有改變過&lt;/li>
+&lt;li>&lt;code>k=base64:&amp;lt;encoded encryption key&amp;gt;&lt;/code>：用 base64 將 key 編碼&lt;/li>
+&lt;li>&lt;code>k=uri:&amp;lt;URI to obtain key&amp;gt;&lt;/code>：指名去 URI 拿 key，通常 URI 會走安全通道，例如 HTTPS 等&lt;/li>
+&lt;li>&lt;code>k=prompt&lt;/code>：雖然 Session 有加密但是 session description 沒有提供 key，用戶要額外去索取&lt;/li>
+&lt;/ol>
+&lt;p>再次強調 SDP 本身要是在安全的情況下才能加 k 欄位&lt;/p>
+&lt;h3 id="屬性-a">屬性 (a=)&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl"> a=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">attribute&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">attribute&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>:&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">value&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>屬性值主要用來擴展 SDP，可以用在 session level 補充對 conference 的資訊，也可放在 media level 傳遞 media stream 的資訊，在 SDP 會有若干的屬性值宣告&lt;/p>
+&lt;p>屬性值有兩種宣告方式&lt;/p>
+&lt;ol>
+&lt;li>Flag概念 (a=&lt;flag>)，例如 a=recvonly&lt;/li>
+&lt;li>鍵值 (a=&lt;attribute>:&lt;value>)，如 a=orient:landscape&lt;/li>
+&lt;/ol>
+&lt;p>至於如何處理與定義屬性值，有些屬性有定義的含義，其餘則應用程式可以彈性處理&lt;/p>
+&lt;h3 id="media-description-m">media description (m=)&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl"> m=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">media&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">port&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">proto&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">fmt&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> ...
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>一份 session description 中可能含有多個 media description，每一份 media description 從 &lt;code>m=&lt;/code> 開始直到下一個 &lt;code>m=&lt;/code>或是 session description 結束&lt;/p>
+&lt;ol>
+&lt;li>media
+類別，可以是 audio / video / text 等&lt;/li>
+&lt;li>port
+串流從哪個 port 發送，這會根據 connection infomation (c=) 而決定，對於某些傳輸協定，如 rtp 會使用兩個 port (RTP+RTCP)，所以宣告時會是 &lt;code>m=video 49170/2 RTP/AVP 31&lt;/code>，表示 RTP 使用 49170 / RTCP 使用 49171；
+如果 c 指定多個 IP 位置，則 port 成一對一映射關係，如&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127/2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=video 49170/2 RTP/AVP 31
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;pre>&lt;code>則因為 RTP 一次使用兩個 port，這表示 224.2.1.1 使用 49170、49171，224.2.1.2 使用 49172、49173
+&lt;/code>&lt;/pre>
+&lt;ol start="3">
+&lt;li>proto
+指定傳輸協定，常用的有 udp 、 RTP/AVP、RTP/SAVP 等&lt;/li>
+&lt;li>fmt
+媒體格式，會跟著 &lt;proto> 的定義，如果 &lt;proto> 是 udp 則 &lt;fmt> 需要指定 audio / video / text / application / message 一者&lt;/li>
+&lt;/ol>
+&lt;h1 id="sdp-attributes">SDP Attributes&lt;/h1>
+&lt;ol>
+&lt;li>a=cat:&lt;category>
+用逗點分隔，用來過濾 category&lt;/li>
+&lt;li>a=keywds:&lt;keywords>
+類似於 cat 屬性，透過關鍵字篩選想要的 session&lt;/li>
+&lt;li>a=tool:&lt;name and version of tool>
+表示用來創建 session 工具的名稱與版號&lt;/li>
+&lt;li>a=ptime:&lt;packet time>
+用 ms 表示一個封包中媒體的總時長&lt;/li>
+&lt;li>a=maxptime:&lt;maximum packet time>
+用 ms 表示一個封包中媒體的總時長上限&lt;/li>
+&lt;li>a=rtpmap:&lt;payload type> &lt;encoding name>/&lt;clock rate> [/&lt;encoding parameters>]
+搭配 media type(m=)宣告，補充RTP所採用的編碼方式，雖然 RTP 檔案本身就會包含 payload 格式，但是常見做法是透過參數設定動態改變
+例如說 &lt;code>u-law PCM coded single-channel audio sampled at 8 kHz&lt;/code>，他的 encode 方式固定只有一種，所以不需要另外宣告rtpmap&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">m=audio 49232 RTP/AVP 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">```bash
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 但如果是 &lt;span class="sb">`16-bit linear encoded stereo audio sampled at 16 kHz`&lt;/span>，希望用 RTP/AVP payload 格式 98 的話，就必須另外宣告解碼方式
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>m=audio 49232 RTP/AVP 98
+a=rtpmap:98 L16/16000/2&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> rtpmap 可以針對 payload 格式做映射，如
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">```md
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=audio 49230 RTP/AVP 96 97 98
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:96 L8/8000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:97 L16/8000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:98 L16/11025/2
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;pre>&lt;code>參數對應的參數可以參考 [RTP Profile for Audio and Video Conferences with Minimal Control](https://tools.ietf.org/html/rfc3551)
+&lt;/code>&lt;/pre>
+&lt;ol start="7">
+&lt;li>a=recvonly
+表明單純接收&lt;/li>
+&lt;li>a=sendrecv
+可以接收與發送，此為預設值&lt;/li>
+&lt;li>a=sendonly
+單純發送&lt;/li>
+&lt;li>a=inactive
+不接收也不發送媒體，基於 RTP 系統的即使是 inactive 也要持續發送 RTCP&lt;/li>
+&lt;li>a=orient:&lt;orientation>
+用於白板或是介紹的工具，可以指定 portrait / landscape / seascape(上下顛倒的 landscape)&lt;/li>
+&lt;li>a=framerate:&lt;frame rate>
+video frame rate 最大值，只有 medial level 的 video 類型需要&lt;/li>
+&lt;li>a=sdplang:&lt;language tag>
+SDP 資訊採用的語言，如果有多種語言建議每種語言都拆成獨立的 session description&lt;/li>
+&lt;li>a=fmtp:&lt;format> &lt;format specific parameters>
+用來傳達某些特定格式，且這些特定格式不需要是 SDP 所能理解的&lt;/li>
+&lt;/ol>
+&lt;h2 id="安全考量">安全考量&lt;/h2>
+&lt;p>SDP 常用於 offer/answer 模型的 SIP 中，用來溝通單播的會話機制，當採用這樣的模式時，要記得考量協定本身的安全性&lt;/p>
+&lt;p>SDP 只是用來描述多媒體會話的內容，接收方要注意 session description 是否通過可信任的管道與來自可信任的來源，否則網路傳輸過程可能遭遇攻擊，必須要自己承擔安全上的風險&lt;/p>
+&lt;p>常用的傳輸方式是 SAP，SAP 本身提供加密與驗證機制；
+不過有些情況下無法採用，例如接收者事前不知道發送者的時候，此時就要特別小心 parse，並注意權限的管控(僅開放有限的軟體可以操作)&lt;/p></description></item><item><title>Linux Traffic Control (tc) 研究</title><link>https://yuanchieh.page/posts/2019/2019-04-05-linux-traffic-control-tc-%E7%A0%94%E7%A9%B6/</link><pubDate>Fri, 05 Apr 2019 12:20:15 +0000</pubDate><guid>https://yuanchieh.page/posts/2019/2019-04-05-linux-traffic-control-tc-%E7%A0%94%E7%A9%B6/</guid><description>&lt;p>以下介紹如何使用 Linux Kernel 內建的工具 &lt;code>tc&lt;/code> ，完成&lt;/p>
+&lt;ol>
+&lt;li>網路流量管制，當一台主機上有多個網路服務，希望可以分配不同的網路頻寬、封包傳送的優先序等&lt;/li>
+&lt;li>模擬惡劣網路環境下的狀態，例如封包延遲、隨機性掉封包&lt;/li>
+&lt;/ol>
+&lt;p>環境則是在 MacOS 用 VM跑 Ubuntu 16.04。&lt;/p>
+&lt;h2 id="背景知識介紹-networklayer">背景知識介紹 Network Layer&lt;/h2>
+&lt;p>tc 是基於網路分層中的 Network Layer 網路層進行封包的控制，針對封包的 ip 內容進行篩選與控制。&lt;/p>
+&lt;p>&lt;strong>網路層&lt;/strong>，主要關注於如何將源端的封包透過路由器，一步步(hop)正確的傳送到接收端，中間的路由算法等略過不談，這邊主要關注於壅塞控制與服務質量&lt;/p>
+&lt;h3 id="壅塞控制--congestion-control">壅塞控制 ( Congestion Control )&lt;/h3>
+&lt;p>Congestion 壅塞是指 當主機接收的封包量增加，大於發送的量，此時會被暫存於 Buffer緩存區當中，但如果封包量填滿了緩存區，就會遺失部分封包，網路也開始壅擠。&lt;/p>
+&lt;p>避免壅塞的方式有幾種&lt;/p>
+&lt;ol>
+&lt;li>增加網路處理的能力&lt;/li>
+&lt;li>流量感知&lt;br>
+主動將封包繞開壅塞區域，走其他利用率較低的路由器，這會需要修改路由算法，將帶寬、傳送延遲等都一併放入 link state routing 的權重分配，決定封包該送往哪個路由器&lt;/li>
+&lt;li>准入控制&lt;br>
+如果發現負載過高，拒絕新的連線建立&lt;/li>
+&lt;li>流量調節&lt;br>
+當路由器發現有壅塞的可能，可以主動發出訊息，再封包上標記，又或是傳送 choke package ，告知發送者應該要降低發送的速度&lt;/li>
+&lt;li>負載脫落&lt;br>
+如果路由器來不及處理封包，為了避免壅塞會直接丟棄封包；&lt;br>
+做法有 RED( Random Early Detection)，當某個暫存區超過某個閥值，就會開始隨機丟棄封包，此時發送方就會意識到需要放緩發送速度。&lt;/li>
+&lt;/ol>
+&lt;h3 id="服務質量-qosquality-ofservice">服務質量 (QoS，Quality of Service)&lt;/h3>
+&lt;p>除了壅塞控制外，應用程式對於網路的要求也會有所不同，例如說大型文件需要較大的帶寬，但是延遲性與網路抖動沒這個敏感；&lt;br>
+但相對的影音頻直播，對於網路抖動就非常敏感，或許你可以接受一個影片穩定 delay 10秒鐘開始，但無法接受播到一半卡頓。&lt;/p>
+&lt;p>服務質量有兩種類別&lt;/p>
+&lt;ol>
+&lt;li>Integrated Service (綜合服務)：&lt;br>
+在封包傳送的路徑上，所有的路由器都保留一定額度的資源，形成專用端到端的數據流，就好比公車專用道就只能由公車行駛；&lt;br>
+好處是能夠很穩定的服務質量，但缺點就是需要非常龐大的資源，且效率不高，具體協議可以參考 RSVP，但這因為難度過高幾乎沒有實踐。&lt;/li>
+&lt;li>Differential Service (區分服務)：&lt;br>
+對比於綜合服務提供整段網路的服務質量，區分服務僅提供單個路由器的服務質量，也就是在每一次的 hop 間由該路由器保留資源(Per Hop Behavior)，等到下一跳再由下一個路由器預留資源；&lt;br>
+在 IPv4 的封包中，header 包含一個欄位 ToS( Type of Service)，共 8 bits，前 6 bits 表示服務類型，後 2 bits 表示壅塞訊息。&lt;/li>
+&lt;/ol>
+&lt;p>為了提供服務質量，路由器必須決定封包發送順序( &lt;code>Packet Scheduling&lt;/code> )以及控制流量(&lt;code>Traffic Shaping 流量整形&lt;/code>) 的功能&lt;/p>
+&lt;p>&lt;code>Traffic Shaping&lt;/code> 主要是針對突發性流量所採取的攤平流量方式，避免一次性塞滿緩存區導致封包掉落，常見的方式有兩種&lt;/p>
+&lt;ol>
+&lt;li>Leaky Bucket&lt;br>
+有一個漏洞的桶，桶的尺寸與出口的最大流速固定；&lt;br>
+只要上方有水注入，桶就會自動從出口出去，如果注入速度高於出口流速，就會開始在桶中累積，如果滿了就溢出。&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__JPPMyAsWQM4A6v2ISToeDA.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.geeksforgeeks.org/leaky-bucket-algorithm/" target="_blank" rel="noopener"
+>https://www.geeksforgeeks.org/leaky-bucket-algorithm/&lt;/a>&lt;/p>
+&lt;p>2. Token Bucket&lt;br>
+桶子內改存放 Token，如果桶子滿了就不再放 Token；&lt;br>
+如果此時有 packet 要發送，就必須從桶子中消耗一個 Token，如果沒有 Token 則 packet 不能發送。&lt;br>
+對比 Leaky Bucket優點在於 &lt;br>
+- Leaky Bucket 桶子滿了會開始丟封包，而 Token Bucket 則是丟棄 Token&lt;br>
+- 當流量低時，Token Bucket 有機會可以累積 Token，等到高峰時一次性使用掉，而 Leaky Bucket 無法做資源的保留&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__ZgZl0hEi3WGl6dKiqtkL1Q.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>&lt;a class="link" href="https://gateoverflow.in/39720/gate2016-1-54" target="_blank" rel="noopener"
+>https://gateoverflow.in/39720/gate2016-1-54&lt;/a>&lt;/p>
+&lt;p>&lt;code>Packet Scheduling&lt;/code> 當路由器一次收到多個服務質量請求的封包時，會需要 packet scheduling 機制處理發送的先後順序，最基本的就是一條 FIFO 的Queue，所以的封包都按順序排隊發送，但是這無法提供良好的服務質量保證；&lt;br>
+另一個是 Fair Queueing (公平隊列)，每個 data flow 都獨立一個 queue，路由器以輪播的方式，輪流發送封包；&lt;br>
+在此之上還有 WFQ (加權公平隊列)，每個 Queue 權重不同，權重高的發送頻率會高於權重低。&lt;/p>
+&lt;blockquote>
+&lt;p>小結：Network Layer 提供壅塞控制與服務質量的控制，而服務質量下流量整形與封包調度機制的實作，也就是後續要用 tc 控制的部分&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="常用網路指令">常用網路指令&lt;/h2>
+&lt;ol>
+&lt;li>找出裝置上目前的 network interface：&lt;br>
+Network Interface Card(網路卡) 一端是連接通訊介質(乙太網、Wifi等)，另一端則是提供主機的網路操作介面(network interface)&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">// 在 mac os 上
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ networksetup -listallhardwareports
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">// 在 ubuntu 上
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ ip link show
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>2. 觀察某 network interface 流量&lt;br>
+參考此篇文章 &lt;a class="link" href="https://www.binarytides.com/linux-commands-monitor-network/" target="_blank" rel="noopener"
+>18 commands to monitor network bandwidth on Linux server&lt;/a>，挑選了兩個不錯的工具 &lt;code>speedometer&lt;/code> 用長條圖即時表現封包流量、&lt;code>tcptrack&lt;/code> 觀察 tcp 連線狀態，方便後續實驗量測&lt;/p>
+&lt;p>3. 找出 domain name 對應的 ip&lt;br>
+因為 tc 是網路層工具，所以要篩選封包需要透過 ip ，透過 &lt;code>$host {domain}&lt;/code> 找出 ip。&lt;/p>
+&lt;h2 id="tc-基本介紹">tc 基本介紹&lt;/h2>
+&lt;p>&lt;a class="link" href="https://linux.die.net/man/8/tc" target="_blank" rel="noopener"
+>tc&lt;/a> 的流量控制主要由四個概念組成&lt;/p>
+&lt;ul>
+&lt;li>Shaping ：控制封包的傳輸速度&lt;/li>
+&lt;li>Scheduling：控制封包的發送順序&lt;/li>
+&lt;li>Policing：收到封包後的處理機制&lt;/li>
+&lt;li>Dropping：流量超過帶寬後的丟封包機制&lt;/li>
+&lt;/ul>
+&lt;p>實作上有三個物件&lt;/p>
+&lt;ol>
+&lt;li>Qdisc (queueing discipline)：&lt;br>
+當 kernel 想要透過 network interface 發送 package 時，會先全部被放在 queue 上面，預設是 pfifo，不做任何處理單純的 First-In First-Out。&lt;/li>
+&lt;li>Class&lt;br>
+有些 qdisc 可以定義 Class，Class 主要用於做流量的管制，支援 Class 的 Qdisc 又稱為 &lt;code>classful qdisc&lt;/code>，每個 Class 又包含自己內部的 Queue，所以能組成層狀的網路流量控制&lt;/li>
+&lt;li>Filter&lt;br>
+決定 package 要送往哪個 class，每個 filter 是綁定在 qdisc 上。&lt;/li>
+&lt;/ol>
+&lt;h2 id="幾種-qdisc介紹">幾種 Qdisc 介紹&lt;/h2>
+&lt;p>qdisc 有非常多種，這裏挑幾個簡單介紹，屆時可依照屬性選擇使用&lt;/p>
+&lt;h3 id="classless-qdisc">classless qdisc&lt;/h3>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://linux.die.net/man/8/tc-pfifo" target="_blank" rel="noopener"
+>pfifo / bfifo&lt;/a>&lt;br>
+針對 Packet / Byte Buffer 容量限制的 First-In First-Out Queue，這種 queue 並不會對封包有額外的操作，收到就依照順序轉發，超過 Buffer 就丟掉，這是最簡單的 qdisc。&lt;br>
+使用上如 &lt;code>sudo tc qdisc add dev enp0s5 root pfifo limit 1000&lt;/code>&lt;/li>
+&lt;li>&lt;a class="link" href="https://linux.die.net/man/8/tc-pfifo_fast" target="_blank" rel="noopener"
+>pfifo_fast&lt;/a>&lt;br>
+預設的 qdisc，內建是三條 pfifo(稱為 band)，會依據 IPV4 header 中的 ToS 轉發到對應的 band，如果 band 中有封包，會從低順位的 band 開始發送，直到清空後依序換高順位的 band&lt;/li>
+&lt;/ol>
+&lt;h3 id="classful-qdisc">classful qdisc&lt;/h3>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://www.systutorials.com/docs/linux/man/8-tc-tbf/" target="_blank" rel="noopener"
+>tbf&lt;/a>&lt;br>
+也就是 Token Bucket 實作，主要用於流量整流增加平均流速 0.5mbps 高峰 1mbps+Buffer空間 5kb&lt;br>
+&lt;code>tc qdisc add dev eth0 handle 10: root tbf rate 0.5mbit burst 5kb peakrate 1mbit&lt;/code>&lt;/li>
+&lt;li>&lt;a class="link" href="https://linux.die.net/man/8/tc-prio" target="_blank" rel="noopener"
+>prio&lt;/a>
+非常類似於 pfifo_fast，同樣預設有三條 band，但優點是可以自訂 priomap，決定 ToS 要對應到哪個 band (pfifo_fast 無法自定)；&lt;br>
+另外也支援 tc filter，用其他的條件決定封包轉發到哪個 band。&lt;/li>
+&lt;li>&lt;a class="link" href="http://man7.org/linux/man-pages/man8/tc-htb.8.html" target="_blank" rel="noopener"
+>htb&lt;/a>&lt;br>
+用於控制 outbound 帶寬流量，基於 Token Bucket 實作&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>* 補： working-conserving scheduler:&lt;br>
+每種 qdisc 可分為 working-conserving 或是 non-working-conserving，working-conserving 表示不會讓資源 idle下來；&lt;br>
+non-working-conserving 則是會在某些條件下延遲，可用於消遲抖動 (jittering )或是需要預期性的排程。&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>例如說 pfifo 收到封包後，就會立即送出；&lt;br>
+對應的 tbf 就是 non-working-conserving，收到封包後，會看是否有 token 才會送出封包，並不一定是立即發生。&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="tc延遲封包">tc — 延遲封包&lt;/h2>
+&lt;p>透過基本的 classless pfifo qdisc，實作：&lt;/p>
+&lt;ul>
+&lt;li>透過封包延遲，放緩 http連線到 stackoverflow&lt;/li>
+&lt;li>透過 bandwidth(帶寬)限制，調整 aws s3 上傳的速度&lt;/li>
+&lt;/ul>
+&lt;p>以下指令參考&lt;/p>
+&lt;h3 id="1-列出目前所有的-network-interface-的設定">1. 列出目前所有的 network interface 的設定&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tc qdisc ls
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">qdisc noqueue 0: dev lo root refcnt &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">qdisc pfifo_fast 0: dev enp0s5 root refcnt &lt;span class="m">2&lt;/span> bands &lt;span class="m">3&lt;/span> priomap &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;a class="link" href="https://linux.die.net/man/8/tc-prio" target="_blank" rel="noopener"
+>tc-prio&lt;/a> 是預設的隊列規則，如果有綁定新的隊列規則會直接覆蓋過去。&lt;br>
+預設 prio 會有三個 band，而 priomap 則表示對應 IP 封包中的 4bits TOS 欄位，將封包透過該 band 發送。&lt;/p>
+&lt;p>需注意 &lt;code>enp0s5&lt;/code> 是我自己的 network interface，記得替換成自己裝置上的 network interface&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__d566EGgUEX52WNdIpSf__AQ.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>&lt;a class="link" href="http://linux-ip.net/articles/Traffic-Control-HOWTO/classless-qdiscs.html" target="_blank" rel="noopener"
+>http://linux-ip.net/articles/Traffic-Control-HOWTO/classless-qdiscs.html&lt;/a>&lt;/p>
+&lt;h3 id="2-預設將所有的流量導向-band2">2. 預設將所有的流量導向 band 2&lt;/h3>
+&lt;p>為了避免其他封包被影響，先將所有的封包都走 band 2(指令計數從0開始)&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo tc qdisc add dev enp0s5 root handle 1: prio bands &lt;span class="m">10&lt;/span> priomap &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>handle 1: 指的是綁定到 qdisc 的 root&lt;br>
+bands 10: 可以創建 10組 band&lt;/p>
+&lt;h3 id="3-設定封包延遲">3. 設定封包延遲&lt;/h3>
+&lt;p>$ sudo tc qdisc add dev enp0s5 parent 1:1 handle 10: netem delay 100ms 10ms&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="http://man7.org/linux/man-pages/man8/tc-netem.8.html" target="_blank" rel="noopener"
+>netem&lt;/a> 是 tc 的工具之一，可用來增加延遲、掉封包、重複封包等模擬工具，&lt;code>netem delay 100ms 10ms&lt;/code> 表示每個封包延遲 100ms(+- 10ms)&lt;/li>
+&lt;li>parent 1:1 表示在 class id 1 底下，建立一個 id 為 1的子節點，因為當前的隊列沒有多層次的 class設計，所以 1:1 就對應到 band 0&lt;/li>
+&lt;li>handle 10: 表示創建一個 class id 為 10 的節點&lt;/li>
+&lt;/ol>
+&lt;p>雖然目前有增加了 band0 的延遲，但因為所有封包都是走 band2，還不會受到延遲的影響，先用工具量測目前的網路延遲，這邊我是用 curl&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ curl -o/dev/null -w &lt;span class="s2">&amp;#34;\\n%{time_connect}:%{time_starttransfer}:%{time_total}\\n&amp;#34;&lt;/span> -s &lt;span class="o">[&lt;/span>https://stackoverflow.com/&lt;span class="o">](&lt;/span>https://stackoverflow.com/&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在設定前不專業量測約為 1.5 s。&lt;/p>
+&lt;h3 id="4-加入過濾器將符合條件的封包轉送到-band0">4. 加入過濾器，將符合條件的封包轉送到 band 0&lt;/h3>
+&lt;p>$ sudo tc filter add dev enp0s5 protocol ip parent 1:0 prio 1 u32 match ip dst 151.101.0.0/16 match ip dport 443 0xffff flowid 1:1&lt;/p>
+&lt;ol>
+&lt;li>protocol 可以指定 ipv4 , ipv6 , tcp 或udp&lt;/li>
+&lt;li>prio queue 的 filter 只能綁定在 1:0 底下，所以 parent 1:0 是固定的&lt;/li>
+&lt;li>u32 是 tc 的工具，主要是針對 ip 內文做篩選，例如 match ip dst 表示對封包的目標位置坐篩選；&lt;br>
+可以設置多個 match 條件&lt;/li>
+&lt;li>flowid 1:1 表示此 filter 綁定到 band 0 上&lt;/li>
+&lt;li>多個 filter 可以綁定到同一個 band 上&lt;/li>
+&lt;/ol>
+&lt;p>設定完之後， 響應時間變成 12秒!&lt;/p>
+&lt;blockquote>
+&lt;p>因為 netem 是針對 package 做 delay，一個 http(s) request 會來回多次，每次傳送不等多的 package，所以 每個 request delay 時間會遠比 1s 長。&lt;/p>
+&lt;/blockquote>
+&lt;p>使用 prio 非常方便的是，底下的 band 可以再另外掛其他的 qdisc，例如說加上 tbf 就可以限制帶寬，加上 netem 就可以流量整形，而且 band 數量可以自行定義，相當好用。&lt;/p>
+&lt;h2 id="tc帶寬限制">tc — 帶寬限制&lt;/h2>
+&lt;p>剛才使用 pfifo qdisc，搭配 netem 做基本的流量控制，但如果需要控制帶寬，就需要用其他的 qdisc，配置 Token Bucket 或是 Leaky Bucket。&lt;/p>
+&lt;p>以下使用 classful qdisc HCB。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__yxleicti2yy9F2K0UrpmHA.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>測試限制 aws s3 上傳的帶寬&lt;/p>
+&lt;h3 id="1-刪除舊的-qdisc設定">1. 刪除舊的 qdisc 設定&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo tc qdisc del dev enp0s5 root
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="2-建立htb">2. 建立 htb&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo tc qdisc add dev enp0s5 root handle 1:0 htb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="3-加入-bandwidth-限制">3. 加入 bandwidth 限制&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo tc class add dev enp0s5 parent 1: classid 1:1 htb rate 100kbps ceil 100kbps
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>比對 s3 上傳的前後，發現上傳速度確實被限制在 100kbps&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__GZhxO8aeHFv0x3qS6lgaBg.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>如果單純想要限制上傳速度，也可以用 tc-tbf，但 htb 優點是用層狀架構限速，leaf 會受到 root 的限制，例如分配一條帶寬 10 Mbps，可以在之下分配 4 Mbps 給某網域 6 Mbps 給其他網域等等。&lt;/p>
+&lt;p>筆記會用到的其他指令&lt;/p>
+&lt;ol>
+&lt;li>使用 dd 創建指定大小的檔案&lt;br>
+if: 檔案內容來源，&lt;code>/dev/zero&lt;/code> 是特殊檔案，讀取時會提供無限的空字元&lt;br>
+of: 檔案內容輸出&lt;br>
+bs: 每次寫入的區塊大小 (byte)&lt;br>
+count: 總共寫多少個區塊&lt;br>
+&lt;code>$dd if=/dev/zero of=file.txt count=1048576 bs=1024&lt;/code>&lt;br>
+這樣會產出 file.txt 於當前目錄並佔 102MB&lt;/li>
+&lt;li>aws-cli 上傳檔案&lt;br>
+&lt;code>$aws s3 cp file.txt s3://{bucket 名稱}&lt;/code> &lt;br>
+aws s3 在上傳檔案會用多個 thread 與 ip，所以要限制比較困難。&lt;/li>
+&lt;/ol>
+&lt;h3 id="參考資料">參考資料&lt;/h3>
+&lt;p>網路相關參考自《计算机网络(第5版)》一書。&lt;/p></description></item><item><title>如何用解除授權攻擊強迫裝置斷線 Wifi 連線</title><link>https://yuanchieh.page/posts/2019/2019-01-20-%E5%A6%82%E4%BD%95%E7%94%A8%E8%A7%A3%E9%99%A4%E6%8E%88%E6%AC%8A%E6%94%BB%E6%93%8A%E5%BC%B7%E8%BF%AB%E8%A3%9D%E7%BD%AE%E6%96%B7%E7%B7%9A-wifi-%E9%80%A3%E7%B7%9A/</link><pubDate>Sun, 20 Jan 2019 01:12:22 +0000</pubDate><guid>https://yuanchieh.page/posts/2019/2019-01-20-%E5%A6%82%E4%BD%95%E7%94%A8%E8%A7%A3%E9%99%A4%E6%8E%88%E6%AC%8A%E6%94%BB%E6%93%8A%E5%BC%B7%E8%BF%AB%E8%A3%9D%E7%BD%AE%E6%96%B7%E7%B7%9A-wifi-%E9%80%A3%E7%B7%9A/</guid><description>&lt;p>&lt;a class="link" href="https://hackernoon.com/forcing-a-device-to-disconnect-from-wifi-using-a-deauthentication-attack-f664b9940142" target="_blank" rel="noopener"
+>&lt;strong>Forcing a device to disconnect from WiFi using a deauthentication attack&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>內容參考 @&lt;a class="link" href="https://hackernoon.com/@brandonskerritt" target="_blank" rel="noopener"
+>Brandon Skerritt&lt;/a> 的創作，以下僅為個人轉譯成中文，執行平台從作者的 Kali Linux 改為 Mac，紀錄一些執行的細節。&lt;/p>
+&lt;h3 id="緣由">緣由&lt;/h3>
+&lt;p>&lt;a class="link" href="https://www.itcodemonkey.com/article/4742.html" target="_blank" rel="noopener"
+>https://www.itcodemonkey.com/article/4742.html&lt;/a>&lt;/p>
+&lt;p>當 Suppliant(終端裝置) 希望與 AP 建立 Wifi 連線時，需要經過四次 Handshake，而在第三次交握時 Suppliant 會輸入 Wifi密碼，這個 Wifi 密碼會經過加密，如果密碼正確則成功建立連線，反之則斷開連線。&lt;/p>
+&lt;p>而 deauthentication attack 利用這樣的交握特性，在第三步假裝是 AP 回覆給 Suppliant驗證錯誤，因此強迫裝置斷開 Wifi 連線，這並不是透過什麼漏洞攻擊，而是 Wifi 傳輸協定原有的機制。&lt;/p>
+&lt;p>這樣的機制使得 Wifi 非常的不安全，deauthentication attack 可以中斷任意裝置的 Wifi連線，這往往只是攻擊的第一步；&lt;br>
+一般裝置 Wifi 斷線後，會用同樣的密碼再次嘗試與 AP建立連線，而此時 Wifi 無線通訊的機制，會使得相鄰的用戶也可以偷聽到這些封包，進而拆解封包，從中暴力破解 AP 的密碼；&lt;br>
+又會是邪惡的用戶偽造一個假的 AP，其他人不明所以就傻傻的連線，透過簡單的釣魚，就可以完成 Middle man attack。&lt;/p>
+&lt;p>看似邪惡的工具，但不要用在破壞也能用在自保上，在 2015 年爆出多起 Airbnb 透過 Wifi Cam 偷窺住戶，作者寫了一個 script 可以自動斷開所有的 Wifi Cam&lt;/p>
+&lt;p>&lt;a class="link" href="https://julianoliver.com/output/log_2015-12-18_14-39" target="_blank" rel="noopener"
+>&lt;strong>Detect and disconnect WiFi cameras in that AirBnB you&amp;rsquo;re staying in&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>同作者還寫了可以自動斷開 Google Glass 的 Script&lt;/p>
+&lt;p>&lt;a class="link" href="https://julianoliver.com/output/log_2014-05-30_20-52" target="_blank" rel="noopener"
+>&lt;strong>Find a Google Glass and kick it from the network&lt;/strong>&lt;/a>&lt;/p>
+&lt;h4 id="警告">*警告&lt;/h4>
+&lt;p>這項有力的工具可以用來保護個人隱私，但作者不鼓勵用於非法或是惡意的攻擊!&lt;/p>
+&lt;h3 id="deauthentication-attack">Deauthentication Attack&lt;/h3>
+&lt;p>首先要確認兩件事&lt;/p>
+&lt;ol>
+&lt;li>準備要斷開的裝置&lt;/li>
+&lt;li>該裝置連結的 Router&lt;/li>
+&lt;/ol>
+&lt;p>原本是希望找到對應的 Cmd Tool 在 Mac 平台上，但後來參考此文章&lt;/p>
+&lt;p>&lt;a class="link" href="https://louisabraham.github.io/articles/WPA-wifi-cracking-MBP.html" target="_blank" rel="noopener"
+>&lt;strong>WPA wifi cracking on a MacBook Pro with deauth&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>可以直接用 &lt;a class="link" href="https://github.com/unixpickle/JamWiFi" target="_blank" rel="noopener"
+>&lt;strong>JamWifi&lt;/strong>&lt;/a> GUI Tool，打開後開始 Scan，Scan 後可以找到 AP 並透過 MAC Address 指定裝置斷線，我在家裡嘗試過是可行的。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__EugN6S__T4PU5Bd5__9eaJ2w.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>在同篇文章中有提到後續破解 Wifi 密碼的方式，透過 deauthentication attack 斷開裝置，接著開 &lt;code>tcpdump&lt;/code> 監聽所有的封包；&lt;br>
+接著用 &lt;code>cap2hccapx&lt;/code>將 tcpdump 的資料轉換格式；&lt;br>
+最後用 &lt;code>hashcat&lt;/code> 類似暴力破解的方式，嘗試還原被 hashed 過的密碼，這裡他的演算法可以輸入 wordlist，網路上有人提供常見的 wifi 密碼，雖然說 wifi 密碼的完全字元(a-zA-Z0–9)可能性是 62 ^ 8 以上，但是利用人類的惰性，其實可能的組合沒有這麼多，這可以省下非常大量的計算時間。&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/berzerk0/Probable-Wordlists/tree/master/Real-Passwords/WPA-Length" title="https://github.com/berzerk0/Probable-Wordlists/tree/master/Real-Passwords/WPA-Length"
+target="_blank" rel="noopener"
+>&lt;strong>berzerk0/Probable-Wordlists&lt;/strong>&lt;br>
+_Version 2 is live! Wordlists sorted by probability originally created for password generation and testing - make sure…_github.com&lt;/a>&lt;a class="link" href="https://github.com/berzerk0/Probable-Wordlists/tree/master/Real-Passwords/WPA-Length" target="_blank" rel="noopener"
+>&lt;/a>&lt;/p>
+&lt;p>可以看一下自己的密碼有沒有在上面 XD&lt;/p>
+&lt;blockquote>
+&lt;p>設定密碼不要用 12345678 或是 0000000 ，另外要記得常換密碼&lt;/p>
+&lt;/blockquote></description></item><item><title>HLS 教學 (上) — 從閱讀Spec 開始</title><link>https://yuanchieh.page/posts/2018/2018-09-24-hls-%E6%95%99%E5%AD%B8-%E4%B8%8A-%E5%BE%9E%E9%96%B1%E8%AE%80spec-%E9%96%8B%E5%A7%8B/</link><pubDate>Mon, 24 Sep 2018 09:54:09 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-09-24-hls-%E6%95%99%E5%AD%B8-%E4%B8%8A-%E5%BE%9E%E9%96%B1%E8%AE%80spec-%E9%96%8B%E5%A7%8B/</guid><description>&lt;p>在數位內容的時代，影音的閱讀比例也越來越高，相關的直播與影音串流服務越來越多，而其中最常使用的串流技術規格便是HLS；&lt;br>
+近日工作上開始使用不少HLS服務，決定自己翻Spec搞懂整個技術架構，並整理成筆記分享。&lt;/p>
+&lt;p>目前預計會寫個兩篇：&lt;br>
+上篇(此篇)介紹 HLS Spec內容&lt;br>
+下篇介紹影音處理相關的規範與工具使用&lt;br>
+全文內容基於文件 &lt;a class="link" href="https://www.rfc-editor.org/rfc/rfc8216.txt" target="_blank" rel="noopener"
+>https://www.rfc-editor.org/rfc/rfc8216.txt&lt;/a> ，但內文為自己閱讀後並重組，如果有不清楚或是筆誤之處，再麻煩留言囉&lt;/p>
+&lt;h3 id="簡介與概論">簡介與概論&lt;/h3>
+&lt;p>RFC 8216 主要是介紹 HTTP Live Streaming (HLS)，主要定義&lt;code>資料的檔案格式&lt;/code>與&lt;code>Server/Client應該有的相對應行為&lt;/code> ，目前的最新版本為 7。&lt;/p>
+&lt;p>HLS 提供穩定、省花費的方式推送連續性或長時段的影片，有幾個特性&lt;/p>
+&lt;ol>
+&lt;li>接收方可以根據網路狀況調整不同解析度&lt;/li>
+&lt;li>支援加密&lt;/li>
+&lt;li>同個影音內容不同的播放條件，例如字幕切換&lt;/li>
+&lt;li>基於HTTP，可以有良好的Cache機制(省花費的原因)&lt;/li>
+&lt;/ol>
+&lt;p>HLS 大致上是將影片切成小塊狀，並透過播放清單推送，Client 收到切成塊狀的影片片段後就可以直接播放，而不需等到整個影片載完才可以播；&lt;br>
+而每個片段都可以被Cache在CDN，方便推送到全世界。&lt;/p>
+&lt;p>小塊狀的影片稱為 &lt;code>Media Segment&lt;/code>，常用的格式為 ts / fmp4&lt;br>
+播放清單則是 Playlist，格式為 m3u8&lt;/p>
+&lt;p>HLS 有兩種 Playlist 格式: &lt;code>Master Playlist&lt;/code> 與 &lt;code>Media Playlist&lt;/code>&lt;br>
+Master Playlist 主要是為了提供多種解析度、翻譯字幕的播放清單 (Media Playlist)，當 Client (如播放器)依據網路條件與用戶選擇等，則選擇支援的播放清單下載影片檔&lt;/p>
+&lt;h4 id="master-playlist">&lt;code>Master Playlist&lt;/code>&lt;/h4>
+&lt;p>主要針對相同內容提供不同的 Streaming，例如不同的解析度、不同的國家有不同的字幕等&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTM3U
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=1280000,AVERAGE-BANDWIDTH=1000000
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://example.com/low.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=2560000,AVERAGE-BANDWIDTH=2000000
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://example.com/mid.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=7680000,AVERAGE-BANDWIDTH=6000000
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://example.com/hi.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=65000,CODECS=&amp;#34;mp4a.40.5&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://example.com/audio-only.m3u8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>大意是在平均流量6000000時播放 hi.m3u8，在比較低點的1000000播放 low.m3u8，如果是針對音檔而已則播 audio-only.m3u8。&lt;/p>
+&lt;h4 id="media-playlist">&lt;code>Media Playlist&lt;/code>&lt;/h4>
+&lt;p>就是 Master Playlist中 Streaming指定的串流播放清單，主要說明要播放的片段URI、播放時長、如何解碼影片或是解密內容等等&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTM3U
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-TARGETDURATION:10
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:9.009,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://media.example.com/first.ts
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:9.009,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://media.example.com/second.ts
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:3.003,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>http://media.example.com/third.ts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這個 Media Playlist 說明了大約最大個Media Segments播放時長為10秒；&lt;br>
+第一個片段 URI 是 http:…/first.ts 長度為 9秒；&lt;br>
+第一個片段播完換第二個片段，以此類推。&lt;/p>
+&lt;h3 id="media-segments">Media Segments&lt;/h3>
+&lt;p>Media Playlist 是由多個 &lt;code>Media Segments&lt;/code> 而組成，每個Media Segments 都是必須註明檔案來源(URI)，且基本上需要是與前一個Media Segments 相連續的內容，也就是 1 播完換 2 ，2 播完換 3 的概念，除非有顯示宣告兩個Media Segments 是不連續的。&lt;/p>
+&lt;p>任一個Media Segments 都必須帶有足夠的資訊讓播放器可以解碼，在不同格式下，有些格式的初始化片段(Media Initialization Segments) 是相同的，這時候可以宣告 &lt;code>EXT-X-MAP&lt;/code> 指定，後續的Media Segments 就可以共用。&lt;/p>
+&lt;p>以下常見的支援格式有&lt;/p>
+&lt;ol>
+&lt;li>MPEG-2 Transport Stream&lt;/li>
+&lt;li>Fragmented MPEG-4&lt;/li>
+&lt;li>Packed Audio(音訊)&lt;/li>
+&lt;li>WebVTT(字幕)&lt;/li>
+&lt;/ol>
+&lt;p>前兩者是不同的影音編碼格式，MPEG-2被廣泛應用於有線電視、DVD等，而MPEG-4 是基於 MPEG-2 改良，各自有不同的格式與 Media Initialization Segments 的格式。&lt;/p>
+&lt;p>WebVTT通常需要額外的 EXT-TIMESTAMP-MAP 去與影音播放校時。&lt;/p>
+&lt;h3 id="playlist">Playlist&lt;/h3>
+&lt;p>Playlist 的檔名必須是 &lt;code>.m3u8&lt;/code> / &lt;code>.m3u&lt;/code> ，並且回傳的 HTTP Response Content-Type必須為 &lt;code>application/vnd.apple.mpegur&lt;/code> 或是 &lt;code>audio/mpegurl&lt;/code> ；&lt;br>
+編碼必須採用 &lt;code>utf-8&lt;/code> ，除了 CR / LF 外不能有其他 utf-8定義的控制碼。&lt;/p>
+&lt;p>在Playlist中，每一行可以是 URI / 空白或是由 &lt;code>#&lt;/code> 開頭的字串；&lt;br>
+特別注意 # 開頭的字串可以是標籤或是註解，標籤像是 &lt;code>#EXT-X&lt;/code> 開頭，且區分大小寫(標籤全大寫)&lt;/p>
+&lt;p>URI 部分可以是相對路徑，相對於 Playlist 的URI。&lt;/p>
+&lt;p>接著介紹Playlist的組成標籤，這部分主要是節錄 Spec內容，因為是名詞定義有點枯燥，有興趣可以深入查詢，後續會有實際範例。&lt;/p>
+&lt;h4 id="basic-tags">Basic Tags&lt;/h4>
+&lt;p>Playlist 可分成 Media Playlist 與 Master Playlist，以下為兩者共用的標籤。&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>EXTM3U&lt;/strong>&lt;br>
+指定檔案為 Extented M3U，必須是檔案的第一行(雷同於html的 DOCTYPE)&lt;/li>
+&lt;li>&lt;strong>EXT-X-VERSION&lt;/strong>&lt;br>
+指定版號，目前最新版為 7，整份 Playlist只應該出現一次。&lt;/li>
+&lt;/ol>
+&lt;h4 id="media-segmentstags">Media Segments Tags&lt;/h4>
+&lt;p>Media Segments Tag 會應用於下一個 Media Segment 或是後續所有的Media Segment 上。&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>EXTINF&lt;/strong>&lt;br>
+註明該 Media Segment的時間長度，這個標籤是必須的。&lt;br>
+格式為 &lt;code>#EXTIF:&amp;lt;duration&amp;gt;,[&amp;lt;title&amp;gt;]&lt;/code> &lt;br>
+duration 單位為秒，建議用浮點數表示，如果版號小於三才使用整數&lt;/li>
+&lt;li>&lt;strong>EXT-X-BYTERANGE&lt;/strong>&lt;br>
+註記該 Media Segment只截取某範圍而非整個完整檔案&lt;br>
+格式為 &lt;code>#EXT-X-BYTERANGE:&amp;lt;n&amp;gt;[@&amp;lt;o&amp;gt;]&lt;/code> &lt;br>
+if( o ) {&lt;br>
+ o 代表 byte offset，n表示從o開始取幾個 byte&lt;br>
+} else {&lt;br>
+ o 取上一個 Media Segment的結尾&lt;br>
+}&lt;/li>
+&lt;li>&lt;strong>EXT-X-DISCONTINUITY&lt;/strong>&lt;br>
+先前說每個 Media Segment 都必須是連續的，但如果檔案格式、影音軌(Track)的數字/型別等、timestamp 有改變，就必須要顯示宣告&lt;/li>
+&lt;li>&lt;strong>EXT-X-KEY&lt;/strong>&lt;br>
+Media Segment 可以被加密，而&lt;code>#EXT-X-KEY&lt;/code>則是宣告解密的方式&lt;/li>
+&lt;li>&lt;strong>EXT-X-MAP&lt;/strong>&lt;br>
+定應 Media Initialization Segments 來源，效力應用於每個Media Segment 上；&lt;br>
+格式為 &lt;code>#EXT-X-MAP:&amp;lt;Attribute-List&amp;gt;&lt;/code>&lt;/li>
+&lt;li>&lt;strong>EXT-X-PROGRAM-DATE-TIME&lt;/strong>&lt;br>
+宣告第一個Media Segment 的絕對時間，格式為 ISO-8601，須包含時區，例如 &lt;code>#EXT-X-PROGRAM-DATE-TIME:2010–02–19T14:54:23.031+08:00&lt;/code>&lt;/li>
+&lt;li>&lt;strong>EXT-X-DATERANGE&lt;/strong>&lt;br>
+指定該時間範圍內的屬性定義，這部分我看不懂在幹嘛OTZ&lt;/li>
+&lt;/ol>
+&lt;h4 id="media-playlisttags">Media Playlist Tags&lt;/h4>
+&lt;ol>
+&lt;li>&lt;strong>EXT-X-TARGETDURATION&lt;/strong>&lt;br>
+單個 Media Segments 的 EXTINT最大值，單位為秒，格式是整數，此標籤為必填。&lt;/li>
+&lt;li>&lt;strong>EXT-X-MEDIA-SEQUENCE&lt;/strong>&lt;br>
+註記第一個Media Segment的序號，如果不存在則預設為0；&lt;br>
+此標籤需出現於所有Media Segments 之前&lt;/li>
+&lt;li>&lt;strong>EXT-X-DISCONTINUITY-SEQUENCE&lt;/strong>&lt;br>
+用於多個串流同步的序號。&lt;/li>
+&lt;li>&lt;strong>EXT-X-ENDLIST&lt;/strong>&lt;br>
+不會有更多的 Media Segment被加入 Playlist中，可以出現在清單的各處&lt;/li>
+&lt;li>&lt;strong>EXT-X-PLATLIST-TYPE&lt;/strong>&lt;br>
+可以是 EVENT 或是 VOD&lt;br>
+EVENT 表示 Media Segment 會持續加到 Playlist之後&lt;br>
+VOD表示 Playlist 不會改變了&lt;/li>
+&lt;li>&lt;strong>EXT-X-I-FRAMES-ONLY&lt;/strong>&lt;br>
+每個 Media Segment都是獨立的I-Frame，影片的編碼與前後沒有相依性，可用於快轉、快速倒帶、關鍵影格等場景＊&lt;/li>
+&lt;/ol>
+&lt;h4 id="master-playlisttags">Master Playlist Tags&lt;/h4>
+&lt;ol>
+&lt;li>&lt;strong>EXT-X-MEDIA&lt;/strong>&lt;br>
+註明在不同的場景(例如純音檔/英文字幕/法文字幕等)下播放不同的 Media Playlist，也就是不同的Rendition，但這些Playlist都必須是相同的內容；&lt;br>
+其中有許多屬性可以設定&lt;br>
+&lt;code>TYPE&lt;/code>:可以是AUDIO/VIDEO/SUBTITLE/CLOSE-CAPTIONS(隱藏字幕)&lt;br>
+&lt;code>URI&lt;/code>:對應的Media Playlist 資源位置&lt;br>
+&lt;code>LANGUAGE&lt;/code>&lt;br>
+&lt;code>ASSOC-LANGUAGE&lt;/code>：用於其他地方的語言指定，如語音 vs 文字&lt;br>
+&lt;code>DEFAULT&lt;/code>：預設播放此Playlist&lt;br>
+&lt;code>GROUP-ID&lt;/code>：自定義的名稱&lt;br>
+等等&lt;/li>
+&lt;li>&lt;strong>EXT-X-STREAM-INF&lt;/strong>&lt;br>
+宣告 Variant Stream，屬性有&lt;br>
+&lt;code>BANDWITDH&lt;/code>：加總Media Playlist的最大 Segment Bit rate&lt;br>
+&lt;code>AVERAGE-BANDWITDH&lt;/code>：平均每秒幾個bits&lt;br>
+&lt;code>CODES&lt;/code>：編解碼格式&lt;br>
+&lt;code>VIDEO&lt;/code>：其值需對應&lt;code>#EXT-X-MEDIA&lt;/code> 的&lt;code>GROUP-ID&lt;/code> ，且該&lt;code>#EXT-X-MEDIA&lt;/code> 的TYPE必須是 VIDEO&lt;br>
+&lt;code>AUDIO&lt;/code>：狀況雷同&lt;br>
+&lt;code>#EXT-X-STREAM-INF&lt;/code>與&lt;code>#EXT-X-MEDIA&lt;/code> 相輔相成&lt;/li>
+&lt;li>EXT-X-I-FRAME-STREAM-INF&lt;/li>
+&lt;li>&lt;strong>EXT-X-SESSION-DATA&lt;/strong>&lt;br>
+任意的 Session值&lt;/li>
+&lt;li>&lt;strong>EXT-X-SESSION-KEY&lt;/strong>&lt;br>
+預先加載在 Media Playlist宣告的 EXT-X-KEY的值&lt;/li>
+&lt;/ol>
+&lt;h4 id="media-or-master-playlisttags">Media or Master Playlist Tags&lt;/h4>
+&lt;ol>
+&lt;li>&lt;strong>EXT-X-INDEPENDENT_SEGMENTS&lt;/strong>&lt;br>
+註記每個Media Segments 可以單獨decode而不需要其他 segment的資訊&lt;br>
+如果出現在Master Playlist對所有 Media Playlist都有效&lt;/li>
+&lt;li>&lt;strong>EXT-X-START&lt;/strong>&lt;br>
+從何處開始播放清單&lt;br>
+需指名 TIME-OFFSET屬性，正值代表從影片開頭開始算，負值則從影片尾端開始算&lt;br>
+TIME-OFFSET值不可超過影片的長度，如果超過則正值從尾部算而負值從頭算(一個循環的概念)&lt;/li>
+&lt;/ol>
+&lt;p>以上是所有的標籤，也不是每個意思都很好理解，後續盡量以範例說明&lt;/p>
+&lt;h3 id="key-files">Key files&lt;/h3>
+&lt;p>EXT-X-KEY的URI屬性標記Key的檔案位置，用於解密Media Segments；&lt;br>
+目前的加密方式可支援 AES-128，如果採用此加密方式，則需要 IV值，用於增強AES-128加密的初始值。&lt;/p>
+&lt;h3 id="client--server-responsibilities">Client / Server Responsibilities&lt;/h3>
+&lt;p>第六章主要定義Server / Client 遇到不同標籤的處理行為，算是上面的大統整，以及實做上的引導說明。&lt;/p>
+&lt;h4 id="server">Server&lt;/h4>
+&lt;p>負責產生Playlist與提供Media Segments&lt;/p>
+&lt;p>實際如何產生來源媒體檔不再 Spec範疇中，而Server必須負責把來源媒體檔分割成連續且時長小於總目標時長的Media Segments，需注意當Server分割檔案時需要切在 &lt;code>packet&lt;/code> / &lt;code>key frame&lt;/code> 上；&lt;br>
+接著針對每個Media Segment分配特定的URI，如果Server支援 Byte-Range GET則可以在Playlist中使用 EXT-X-BYTERANGE&lt;/p>
+&lt;p>當Media Segment 被運用在 Playlist中，Server必須確保資源可以被取得且不會出錯，且下載必須是立即下載而非 Streaming&lt;/p>
+&lt;p>如果TYPE是 VOD，Server 產生出 Playlist就不應該修改；&lt;br>
+如果TYPE 是 EVENT，已經產生的Playlist也不能修改，只能在Playlist之後繼續增加行數。&lt;/p>
+&lt;p>如果Media Playlist沒有包含 EXT-X-ENDLIST，則Server 必須提供包含新的Media Segments 來更新Playlist，而提供的時間必須等 0.5 ~ 1.5 目標時間內，因為這樣才能最大化利用網路效能。&lt;/p>
+&lt;h4 id="client">Client&lt;/h4>
+&lt;p>當Client 收到Master Playlist ，可以選擇一個 Variant Stream 播放，Client 必須檢查版號與標籤的語法，如果不合則停止播放，但為了更好的向前相容，遇到無法識別的標籤或屬性值就自動忽略。&lt;/p>
+&lt;p>如果 Media Playlist TYPE 是 Event 且沒有 EXT-X-ENDLIST 則必須定期重載 Playlist 以便獲取最新的 Media Segments，但為了不帶給Server過多負擔，重新獲取的時間差必須在至少一倍的 target duration，如果第一次重載後沒有更新則至少等半個target duration 再重試。&lt;/p>
+&lt;p>這部分內容很多，有興趣可以慢慢翻，主要就是講如何載入資源與遇到標籤要怎麼處理等等&lt;/p>
+&lt;h3 id="examples">Examples&lt;/h3>
+&lt;p>&lt;a class="link" href="https://developer.apple.com/documentation/http_live_streaming/example_playlists_for_http_live_streaming" target="_blank" rel="noopener"
+>&lt;strong>Example Playlists for HTTP Live Streaming | Apple Developer Documentation&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>Spec 中也有範例，但這邊我擷取Apple Developer 的範例&lt;/p>
+&lt;h4 id="安插廣告">安插廣告&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTM3U
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-TARGETDURATION:10
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-VERSION:4
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-MEDIA-SEQUENCE:0
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:10.0,ad0.ts
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:8.0,ad1.ts
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-DISCONTINUITY
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:10.0,movieA.ts
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTINF:10.0,movieB.ts
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>注意在 ad1.ts 與 movieA.ts 中有個 &lt;code>#EXT-X-DISCONTINUITY&lt;/code> ，因為 Ad 跟 Movie 勢必是兩個不同的片段，所以必須加入才不會因為 timestamp 銜接不上而導致播放錯誤！&lt;/p>
+&lt;h4 id="master-playlist-with-alternative-audio">Master Playlist with Alternative Audio&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXTM3U
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=&amp;#34;aac&amp;#34;,NAME=&amp;#34;English&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span> DEFAULT=YES,AUTOSELECT=YES,LANGUAGE=&amp;#34;en&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> URI=&amp;#34;main/english-audio.m3u8&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=&amp;#34;aac&amp;#34;,NAME=&amp;#34;Deutsch&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span> DEFAULT=NO,AUTOSELECT=YES,LANGUAGE=&amp;#34;de&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> URI=&amp;#34;main/german-audio.m3u8&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=&amp;#34;aac&amp;#34;,NAME=&amp;#34;Commentary&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span> DEFAULT=NO,AUTOSELECT=NO,LANGUAGE=&amp;#34;en&amp;#34;, \\
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> URI=&amp;#34;commentary/audio-only.m3u8&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=1280000,CODECS=&amp;#34;...&amp;#34;,AUDIO=&amp;#34;aac&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>low/video-only.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=2560000,CODECS=&amp;#34;...&amp;#34;,AUDIO=&amp;#34;aac&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>mid/video-only.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=7680000,CODECS=&amp;#34;...&amp;#34;,AUDIO=&amp;#34;aac&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>hi/video-only.m3u8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">#EXT-X-STREAM-INF:BANDWIDTH=65000,CODECS=&amp;#34;mp4a.40.5&amp;#34;,AUDIO=&amp;#34;aac&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>main/english-audio.m3u8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果希望可以讓Video 依據不同的頻寬切換，而音檔根據不同的語言選擇切換，就可以參考這個範例&lt;/p>
+&lt;p>&lt;code>#EXT-X-MEDIA&lt;/code> 定義了Rendition，透過LANGUAGE指定語言，接著TYPE表明為AUDIO聲音檔，GROUP-ID自取為 aac；&lt;/p>
+&lt;p>而&lt;code>#EXT-X-STREAM-INF&lt;/code> 定義的是 Variant Stream，AUDIO指定為 aac，也就是對應 &lt;code>#EXT-X-MEDIA&lt;/code> 的GROUP-ID，其URI則指定播放 video。&lt;/p>
+&lt;p>可以看出常用的標籤就那幾個，有些標籤我來回看了幾次還是看不懂，像是 EXT-X-DATERANGE就很難懂，範例也都沒用上，如果有人知道實際上的應用與原理再麻煩留言了OTZ&lt;/p>
+&lt;h3 id="結語">結語&lt;/h3>
+&lt;p>整份Spec 死嗑完很多部份也還是懵懵懂懂，但至少有個全局的認知與介紹，下一章從影片處理到Playlist修改，來看實際應用的處理。&lt;/p>
+&lt;h3 id="註記">註記&lt;/h3>
+&lt;h4 id="影片編碼">影片編碼&lt;/h4>
+&lt;p>參考維基百科&lt;/p>
+&lt;p>&lt;a class="link" href="https://zh.wikipedia.org/wiki/%E8%A6%96%E8%A8%8A%E5%A3%93%E7%B8%AE%E5%9C%96%E5%83%8F%E9%A1%9E%E5%9E%8B" target="_blank" rel="noopener"
+>&lt;strong>視訊壓縮圖像類型 - 维基百科，自由的百科全书&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>影像是一幀一幀的圖片連續快速播放，但如果儲存時把每一幀都用圖片方式儲存資料量會非常大，但是影片往往一段時間的場景雷同，如果我可以先記第一張圖，其餘去計算第二張與第一張差多少的概念去儲存，就可以避免儲存過多相同冗余的數據&lt;br>
+但因為要避免掉了一點資料就全毀，保留一些彈性所以會在不同時刻安插取全圖的時機。&lt;/p>
+&lt;p>影片壓縮透過建立 I-Frame / P-Frame / B-Frame方式&lt;br>
+I-Frame 關鍵影格，基本上就儲存並壓縮整張圖，作為其他Frame解碼的依據&lt;br>
+P-Frame則僅儲存與上一個 I Frame差異的像素&lt;br>
+B-Frame則為前後預測圖像，會參考前一個 I-Frame 與後一個 P-Frame&lt;br>
+所以大致會長成 &lt;code>IBB..PIBB..P&lt;/code>，取 I-Frame / B-Frame 的頻率可以停整&lt;/p>
+&lt;p>影音檔與 FFMpeg 教學：&lt;a class="link" href="https://github.com/leandromoreira/ffmpeg-libav-tutorial" target="_blank" rel="noopener"
+>ffmpeg-libav-tutorial&lt;/a>&lt;/p></description></item><item><title>DNSSEC 基本原理介紹</title><link>https://yuanchieh.page/posts/2018/2018-07-30-dnssec-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%E4%BB%8B%E7%B4%B9/</link><pubDate>Mon, 30 Jul 2018 10:14:21 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-07-30-dnssec-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%E4%BB%8B%E7%B4%B9/</guid><description>&lt;p>前陣子在看 Cloudflare一些相關設定，剛好看到 DNSSEC這個技術名詞，以下是認識後的筆記。&lt;/p>
+&lt;p>參考資料：&lt;br>
+&lt;a class="link" href="https://www.cloudflare.com/dns/dnssec/how-dnssec-works/" target="_blank" rel="noopener"
+>https://www.cloudflare.com/dns/dnssec/how-dnssec-works/&lt;/a> &lt;br>
+&lt;a class="link" href="http://www.cc.ntu.edu.tw/chinese/epaper/0022/20120920_2206.html" target="_blank" rel="noopener"
+>http://www.cc.ntu.edu.tw/chinese/epaper/0022/20120920_2206.html&lt;/a>&lt;/p>
+&lt;h3 id="dns與dnssec">DNS與DNSSEC&lt;/h3>
+&lt;p>DNS，域名系統，用來將人類好記憶的文字域名轉換為 ip位置，就好像電腦世界的電話簿一般；&lt;br>
+但是DNS最大問題在於，取得紀錄後卻沒有驗證紀錄是否正確或是被竄改的方法，這也是 DNSSEC(Domain Name System Security Extensions) 的出現。&lt;/p>
+&lt;h3 id="數位簽章">數位簽章&lt;/h3>
+&lt;p>DNSSEC是透過數位簽章的方式，確保DNS查詢的紀錄沒有被竄改，所以先來簡單介紹什麼是數位簽章。&lt;/p>
+&lt;p>簽章，是為了確保消息&lt;code>不被竄改性&lt;/code>與&lt;code>不可誣賴性&lt;/code> ，像是契約要一試兩份，雙方確認好內容，最終簽字畫押；&lt;br>
+假設某天甲方竄改了契約內容，乙方可以拿出當初保留的契約反駁；&lt;br>
+又或是乙方想要否認契約，但是甲方同樣可以拿出契約中的乙方簽章證明。&lt;/p>
+&lt;p>甲 &amp;ndash;&amp;gt; 自己產生公鑰與私鑰，公鑰可以讓所有人取得，私鑰要保護好&lt;br>
+今天甲要給乙一份文件 Doc，為了比對用 hash產生雜湊值H&lt;br>
+接著甲將雜湊值H用私鑰加密成 H_encrypted，H_encrypted 也就是數位簽章&lt;/p>
+&lt;p>甲將 {Doc,H_encrypted} 交由丙轉交給乙，此時丙偷改了 Doc&lt;/p>
+&lt;p>乙收到後，將 Doc依照約定的hash產生出雜湊值 H&amp;rsquo;&lt;br>
+接著用甲的公鑰解開 H_encrypted =&amp;gt; H，發現H&amp;rsquo; != H，發現內容被竄改了！&lt;/p>
+&lt;p>-&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;&lt;br>
+假設剛才 Doc沒有被竄改，乙方驗證並確認收到甲傳遞的訊息&lt;br>
+但是某日甲想要反悔說沒有簽署過該份合約&lt;/p>
+&lt;p>此時乙一樣拿甲的公鑰解密數位簽章，接著比對 Doc透過hash的雜湊值，發現是一樣的，因為公鑰/私鑰是獨一無二(非常難碰撞)，只有公鑰可以解開私鑰加密的內容(反之亦然)，所以篤定 Doc是甲簽署的。&lt;/p>
+&lt;h3 id="dnssec">DNSSEC&lt;/h3>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__4__CbpPL7m9ELFi__qNmM7__w.jpeg"
+loading="lazy"
+alt="截圖自 cloudflare"
+>&lt;/p>
+&lt;p>1.DNS紀錄有多種型別，假設是宣告AAAA型別，也就是將域名對應IPv6的紀錄，每一筆記錄縮寫為RR；&lt;br>
+而在簽署過程，會把同樣型別的紀錄整合為一組，也就是這邊看到的&lt;code>RRset&lt;/code>。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__j6z50ztbEl__PPZrUqsR9Jw.jpeg"
+loading="lazy"
+alt="截圖自 cloudflare"
+>&lt;/p>
+&lt;p>2. 接著將RRset產生數位簽章，也就是RRSIG，接著回覆DNS紀錄時，總共要給三樣東西&lt;br>
+&lt;code>{RRset / RRSIG / Public ZSK}&lt;/code>&lt;br>
+Public ZSK也就是DNS Server的公鑰。&lt;/p>
+&lt;p>用戶就可以拿 Public ZSK解開 RRSIG，比對 RRset，就可知道該RRset是否真的來自DNS Server&lt;/p>
+&lt;h4 id="如何確保-public-zsk是沒有被竄改">如何確保 Public ZSK是沒有被竄改&lt;/h4>
+&lt;p>這又可以套用數位簽章了，子DNS Server會向父 DNS Server 提交他的 Public ZSK；&lt;br>
+父DNS Server就當作 &lt;code>{子DNS Server → Public ZSK}&lt;/code> 當作是一筆 RRSet(又稱DS，Delegation Signer)&lt;br>
+接著一樣用自己的公鑰(Public KSK)簽署數位簽章&lt;/p>
+&lt;p>但問題還是在，要如何在確保 Public KSK是正確的呢？&lt;br>
+這會無限遞迴數位簽章直到 DNS Root Server，這也是信任鍊(Chain of Trust)。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__iHfEalyeh8GUT__lt8uGfHw.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>有興趣看dns解析會走過些路徑可以用下列工具，像是 google.com，會先到 root dns server -&amp;gt; .com dns server -&amp;gt; google.com dns server -&amp;gt; return AA record&lt;/p>
+&lt;p>&lt;a class="link" href="https://simpledns.com/lookup-dg" target="_blank" rel="noopener"
+>&lt;strong>Trace DNS Delegation&lt;/strong>&lt;/a>&lt;/p>
+&lt;h4 id="那我們可以全盤相信-rootserver嗎">那我們可以全盤相信 Root Server嗎?&lt;/h4>
+&lt;p>這篇文章說明了整個Root Server在發布公鑰/私鑰的嚴謹性，頂級域名商(.com, .edu, .org …)他們的專業維護整個網路安全的可靠性與可信度。&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.cloudflare.com/dns/dnssec/root-signing-ceremony/" target="_blank" rel="noopener"
+>&lt;strong>The DNSSEC Root Signing Ceremony | Cloudflare&lt;/strong>&lt;/a>&lt;/p></description></item></channel></rss>

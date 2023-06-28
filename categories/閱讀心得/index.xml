@@ -1,0 +1,829 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>閱讀心得 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97/</link><description>Recent content in 閱讀心得 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 26 Jan 2021 08:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97/index.xml" rel="self" type="application/rss+xml"/><item><title>《Clean Coder 無瑕的程式碼》心得</title><link>https://yuanchieh.page/posts/2021/2021-01-26-clean-coder-%E7%84%A1%E7%91%95%E7%9A%84%E7%A8%8B%E5%BC%8F%E7%A2%BC%E5%BF%83%E5%BE%97/</link><pubDate>Tue, 26 Jan 2021 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-01-26-clean-coder-%E7%84%A1%E7%91%95%E7%9A%84%E7%A8%8B%E5%BC%8F%E7%A2%BC%E5%BF%83%E5%BE%97/</guid><description>&lt;p>&lt;img src="https://yuanchieh.page/%27/post/2021/img/0126/cover.jpeg%27"
+loading="lazy"
+>&lt;/p>
+&lt;p>Clean Code 相信很多人都看過，提供軟體界一個自我審思程式碼品質的標竿，也被許多工程師奉為圭臬，這一本 Clean Coder 更多著重於&lt;code>身為一名專業人士所需具備的內涵&lt;/code>，包括但不限於程式碼&lt;/p>
+&lt;p>Highlight 兩點我覺得被重重提醒的地方，並提出一些自己的想法&lt;/p>
+&lt;h2 id="說不與說是">說「不」與說「是」&lt;/h2>
+&lt;p>身為工程師，都遇過 PM 臨時來的需求，並強硬的要壓一個不太合理的日期，在這種壓力下，不論是出於善意或是懶得爭辯，是否都曾說過「好的我試試」&lt;br>
+對於答應接下工作的工程師而言，「試試」就是代表有可能做到，但是 PM 會解讀成「好的沒問題」&lt;br>
+等到上線日來臨開天窗，身為 PM 覺得被工程師耍了，而工程師也很無辜的表示「就說試試而已」，開始踢起皮球，這對雙方都是很不專業的表現&lt;/p>
+&lt;p>當我們要&lt;code>給予承諾時，請非常小心我們的措辭&lt;/code>，如果因為壓力就改口說「我試試看」，那是否代表著過去的你都在偷懶，在壓力相逼的情況下反而增加工作產能？&lt;br>
+如果還是照既定的方式做，那所謂的「嘗試」又是在嘗試什麼呢？&lt;/p>
+&lt;p>這聽起來很理想化，或許會嗤之以鼻，但及早說不，並堅守底線，不要因為壓力就放棄測試，不要因為壓力就想寫出有臭味的程式碼，身為專業人士應該有對自己工作品質的保證，而不是一昧的降低標準&lt;/p>
+&lt;blockquote>
+&lt;p>或許更好的方式是將任務細分，在時限內給出合理的成果，並規劃未來逐步完成的時辰，遇到時辰困難應儘早反應，而不是抱著僥倖的心態祈禱或是冷眼看著任務失敗&lt;/p>
+&lt;/blockquote>
+&lt;p>當確定要接下任務時，請確保再給予「是」的承諾時包含三個步驟&lt;/p>
+&lt;ol>
+&lt;li>口頭上說自己會去做&lt;/li>
+&lt;li>心裡認真對待自己所做出的承諾&lt;/li>
+&lt;li>真的付諸行動&lt;/li>
+&lt;/ol>
+&lt;p>如果發現有這些徵兆，那多半承諾都會落空&lt;/p>
+&lt;ol>
+&lt;li>需要 / 應當 - 我們需要有人完成這項事情&lt;/li>
+&lt;li>希望 / 但願 - 但願我有時間幫你處理&lt;/li>
+&lt;li>讓我們 (而不是「讓我」) - 讓我們一起做這項任務&lt;/li>
+&lt;/ol>
+&lt;p>真正的承諾，應當是&lt;code>明確指出自己將負責這件事情，並給予明確的時辰與交付內容&lt;/code>&lt;/p>
+&lt;p>這點真的很有感，尤其是做後端，時常要協助其他團隊調查 API 呼叫紀錄 / 伺服器運作狀況 / DB 資料查詢等瑣事，常常會說「好的，我等等幫你查」，一方面正事一直被打斷效率差，另一方面也容易忘記答應過的事情，導致整天工作很忙卻也沒有什麼產出&lt;/p>
+&lt;p>後來我做了一些調整&lt;/p>
+&lt;ol>
+&lt;li>上班一開始就用筆記本寫下今天要完成的任務&lt;/li>
+&lt;li>開發途中有人敲 slack 需要協助，除非事態緊急，否則等任務做到一個階段再回覆&lt;/li>
+&lt;li>每天只接固定的瑣事數量，其餘的給予明確時間回覆(如隔天)&lt;/li>
+&lt;/ol>
+&lt;p>盡可能確保自己的任務準時且有品質交付，之餘也協助其他團隊成員的調查，讓自己給予的承諾是正面的&lt;/p>
+&lt;h2 id="預估">預估&lt;/h2>
+&lt;p>預估工時是一個蠻微妙的藝術，PM 會拿一個不是完全明確的需求來詢問一個預估的工時，預估不是承諾，帶有著一點模糊的空間，「可能三天？如果有緊急事件可能要五天？」未來有著太多的不確定性，但是預估與資源安排息息相關，不能因為預估不準而讓 PM 難以安排進度，&lt;code>而往往工程師有過度樂觀的狀況 (笑&lt;/code>&lt;/p>
+&lt;h3 id="pert-program-evaluation-and-review-technique">PERT (Program Evaluation and Review Technique)&lt;/h3>
+&lt;p>美軍在 1957 年發展潛艇極地航行計畫時所設計的預估工時方法，採用三個數值&lt;/p>
+&lt;ol>
+&lt;li>O 異常樂觀：所有事情都很順利的情況下的工時，機率應小於 1%&lt;/li>
+&lt;li>N 常規預估：機率發生最高的預估工時&lt;/li>
+&lt;li>P 異常悲觀：考量各種災害如地震等，給予最悲觀的工時預估，機率應小於 1%&lt;/li>
+&lt;/ol>
+&lt;p>得出上面三個數值後，可以用機率分析表示&lt;/p>
+&lt;ol>
+&lt;li>預估完成工時: u = (O+4N+P) / 6&lt;/li>
+&lt;li>標準差，用來衡量不確定性：(P-O) / 6&lt;/li>
+&lt;/ol>
+&lt;h3 id="德爾菲法">德爾菲法&lt;/h3>
+&lt;p>剛才的 PERT 是一個人預估的工時，但是換一個人可能會給出不同的預估結果，仰賴團隊成員給出不同的預估，最後達成共識也是一種方法&lt;/p>
+&lt;p>主持人請每個成員在他人不知道的狀況下決定預估工時，時間到一起亮牌(數手指之類的)，看大家是否有共識，如果有人有很大的歧異，則開始討論分歧的依據，接著下一輪，直到大家給予的評估都差不多才結束&lt;/p>
+&lt;p>凝聚共識也是很重要的一環，尤其是團隊合作上，從每一個人評估工時的不同，就能去看出對於細節與實作想法上的差異，彌平這類的差異可以讓團隊合作更順暢&lt;/p>
+&lt;h3 id="大數定律">大數定律&lt;/h3>
+&lt;p>將大任務拆解成小任務後在估時會比較精準，且經過拆解可以更理解任務的各種面向&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>書中還有談其他面向如測試 / 練習 / 協作等，算蠻有趣的一本書，明確指出專業人士的區別，其中舉的案例也是歷歷在目，值得在職涯中時時品味&lt;/p></description></item><item><title>《一千零一個點子之後：NETFLIX創始的祕密》閱讀心得</title><link>https://yuanchieh.page/posts/2020/2020-09-17-%E4%B8%80%E5%8D%83%E9%9B%B6%E4%B8%80%E5%80%8B%E9%BB%9E%E5%AD%90%E4%B9%8B%E5%BE%8Cnetflix%E5%89%B5%E5%A7%8B%E7%9A%84%E7%A5%95%E5%AF%86%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97/</link><pubDate>Thu, 17 Sep 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-09-17-%E4%B8%80%E5%8D%83%E9%9B%B6%E4%B8%80%E5%80%8B%E9%BB%9E%E5%AD%90%E4%B9%8B%E5%BE%8Cnetflix%E5%89%B5%E5%A7%8B%E7%9A%84%E7%A5%95%E5%AF%86%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97/</guid><description>&lt;p>&lt;img src="https://yuanchieh.page/post/img/20200917/netflix.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>每家知名的巨頭，都有包裝後漂亮的「公關」創業故事，像是 Netflix 就是創辦人 Reed Hastings 去百視達租片因為晚還被罰錢，憤而創辦的故事&lt;br>
+這個故事的包裝是因為當時 Netflix 被百視達拒絕收購後，為了簡潔、有吸引力順便推銷自家產品特色 (沒有遲還罰款) 所編造的，這確實是個很棒的腳本，但真實的創業故事遠比這一小段精彩的很多&lt;/p>
+&lt;p>這本書有趣的地方在於，作者 Marc Randolph 鉅細彌遺地從點子發想到創辦前緊鑼密鼓的籌劃，公司經歷多次 Pivot 終於摸索出自己的一套商業模式，描述的方式連當天吃什麼 / 跟家人的互動 / 與公司成員的對話等都撰寫下來，讓人身歷其經跟著 Neflix 一起走過那一段歲月的感覺，但又不會撈叨到如日記般的瑣碎&lt;/p>
+&lt;p>以下重點整理幾點個人覺得很精彩的部分&lt;/p>
+&lt;h2 id="一千零一個點子">一千零一個點子&lt;/h2>
+&lt;p>Marc 因為公司被收購而與 Reed 所共事，因為公司要跑行政流程，兩人接下來數個月都無所事事，在每天通勤路上，Marc 會不斷地丟出新點子與 Reed 討論，「客製化棒球棍」/ 「郵寄洗髮精」，Marc 擅長 Marketing / 挖掘新點子，而 Reed 則是有理性且有邏輯的分析每一個點子，一路上兩人不斷的爭執、持續激盪新的想法&lt;/p>
+&lt;blockquote>
+&lt;p>每一個好點子的背後都有堆積如山的爛點子，甚至有時候好點子出現時你還無法察覺&lt;/p>
+&lt;/blockquote>
+&lt;p>後來 Marc 在每一夜要哄小孩睡覺時，拿起來錄影帶《阿拉丁》，跟 Reed 討論時正好他被百視達坑了 40 美金，在多個爛點子轟炸下，這似乎是一個有前景的點子&lt;/p>
+&lt;p>Marc 接著組織團隊，開始想如何打造「郵寄出租錄影帶」事業，跟團隊討論後發現，為了方便用戶，公司要負擔來回的郵費 / 包材等，算一算成本高的驚人，經過試算後必須要出租一百次才有辦法還本，這根本就行不通&lt;/p>
+&lt;p>但是當時(1997年)新的影音格式 DVD 即將問世，扭轉了錄影帶所造成的問題&lt;/p>
+&lt;ol>
+&lt;li>一張薄如 CD 的體積與重量&lt;/li>
+&lt;li>加上之前廠商因為規格之亂 &lt;a class="link" href="https://zh.wikipedia.org/zh-tw/%E5%BD%95%E5%83%8F%E5%B8%A6%E6%A0%BC%E5%BC%8F%E6%88%98" target="_blank" rel="noopener"
+>wiki: 錄影機格式戰&lt;/a>，所以大家比較願意組織聯盟遵循同一套規範&lt;/li>
+&lt;li>媒體產業背景的歷史因素，好萊塢等娛樂產業不滿百視達壟斷租片市場，DVD 預計發行的價格是錄影帶的 1/5&lt;br>
+瞬間讓郵寄出租 DVD 這個點子可行&lt;/li>
+&lt;/ol>
+&lt;p>雖說 DVD 前景看起來很誘人，回溯時空當時還是極為小眾的市場，甚至 Marc 和 Reed 都沒看過 DVD，但 Marc 極力說服 Reed，最後兩人賭說「如果郵寄 CD 可以成功」，他們就認真考慮開公司做郵寄 DVD 的生意&lt;/p>
+&lt;h2 id="聚集頂尖人才並放手讓他們發揮">聚集頂尖人才並放手讓他們發揮&lt;/h2>
+&lt;p>&lt;code>「真正的創新，不會來自由上而下的發號施令，也不會來自定義狹隘的任務。你要雇用一群專注於大目標的創新者，他們有辦法找出自己身處何方，著手解決問題」&lt;/code>
+直接從書中摘錄這一段，描繪了 Marc 最一開始建立團隊與運營的方向，放手讓專業的人才去自由發揮，Marc 只抓住大方向，並持續找尋外部合作機會，例如與索尼 / 東芝談合作，這兩家是當時販售 DVD 播放器的大廠，推出了買新機免費租片的行銷方案&lt;/p>
+&lt;p>回顧 Marc 本人的生命經歷與生活哲學，他十分重視以前在野外求生的訓練，在野外攀岩 / 溯溪 / 登山時，你必須環顧整個環境，找出任何可能發生意外的地方並設想如何處理，同時要不斷在沒有明確方向、混亂的現實中持續往目標邁進&lt;/p>
+&lt;p>就像是 Netflix 在上線前的準備，他們不斷的改良包裝 / 回郵的方式；倉儲人員持續找出如何有效管理庫存、找出每一家郵局的最短路徑與寄送時間；內容營運人員去各大 DVD 論壇臥底持續推播訊息，所有人都緊鑼密鼓準備服務上線的那一刻&lt;/p>
+&lt;p>時間快轉到服務即將上線的前一刻 (1997/4/14)，伺服器都架設完成，連接了一個小鈴鐺如果有訂單進來就會聲響，等到九點鐘一上線，「鈴鈴鈴」服務比想像中火熱，伺服器過了一個小時就支撐不住，IT 人員不斷往訪大賣場組建新的伺服器，所有人既緊張卻又感到欣慰，郵寄 DVD 這門生意行得通!&lt;br>
+因為生意比想像中火爆，這時候倉儲人員先前研究的各大郵局關門時間與最短路徑就非常重要，把要做的細節都實際的測試/調整過才能應付各種突發的狀況&lt;/p>
+&lt;h2 id="pivot-pivot-在-pivot">Pivot Pivot 在 Pivot&lt;/h2>
+&lt;p>這一段 Pivot 的轉折十分精彩，散落在時間軸的不同部位，Netflix 雖說一開始是打算郵寄出租 DVD，但是最一開始的營收高達 9 成都是來自販售，而非出租，他們就是搞不懂為什麼用戶不會想要持續的租借；&lt;br>
+雪上加霜的是，Amazon 前些陣子才上市，找上 Netflix 希望談併購，亞馬遜不滿足於線上賣書而已，而是希望跨足成為全都賣的電商平台，不論併購是否成功，Amazon 都決心踏入 DVD 線上販售的市場，對 Netflix 會是一個非常大的打擊&lt;/p>
+&lt;p>後來 Marc 跟 Reed 因為收購價格太低，所以拒絕了 Amazon 的邀請，但兩人意識到公司危在旦夕，所以心一橫把販售的事業停止，專心做出租，此時出租的事業雷同線上版的百視達，一樣會收取遲還罰款&lt;/p>
+&lt;blockquote>
+&lt;p>加拿大原則&lt;/p>
+&lt;/blockquote>
+&lt;p>這是 Netflix 早期做商業決策時的重要依據，他們最一開始只專注於美國市場，但後來調查如果增加加拿大，可以立刻多一成的收入，但是後來想了想，因為還會有法規 / 郵寄限制 / 語言 (加拿大有法語區)，他們決定&lt;code>只專注於一件事情上&lt;/code>，所以就稱為「加拿大原則」&lt;/p>
+&lt;p>出租與販售 DVD 的事業也是，雖說有 Amazon 這個外敵存在，但他們內部早已再討論兩種商業模式的取捨，美其名能滿足更多元用戶的需求，但也無形中讓用戶更加的困惑&lt;/p>
+&lt;p>割捨掉販售 DVD 後，Netflix 持續的燒錢，用戶似乎出租過一次就不想租第二次，Marc 與他的團隊持續想問題在什麼地方，最後他們想出了現今 Netflix 的商業模式&lt;/p>
+&lt;blockquote>
+&lt;p>訂閱制 + 沒有遲還罰款 + 不斷送到家服務&lt;/p>
+&lt;/blockquote>
+&lt;p>每一個月 19.99 美金，一次可以租四片，在網站上可以建立待看清單，每還一片就立刻送下一片給你，沒有任何的退還期限!&lt;/p>
+&lt;p>這個商業模式徹底引爆了，用戶愛死這個商業模式，在推出第一個月免費試用後，近乎九成的用戶次月續訂，這個模式更符合一般人看影片的需求&lt;/p>
+&lt;p>雖然找到適合的商業模式，但還是很燒錢，因為提供第一個月免費試用，所以公司必須負擔用戶第一個月的 DVD / 郵寄成本，現金流壓力很大，Marc 與 Reed 找上百視達談併購，最後無疾而終，Marc 在書末酸了百視達一下 :P&lt;/p>
+&lt;p>在當時 2000 年初遇到 .com 泡沫後，網路服務的募資極度困難，Netflix 不得已開始了第一波的大裁員，包含很多的創始團隊成員的離去，經過組織瘦身後所有人更加專注於目標上；&lt;br>
+在書的過程中，Marc 本人的權利也慢慢的被剝奪，其實 Marc 才是 Netflix 最一開始的創辦人，Reed 出資並擔任董事的角色，但後來 Reed 坦白地指出 Marc 缺失，改由 Reed 出任執行長變成雙首長制，後續 Marc 在上市後一段時間，離開了待七年多的 Netflix&lt;/p>
+&lt;p>Marc 很勇敢地承認自己的不足，Reed 也很誠實地以好友/董事的身份直接指出，最後也在他領導下讓 Netflix 變成市值一千五百億美元的大公司；&lt;br>
+但是看到整個過程還是不勝唏噓&lt;/p>
+&lt;h2 id="that-will-never-work---nobady-knows-anything">That will never work -&amp;gt; Nobady knows anything&lt;/h2>
+&lt;p>&lt;code>That will never work&lt;/code> 是原文書名，代表著當初Marc 的點子不被眾人看好，&lt;code>Nobady knows anything&lt;/code> 則是 Marc 給出的回應，沒有人知道任何事，只有試了才知道&lt;/p>
+&lt;p>這本書十分的精彩，過程有很多創業的小故事，例如最一開始 Netflix 叫做 kibble (狗食)，起因是 Marc 好友推薦先幫公司取的爛名字，這樣到服務快上線，即使你忙到焦頭爛額，看到名字這麼爛才會有動力去想真正的好名字 /&lt;br>
+他們曾經有一次空前絕後的好機會去行銷，結果不小心把 A 片寄給用戶，反而造成很大的公關危機！&lt;/p>
+&lt;p>十分推薦喜歡創業 / 單純對 Netflix 發跡 有興趣的朋友去觀看&lt;/p></description></item><item><title>閱讀心得《Designing with Data 善用數據幫你打造好設計》</title><link>https://yuanchieh.page/posts/2020/2020-04-05-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97designing-with-data-%E5%96%84%E7%94%A8%E6%95%B8%E6%93%9A%E5%B9%AB%E4%BD%A0%E6%89%93%E9%80%A0%E5%A5%BD%E8%A8%AD%E8%A8%88/</link><pubDate>Sun, 05 Apr 2020 11:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-04-05-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97designing-with-data-%E5%96%84%E7%94%A8%E6%95%B8%E6%93%9A%E5%B9%AB%E4%BD%A0%E6%89%93%E9%80%A0%E5%A5%BD%E8%A8%AD%E8%A8%88/</guid><description>&lt;p>公司今年度開始全面導入數據驅動設計，每個部門的所有專案都必須有明確的數據評估成效，身為一個工程師，看到公司往更有邏輯的方式組織專案，用更多的理性數據當作依據來安排做事的優先順序感到開心，這讓我們擺脫窮忙的局面，專注在執得投資的項目上；&lt;/p>
+&lt;p>但另一方面也感到憂慮，是不是任何現階段無法使用數據衡量的事物就完全不重要？例如用戶體驗、工程品質等等，是不是我們走向數據的同時就成了完全百分百的賺錢機器？&lt;/p>
+&lt;p>基於這樣的考量，同事推薦了這本書《Designing with Data 善用數據幫你打造好設計》&lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20200405/bookcover.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>這本書以設計師為出發，闡述數據是設計師的好朋友，而不是扼殺創意的牢籠，同樣的這句話我覺得也能套用到工程師身上(&lt;code>工程師也是有對品質要求的浪漫&lt;/code>)&lt;/p>
+&lt;p>如果你跟我有一樣的擔憂，又或是想知道良好的數據驅動設計是怎麼正向的推動，這本書無疑是個很棒的入門書 (我們公司的資深 UX 設計師 / PM 都推薦閱讀)&lt;/p>
+&lt;h2 id="數據思維">數據思維&lt;/h2>
+&lt;p>數據的本身只是個單純的計數，他可以是網頁上按鈕點擊的次數、用戶停留的時間長，又或是 app store 給予的評價星等，數據是個理性且沒有意義的存在，只有當人們解讀時才賦予了含義&lt;/p>
+&lt;p>當我們開始解讀數據，可以分成三個層次的思維&lt;/p>
+&lt;ol>
+&lt;li>數據驅動&lt;br>
+數據的表現很明確，可以直接回答團隊的問題，並驅動結論的產生&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>例如說希望透過改善付費頁面增加轉換率，此時透過實驗觀察到轉換率的高或低，就能有明確的結論知道改善是否有效&lt;/p>
+&lt;/blockquote>
+&lt;ol start="2">
+&lt;li>數據啟示&lt;br>
+當面對一個模糊不清的領域，團隊需要花一些時間研究與探索才能明定目標，此時數據的用途不是給予一翻兩瞪眼的結論，而是從中的差異去解讀可能性&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>另如說之前公司為了瞭解用戶對於登入方式的想法，增設多個第三方登入的方式，我們不期待這次實驗後就拍板要不要導入第三方登入，而是單純探索用戶的反應，並分析增加登入通過率的可行方案
+往往是先有了數據啟示，經過幾次的探索有了更明確的假設與目標，接著就拆分成多個數據驅動的實驗&lt;/p>
+&lt;/blockquote>
+&lt;ol start="3">
+&lt;li>數據意識&lt;br>
+當我們習慣數據思考後，開始打造完整的數據收集系統，讓整個產品的流程都能用數據去解釋與呈現&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>例如說公司之前想要衡量新用戶的體驗，重新定義數據收集的內容與格式，用數據紀錄抵達第一個「a ha moment」的用戶體驗里程，這成了後續評估專案成效的重要指標&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="為什麼需要數據">為什麼需要數據&lt;/h2>
+&lt;p>當我們在打造一項產品，我們都希望有很多的用戶能夠使用而受惠，進而付費讓整個商業模式可以運轉，持續打造能夠解決用戶痛點的好產品&lt;br>
+但是我們要如何知道「用戶是不是真的滿意我們的產品？」「推出的新功能是不是用戶真的要的？」「新的 UI 介面成效有比舊的 UI 更受歡迎嗎？」「我們該怎麼做才能增加營收？」等問題&lt;/p>
+&lt;blockquote>
+&lt;p>我們該如何知道用戶的使用情況與反饋？&lt;/p>
+&lt;/blockquote>
+&lt;p>對於網路產業來說，推出產品與收到反饋的時間都非常快，在更近一步討論數據之前，必須先回歸原點，公司再不同的階段會有不同的戰略目標，可能是營收的成長率或是用戶的成長數等&lt;/p>
+&lt;ol>
+&lt;li>[案例一] Netflix 的商業模式是訂閱制，在訂閱方案的金額固定下，用戶的訂閱數就是他們很重要的&lt;code>關鍵指標&lt;/code>，關鍵指標通常是直接跟營收做掛鉤；接著透過數據觀察到用戶的訂閱意願與觀看時間成正比，所以觀看時間就成了&lt;code>次要指標&lt;/code>&lt;/li>
+&lt;li>[案例二] Coursera 的商業模式是透過販售課程完成的結業證書，他們的次要指標是用戶是否通過第一次考試、用戶在一週內是否有反覆回來造訪網頁&lt;/li>
+&lt;/ol>
+&lt;p>在資源有限的情況下，我們必須持續且快速的嘗試，關鍵指標反應可能會比較慢，所以會需要有其他的次要指標去觀察嘗試的結果，用每一次的學習去往次要指標與關鍵指標邁進，因此快速且正確的評估用戶的反應，就是件非常重要的事情，常見的手段分成&lt;code>量化研究&lt;/code>與&lt;code>質化研究&lt;/code>&lt;/p>
+&lt;h4 id="量化研究">量化研究&lt;/h4>
+&lt;p>主要是透過客觀的觀察大量用戶的行為，透過統計分析探討「用戶是如何操作產品 / 用戶怎麼操作這項功能」&lt;/p>
+&lt;h4 id="質化研究">質化研究&lt;/h4>
+&lt;p>透過用戶訪談或使用性測試，與少量的用戶進行深度的訪談，藉此了解用戶的真實情緒反應，更注重於「為什麼用戶會怎樣思考」等問題&lt;/p>
+&lt;p>量化研究與質化研究相輔相成，例如說公司推出了新的付費方案，透過量化研究發現整體用戶的續訂率下降了，這時候就透過訪談方式去了解到用戶看到多個方案反而不清楚其中的差異，導致考慮的時間拉長等當初設計方案時欠缺考慮的方向&lt;/p>
+&lt;p>這本書反覆強調，是&lt;code>數據優先而非單純數據&lt;/code>，意即量化研究或許是主要手段，但也不能完全捨棄質化研究&lt;/p>
+&lt;h2 id="ab-測試">A/B 測試&lt;/h2>
+&lt;p>當我們執行專案後，要怎麼清楚的知道這樣的結果是基於我們做出的改變，而不是外在因素干擾或是瞎貓碰到死耗子，簡言之要釐清&lt;code>高相關性與因果性&lt;/code>，在此推薦一篇 whoscall 團隊非常棒的文章
+&lt;a class="link" href="https://medium.com/gogolook-design/%E6%95%B8%E6%93%9A%E5%88%86%E6%9E%90%E7%9A%84%E5%8A%9B%E9%87%8F-6e8c46b9fa24" target="_blank" rel="noopener"
+>數據分析的力量&lt;/a>&lt;/p>
+&lt;p>為了找出因果性，可以套用科學實驗的方法，&lt;/p>
+&lt;blockquote>
+&lt;p>拆分同質的對照組與實驗組，控制一次改變一個自變數的情況下，觀察應變數的變化關係&lt;/p>
+&lt;/blockquote>
+&lt;p>也稱作為 A/B 測試，拆分成 A,B 兩組，一組維持原本的設計，另一組依照我們的假設套用新的設計，觀察兩組的指標變化，推論假設是否成立&lt;/p>
+&lt;p>基於我們的商業目標與現有的數據，我們提出多組假設，並依據假設設計多組實驗組，實際的情況大概會長這樣&lt;/p>
+&lt;p>以下拆分成三個階段 定義 -&amp;gt; 執行 -&amp;gt; 評估&lt;/p>
+&lt;h2 id="定義">定義&lt;/h2>
+&lt;p>有幾個問題可以幫助思考目標&lt;/p>
+&lt;ol>
+&lt;li>你想把時間跟精力放在哪邊產生影響力&lt;/li>
+&lt;li>你相信什麼對使用者是好的&lt;/li>
+&lt;li>怎樣的使用者體驗或是商業關鍵議題可以被視為機會點&lt;/li>
+&lt;li>什麼是改進使用者體驗的好機會&lt;/li>
+&lt;/ol>
+&lt;p>定義的目標可以是量化指標，也可以是質化指標，例如書中以辦營隊為例，「增加營隊報名人數」可以是個目標，「讓營隊變得更好玩」也可以是個目標；&lt;br>
+但不論目標是量化還是質化，都&lt;code>必須找到量測的指標，確認自己有在往目標邁進&lt;/code>，質化目標也可以通過問卷回收、田野調查等方式&lt;/p>
+&lt;h3 id="指標的評估">指標的評估&lt;/h3>
+&lt;p>先前提到關鍵指標與次要指標，設定次驗指標的目的在於關鍵指標的反應週期可能很長，另如月訂閱制要等到一個月後才知道結果太慢了；&lt;br>
+又或是關鍵指標太不敏感，像是app store 評價，如果今天做的是局部+評估類型的改動，像是調整按鈕大小與顏色，估計是不會很快反映在評價上，所以需要額外的指標衡量&lt;/p>
+&lt;h3 id="指標之間的衝突">指標之間的衝突&lt;/h3>
+&lt;p>目標的制定是科學也是藝術，例如 eBay 的交易媒合的方式是賣家上架商品 + 買家下標兩者動作結合，他們透過數據發現在某些情況下買家棄標的比例很高，經過研究發現是目前的上架流程某些資料不透明，例如買家下標才發現商品在海外需要額外的運費跟稅收，所以他們希望研究&lt;code>增加商品資訊量是否能夠減少棄標量&lt;/code>，他們發現增加商品資訊量確實減少棄標量，但是也因為增加購買的阻力導致下標數量下滑&lt;/p>
+&lt;p>這時候&lt;code>減少棄標量增加交易品質&lt;/code>跟&lt;code>下標數量下滑&lt;/code>這兩個指標孰輕孰重，就考驗團隊的價值觀，此時 eBay 選擇前者，因為與其增加短期的下標量，他們更重視用戶的中、長期關係&lt;/p>
+&lt;p>同樣的 Airbnb 也面臨過相同的抉擇，他們發現某些屋主的物件條件明明不錯卻出租日很少，後來發現是照片拍得不夠好、資訊不夠充分，當時內部一個團隊目標是「增加屋主的上傳物件數」另一個團隊的目標是「增加屋主出租的機會」，兩者同時希望更改註冊流程，一個希望簡化另一個希望屋主更慎重註冊，實驗的方向剛好衝突，最終他們選擇融合兩者目標去平衡，達到最佳的成效&lt;/p>
+&lt;blockquote>
+&lt;p>這是一個不斷反覆思索的過程，從目標到指標的設定需要來回的檢視，並與各個團隊溝通以免實驗互相衝突&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="假說">假說&lt;/h3>
+&lt;p>有了目標後要開始發想假說，我們必須決定專案的規模以及預計學習的事物，可以用兩個維度四個象限拆分：&lt;code>局部/全面&lt;/code>、&lt;code>探索/評估&lt;/code>&lt;br>
+改動範圍如果是局部，那代表我們可以用較激進的方式去量測，因為潛在的風險比較小/&lt;br>
+專案的目的如果是評估，那代表結果必須很明確的回答某些問題，在設計數據收集方面就要往這方面邁進&lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20200405/category.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;p>例如說「改動付費頁面希望提升轉換率」就是個&lt;code>局部+評估&lt;/code>類型的需求，只改動一個頁面不會影響到其他關鍵體驗，同時專案的結果會直接決定要不要套用新的設計；&lt;br>
+而「修改視覺系統希望更清楚表達產品價值與品牌意識」就是個&lt;code>全面+探索&lt;/code>的需求，改動上線後無法直接回答轉換率是否直接因此提升，需要從其他面向與增加量測方式才能得知專案的成效&lt;/p>
+&lt;h4 id="制定假說">制定假說&lt;/h4>
+&lt;p>接著用以下的句子問自己&lt;/p>
+&lt;blockquote>
+&lt;p>對於 [使用者類型]，如果 [改變]，就會 [效應]，這是由於 [理由]，並會影響 [量測值]&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;strong>&lt;code>使用者類型&lt;/code>&lt;/strong> 可以是不同的子集，例如說新用戶跟舊用戶就是很大的差異，又或是不同國家、不同性別等，這依據產品調性與實驗的性質不同而區隔
+以下問題可以幫助思考&lt;/p>
+&lt;ol>
+&lt;li>你對於他們的人口結構有什麼了解？他們有什麼習慣？&lt;/li>
+&lt;li>他們和公司有什麼關係？&lt;/li>
+&lt;li>這是現有的使用者？新用戶？專業用戶？&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>&lt;code>改變&lt;/code>&lt;/strong> 是指希望用來影響使用者的事物，一個假說可以多種不同的改變設計&lt;/p>
+&lt;ol>
+&lt;li>你是要增加新的設計？&lt;/li>
+&lt;li>還是要移除舊的設計&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>&lt;code>效應&lt;/code>&lt;/strong> 是預期帶來的改變&lt;/p>
+&lt;ol>
+&lt;li>你發現的問題是什麼？什麼樣的用戶可以解決或是減少這個問題？&lt;/li>
+&lt;li>你發現的機會領域是什麼？&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>&lt;code>理由&lt;/code>&lt;/strong> 則是支持假說的證據&lt;/p>
+&lt;ol>
+&lt;li>你的理由是來自消費者動機？還是由某種戰術與機制來達成改變&lt;/li>
+&lt;li>有哪筆資料支持這項假說？&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>&lt;code>量測&lt;/code>&lt;/strong> 是想要影響的終極指標，用一個客觀的方式最大化學習&lt;/p>
+&lt;ol>
+&lt;li>為了瞭解你正在創造正面且夠大的影響，需要衡量什麼指標？&lt;/li>
+&lt;li>你會量測用戶的情緒嗎？&lt;/li>
+&lt;/ol>
+&lt;p>以照片分享平台為例，假說可以是「我們預測藉由增加濾鏡與照片特效，會有更多人使用我們的產品，因為這會讓他們的照片更好看、更有趣，若我們發現使用者投入層度增加就知道假設是真的」&lt;/p>
+&lt;h3 id="樣本與信心程度">樣本與信心程度&lt;/h3>
+&lt;p>在定義階段，我們需要明確測試的族群是哪些，並且決定測試的時間週期與樣本數，例如說假日上線的用戶跟平日上線的用戶可能不同，如果測試的週期不夠全面，容易得到錯誤的結論&lt;/p>
+&lt;p>為了避免假陽性(實驗判斷有效但實際無效)、假陰性(實驗判斷無效但實際有效)等實驗不準確的狀況，我們需要對測試結果有一定程度的信心，例如說有人通知巷口失火了，如果只是一個人你可能覺得在開玩笑，但有一百人都這樣說勢必就會開始起疑心，在統計上稱為&lt;code>信賴區間&lt;/code>，從母體採集某個數量的子樣本，套用數據後得到一定的信心水準&lt;/p>
+&lt;p>面對不同等級的修改會需要不同的信心水準，同時也會決定結果放量的過程，例如說跟營收相關的改動可能要比較高的信心水準，以及較謹慎緩慢的放量過程&lt;/p>
+&lt;h3 id="快速驗證">快速驗證&lt;/h3>
+&lt;p>再進行產品做實體測試前，可以推出低擬真度的 mockup 進行使用性研究，例如 spotify 希望統一視覺系統，但不確定要採用深色還是淺色的方案，此時他們將設計原型做成問卷調查先快速驗證，最終採用了深色的方案，用此減少不必要的嘗試&lt;/p>
+&lt;p>在定義的階段，試著回答以下問題&lt;/p>
+&lt;ol>
+&lt;li>你想要為公司達到的目標有哪些？&lt;/li>
+&lt;li>在你的試驗中，最重要學習到的會是什麼？&lt;/li>
+&lt;li>在生成假說時，運用了哪些數據？&lt;/li>
+&lt;li>在挑選假說時，是否真的生成了所有的假說？&lt;/li>
+&lt;/ol>
+&lt;h2 id="執行">執行&lt;/h2>
+&lt;p>這一個階段是如何&lt;code>透過設計呈現假說&lt;/code>，例如 Netflix 想要測試 「在首頁增加電影的選擇數目是否會增加銷量」，但是增加選擇數目有很多種方式，設計團隊提出[增加電影類別數]或[類別中電影的數量] (廣度與深度)，分別涉及成三個實驗&lt;/p>
+&lt;ul>
+&lt;li>25 x 100&lt;/li>
+&lt;li>50 x 75&lt;/li>
+&lt;li>50 x 100
+最終發現中間的實驗效果最好&lt;/li>
+&lt;/ul>
+&lt;p>在 &lt;a class="link" href="https://www.facebook.com/notes/liou-shih-sie/ab-testing-%E4%BA%94%E5%A4%A7%E5%BF%85%E6%AE%BA%E6%8B%9B%E6%95%B8%E8%AE%93%E4%BD%A0%E8%BD%89%E6%8F%9B%E7%8E%87%E7%AB%8B%E9%A6%AC%E6%8F%90%E5%8D%87-200-day-12-200-everythingaboutgrowth/1662617627089462/" target="_blank" rel="noopener"
+>A/B Testing 五大必殺招數，讓你轉換率立馬提升 200% - Day 12 / 200, #EverythingAboutGrowth&lt;/a> 文章中分享一段很精闢的見解&lt;/p>
+&lt;blockquote>
+&lt;p>好的實驗假設，都是奠基於使用者行為與心理脈絡發展而成&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">【功能性假設】
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">-&lt;/span> 按鈕從藍色變紅色，會提升轉換率
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">-&lt;/span> 把圖片由小放大，會提升轉換率
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">【行為心理脈絡假設】
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">-&lt;/span> 旅宿頁面加強急迫感，會提醒使用者有訂不到房的可能性與壓力，進而提升轉換率
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">-&lt;/span> 搜尋列表頁讓更多商品能一次映入眼簾，能幫助使用者容易比較多間民宿並找到喜歡民宿，進而提升轉換率
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>切記每個專案的重點要放在學習與檢討，而不是做完沒有成效就算了，擺正心態才能不斷的調整與改善&lt;/p>
+&lt;p>好的實驗並需明定目標，並平衡學習的細度以及測試的項目，在過程中可能會同時有多個假說與實驗再進行，透過不斷地檢視與學習，可以捨棄或是增加測試項目&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20200405/test_structure.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="假門測試-fake-door">假門測試 (Fake door)&lt;/h3>
+&lt;p>可以再投入完全工程開發資源前，先做假的介面可以互動但背後的工程邏輯先忽略，測試用戶是否真的有需求，&lt;code>假門測試相比問卷可以真實反應用戶的需求，但要小心有可能惹惱用戶&lt;/code>，所以在投放的過程應該要保守&lt;/p>
+&lt;p>例如我們公司為了測試用戶是否需要額外的登入功能，就先放假的登入按鈕收集用戶需求，點擊後彈窗顯示功能還在開發中，執行假們測試僅套用到極少數的用戶上，取得足夠樣本後就終止了&lt;/p>
+&lt;h3 id="試驗零">試驗零&lt;/h3>
+&lt;p>再開始聚焦細節之前，可以先退一步思考「如果功能移除會有怎樣的影響」來避免過度聚焦的副作用，Skyscanner 發現移除頁面上的「最便宜機票」按鈕不影響關鍵數據，他們就省下精力在優化這個項目上&lt;/p>
+&lt;p>這個階段可以試著問以下問題&lt;/p>
+&lt;ol>
+&lt;li>你如何打造最符合假說的體驗與設計？&lt;/li>
+&lt;li>在這個階段什麼元素是關鍵設計？什麼是其他可以之後注意的？&lt;/li>
+&lt;li>跟其他測試項目相比，這個項目能從中學到的獨特之處在哪？&lt;/li>
+&lt;li>如果需要學習到事務，最多需要幾個測試項目？&lt;/li>
+&lt;li>你能否說明每個測試項目的差異？&lt;/li>
+&lt;/ol>
+&lt;h2 id="分析">分析&lt;/h2>
+&lt;h3 id="發行-ab-測試之前">發行 AB 測試之前&lt;/h3>
+&lt;p>當要發行測試時，可以透過一些使用者研究去精練測試項目，確保實際發出的 AB 測試項目是最有價值的，向 spotify 每兩到三週會找真實的用戶到辦公室接受聲音測試，各團隊依據需求提出申請，在大規模 AB 測試之前調整文案與設計&lt;/p>
+&lt;p>接著要確保 &lt;strong>&lt;code>最小可檢測效應&lt;/code>&lt;/strong>，意即足以宣告成功的最小改變量，要記得做任何的實驗都有代價的，不論是投入的資源，還是用戶的學習成本都是，要事先明定指標的變動量大於某個數值才能帶來真正的商業價值，反之則不值得發行&lt;/p>
+&lt;p>最後要執行前，確認樣本的檢樣方式是否正確 / 確認發布後要持續多久 / 考量落實的細節等，像是 Facebook 在推出新功能前都會在紐西蘭先測試，因為 Facebook 測試會需要有實際的社交關係，同時又要與其他國家有點隔閡才不會用戶體驗互相衝突等&lt;/p>
+&lt;p>這時候可以問自己幾個問題&lt;/p>
+&lt;ol>
+&lt;li>我在嘗試學習的東西是什麼？是否我還相信我的設計可以傳達想要學習的東西？&lt;/li>
+&lt;li>如果我的試驗成功或失敗，我要做什麼？&lt;/li>
+&lt;li>我的測試樣本是否足夠大？&lt;/li>
+&lt;li>是否了解測試中的所有指標？&lt;/li>
+&lt;li>是否有良好的次要指標？&lt;/li>
+&lt;/ol>
+&lt;h3 id="評估結果">評估結果&lt;/h3>
+&lt;p>如果結果是正面的，代表假說是有價值的，但此時要仔細評估背後的學習，而不是貿然的推出新功能&lt;/p>
+&lt;p>例如說 Esty 網站推出新的後台系統流程，透過測試結果良好，但貿然推出新流程增加舊用戶的學習曲線，後來他們在不會推出與逐步釋出之間做抉擇&lt;/p>
+&lt;p>如果結果是負面的，要反過來思考&lt;/p>
+&lt;ol>
+&lt;li>用戶是否以你所想像的方式使用？&lt;/li>
+&lt;li>用戶是否關心你所沒有考慮的事物？&lt;/li>
+&lt;li>這功能是否只是群體的細分族群使用而非大眾需求？&lt;/li>
+&lt;/ol>
+&lt;p>此外有些決策是為了更大的商業考量，即使目前的測試導致些許的負面結果，但權衡之後還是值得推出，像是先前 ebay 的案例&lt;/p>
+&lt;p>如果對照組與實驗組的結果差不多，這是常見的事情，不必太氣餒，可以反過頭來檢視打造測試的過程是否有所遺漏&lt;/p>
+&lt;ol>
+&lt;li>樣本的選擇是否正確&lt;/li>
+&lt;li>是否需要更多的用戶才能量測&lt;/li>
+&lt;li>是否有外部因子干擾&lt;/li>
+&lt;li>挖掘其他次要指標與關鍵指標&lt;/li>
+&lt;/ol>
+&lt;p>接著可以決定是否進行下一輪測試，又或是將成果逐步放量到全部用戶上
+&lt;img src="https://yuanchieh.page/post/img/20200405/analyze.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>最後兩章講得是如何在公司內導入，以及招聘合適的人選，這部分就暫略，整份讀書心得其實有點生硬，畢竟是不常接觸的領域，從門外漢與公司運作角度一瞥數據驅動與AB測試的美妙，整套設計非常的理性科學，卻也在某些設計環節依舊保留創造與彈性，結合兩者才能持續打造用戶真正需要的產品&lt;/p></description></item><item><title>[閱讀心得] 《原子習慣》細微改變帶來巨大成就的實證法則</title><link>https://yuanchieh.page/posts/2019/2019-12-14-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97-%E5%8E%9F%E5%AD%90%E7%BF%92%E6%85%A3%E7%B4%B0%E5%BE%AE%E6%94%B9%E8%AE%8A%E5%B8%B6%E4%BE%86%E5%B7%A8%E5%A4%A7%E6%88%90%E5%B0%B1%E7%9A%84%E5%AF%A6%E8%AD%89%E6%B3%95%E5%89%87/</link><pubDate>Sat, 14 Dec 2019 05:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2019/2019-12-14-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97-%E5%8E%9F%E5%AD%90%E7%BF%92%E6%85%A3%E7%B4%B0%E5%BE%AE%E6%94%B9%E8%AE%8A%E5%B8%B6%E4%BE%86%E5%B7%A8%E5%A4%A7%E6%88%90%E5%B0%B1%E7%9A%84%E5%AF%A6%E8%AD%89%E6%B3%95%E5%89%87/</guid><description>&lt;p>&lt;img src="https://im1.book.com.tw/image/getImage?i=https://www.books.com.tw/img/001/082/25/0010822522.jpg&amp;amp;v=5cda990c&amp;amp;w=348&amp;amp;h=348"
+loading="lazy"
+>&lt;br>
+&lt;a class="link" href="https://www.books.com.tw/products/0010822522" target="_blank" rel="noopener"
+>博客來連結&lt;/a>&lt;/p>
+&lt;h1 id="前言">前言&lt;/h1>
+&lt;p>《原子習慣》是本實證的書籍，看完覺得很受用也感觸良多，所以會用較多的自身經驗去應證與實踐書中內容，打完心得後發現篇幅遠比自己想像中長，也比較多個人的歷程 (防雷宣告)&lt;/p>
+&lt;p>這兩個月生活有些改變，跑完人生第一場全馬馬拉松(也是人生第一場馬拉松)、部落格從 Medium 移出至 Hugo 自己 host、租屋從永和搬至三重，這三件事情算是下半年的人生里程碑，在生活習慣與環境轉變的過程，察覺自己在心理狀態上有些微妙的模式，後來看到這本書《原子習慣》，不禁想說「對啊! 就是這樣」&lt;/p>
+&lt;p>自己一直非常著迷於行為科學的書籍，我認為天生的基因會影響在不同領域投注的效率以及成就天花板，但往往常人很難去達到基因的極限，我們應該更專注於我們所能控制的 - &lt;code>打造正確的學習態度與積極正向的心態&lt;/code>&lt;/p>
+&lt;p>這些年陸續看了《大腦喜歡這樣學》、《刻意練習》到現在推薦的這本《原子習慣》，從最基層大腦的生理運作方式、各種行為科學實驗到各領域的頂尖人才研究，讓我更相信改變沒有想像中的困難，只要找對學習的方法&lt;/p>
+&lt;p>在自己生活中也試著落實書中的理念，去調整自己的學習方式與心態，雖然成就方面遠不足以說嘴，但跟兩年前的自己相比，卻也成長許多&lt;/p>
+&lt;p>最近開始察覺到自己在某些方面有了退步，例如部落格更新的頻率下降非常多，從以前一個月四篇到現在一個月一篇，一方面是有意希望下降自己發文的頻率，希望讓自己有更長的學習週期去鑽研更難的問題而非為了發文而發文，但卻也慢慢開始出現了怠惰，看到《原子習慣》才驚覺”習慣“的樣貌，發文頻率下降的原因是可以被拆解，也才有可以被改善的可能&lt;/p>
+&lt;blockquote>
+&lt;p>我們都在不斷的設定目標，小至讀書計畫大至財富自由，希望用自制力去說服(強迫)自己培養出正確的習慣，但往往堅持不了多久就放棄了，這是因為我們忽略探討「習慣」的本質，所以才無法「養成好習慣與杜絕壞習慣」&lt;/p>
+&lt;/blockquote>
+&lt;p>如果你覺得「會放棄的人就是自己不夠努力、自制力不夠好」，又或是「元旦制定了新年新計畫卻每次撐不到農曆年就放棄的人」這本書可以帶給你不同的想法，並提供非常實用的技巧&lt;/p>
+&lt;h1 id="核心理念">核心理念&lt;/h1>
+&lt;h3 id="複利的力量比原子彈還可怕">複利的力量比原子彈還可怕&lt;/h3>
+&lt;p>&lt;code>每天進步 1%累積一年之後就是 37倍的成長&lt;/code>，堅持每個微小的改善，累積起來就是驚人的成長，這也是&lt;code>&amp;quot;原子 atomic&amp;quot;&lt;/code> 在書名的含義，在 2003 年英國自行車協會雇用新的教練 戴夫・布萊爾斯福德，在此前英國自行車隊在過往一百多年只是一隻平庸的車隊，布萊爾斯福德決定在每個面向都嘗試做出微幅改善，例如重新設計坐墊讓選手更好做、設法增加輪胎摩擦力、調整每位選手的訓練模式等，累積這些正面的改變後，英國車隊在短短數年內斬獲了九項奧運紀錄與多項世界紀錄&lt;/p>
+&lt;p>已經有很多成功學都在探討複利的威力，但這邊有個重點是&lt;/p>
+&lt;blockquote>
+&lt;p>微小&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="專注於系統而非目標">專注於系統而非目標&lt;/h3>
+&lt;p>往往我們習慣制定很多的目標，例如說全馬要四小時內跑完(破四)，設立這樣的目標會帶來一種心理暗示「如果我破四了才會快樂，反之則不快樂」的單選題，如果沒有達成目標就會很沮喪，反之即使達成目標了，也就會因此停下腳步；&lt;/p>
+&lt;p>作者提議我們應該專注於&lt;code>系統&lt;/code>而非目標&lt;/p>
+&lt;blockquote>
+&lt;p>目標是想要達到的成果、系統是讓你達到成果的過程 &lt;br>
+例如說你是教練，你的目標是拿下冠軍，你的系統是招聘球員、帶隊訓練、制定比賽策略等&lt;/p>
+&lt;/blockquote>
+&lt;p>這不是說目標不重要，有了具體的目標才有後續打造系統的可能，但只聚焦於目標而非系統容易過於短視，而習慣就是專注於打造良好的系統，每日投入正確的事情，累積起來就不太需要擔心成果會太差 (此心法或許僅限於個人而非公司使用)&lt;/p>
+&lt;p>以我自身的經驗一開始馬拉松練習確實也想要拼破四，網路上找了菜單開始按表操課，每日的練習確實帶來進步，越接近比賽跑得也越快，但心情也越來越低落，甚至不太想跑步了；&lt;br>
+因為一方面目標設定的有點高，沒有參加過長跑第一次就想要挑戰全馬遠比想像中困難，另一方面一直聚焦於目標與現實的落差實在讓人沮喪，導致後面反而倦怠成績又更差強人意&lt;/p>
+&lt;h3 id="自我身份認同---你想要成為怎樣的人">自我身份認同 - 你想要成為怎樣的人&lt;/h3>
+&lt;p>當我們做一件事一個決定，可以再往回追溯「我們要如何做」以及「為什麼我們要這樣做」，也就是 Golden Circle 所描述的 &lt;code>What &amp;lt;-- How &amp;lt;-- Why&lt;/code>&lt;br>
+在行為上也是，&lt;code>成果 &amp;lt;-- 系統(改變過程) &amp;lt;-- 身份認同&lt;/code>，習慣的養成讓我們自然而然去做某件事，持續的做，在執行的過程不斷的加強「我是誰」的意象，這又回應到為什麼專注於系統有時比專注於目標更重要，因為這關乎到我們最後會成為怎樣的人；&lt;br>
+而我們自身的身份認同，也決定了我們決定去打造對應的習慣，兩者是互相影響的&lt;/p>
+&lt;p>作者舉一個有趣的例子，有個癮君子決定要戒菸了，當一個人遞香菸給他時，如果他回答「對不起我不抽煙」跟「對不起我正在戒菸」，前者戒菸的成功機率會高出許多，因為&lt;code>他的身份認同已經是不抽菸的人&lt;/code>，所以不抽菸的舉動對他來說是很正常的回應(或蓄意塑造自己)；&lt;br>
+而後者還是以抽菸者自居，每次不抽菸都是種掙扎，容易又受到誘惑而菸癮復發&lt;/p>
+&lt;h1 id="習慣形成">習慣形成&lt;/h1>
+&lt;p>習慣的養成主要是因為大腦的心力是有限的，每次也只能專注在一件事情上，但生活中大大小小有這麼多的決定要做，小至每天吃什麼穿什麼到工作上的商業決策，所以大腦為了節省資源，漸漸的一些熟悉的事情就會用固有的模式處理，這些模式就成了我們的習慣&lt;/p>
+&lt;p>但習慣的養成是有一個迴路&lt;/p>
+&lt;blockquote>
+&lt;p>提示 -&amp;gt; 渴望 -&amp;gt; 回應 -&amp;gt; 獎勵&lt;/p>
+&lt;/blockquote>
+&lt;p>心理學家做了一項實驗，將貓放在迷龍的設計中，設計多個出口，必須拉下出口旁的拉桿門才會開，成功找到出口後會有食物的獎勵，心理學家觀察到貓咪隨著練習的次數，開始知道要拉拉桿，認得正確出口的速度也越來越快&lt;/p>
+&lt;p>所以將習慣的迴路拆解套用在人的生活上&lt;/p>
+&lt;blockquote>
+&lt;p>提示：手機響了有新訊息&lt;br>
+渴望：想要知道訊息內容&lt;br>
+回應：拿起手機&lt;br>
+獎勵：滿足了知道訊息的渴望&lt;/p>
+&lt;/blockquote>
+&lt;p>當我們要建立好習慣跟戒除壞習慣，就要從這四個步驟下手&lt;/p>
+&lt;h1 id="提示">提示&lt;/h1>
+&lt;p>人類受到環境的影響遠比想像中的大，例如說商店貨架上，跟視線等高的商品區銷售額更好；又或是在零食區顯眼處擺放健康食品，不做其他改善人們也會傾向拿取健康食品&lt;/p>
+&lt;p>我們在做決定時很多時候都處於淺層意識的狀態，這時候環境的提示就會自然而然引導我們，所以想要&lt;code>建立好習慣就讓他更顯而易見 / 戒除壞習慣就連看都不要看到&lt;/code>&lt;/p>
+&lt;p>像是現代人容易受到 3C 產品的誘惑，即使想要集中精神還是會不斷的被干擾，最好的方式是連看到都不要看到，舉例來說在書房看書就把手機遺留在客廳，連看都看不到；
+如果說想要培養運動習慣，就在每天睡覺前把運動服整理好，放在一起床就會看見的地方，隔天醒來下意識就會被提示「該運動了」&lt;/p>
+&lt;h3 id="環境">環境&lt;/h3>
+&lt;p>環境對人也有提示的功能，例如說習慣在沙發上滑手機吃零食，只要一坐到沙發上就會不自覺想要去拿零食，作者建議&lt;code>一個地方就只做一件事&lt;/code>，書桌就只用來辦公跟讀書、沙發就用來看電視放鬆等等，一個位子一件事，當你到了那個環境，自然就會做原本熟悉的事情&lt;/p>
+&lt;p>如果想要徹底改頭換面，換個新的環境或許是個不錯的選擇&lt;/p>
+&lt;h1 id="渴望">渴望&lt;/h1>
+&lt;p>當人類收到獎勵時，腦中會分泌「多巴胺」，也就是讓人類感到放鬆快樂的激素，但根據研究證實，&lt;code>當渴望獎勵時而尚未收到獎勵時，也會分泌多巴胺&lt;/code>，而渴望也會比實際收到獎勵時的快樂更強烈&lt;/p>
+&lt;h3 id="綑綁獎勵">綑綁獎勵&lt;/h3>
+&lt;p>所以我們可以透過&lt;code>綑綁獎勵&lt;/code>，將一個不怎麼有吸引力的好習慣捆綁在一個喜歡的習慣上，例如說有個工程師希望培養騎腳踏車的運動習慣，同時他也很愛看 Netflix，所以他決定結合兩者，當腳踏車機踩到一定時速之後，Netflix 才會開始播放，反之就會暫停播放&lt;/p>
+&lt;p>公式是&lt;/p>
+&lt;blockquote>
+&lt;p>做完 [目前習慣後]，我將執行 [我需要的習慣]&lt;br>
+做完 [我需要的習慣] 後，我會執行 [我想要的習慣]&lt;/p>
+&lt;/blockquote>
+&lt;p>例如午休回來後打電會給三個客戶，打完後就可以滑手機這樣，將需要被培養的習慣安插在中間&lt;/p>
+&lt;h3 id="尋求團體">尋求團體&lt;/h3>
+&lt;p>人們都有尋求 &lt;code>歸屬&lt;/code> 的心理需求，我們總希望找到一個認同自我的團體，同時我們為了加強認同也不知不覺開始模仿團體中大多數人的習慣，希望藉此獲得掌聲，有研究發現如果身邊有朋友變胖了，那自己變胖的機率會提高 1/3&lt;/p>
+&lt;p>同樣的我們可以透過加入團體來培養自己新的習慣，但需要注意&lt;/p>
+&lt;ol>
+&lt;li>你希望的習慣是常態&lt;/li>
+&lt;li>你跟這個團體本身有共通點&lt;/li>
+&lt;/ol>
+&lt;p>有個共通點我覺得蠻重要的，如果沒有一開始很難融入，後續要培養習慣就會很困難&lt;br>
+我自己是加入了龍舟隊之後，發現大家都在跑馬拉松，不知不覺也興起培養跑步興趣的念頭，雖然不是跟龍舟隊一起練跑，但在社群媒體上分享互相加油，也是我一直堅持下去的動力之一&lt;/p>
+&lt;h1 id="回應">回應&lt;/h1>
+&lt;p>當你在房間排除雜念，把前置作業都準備好了，最終阻擋你完成任務的原因是什麼？&lt;/p>
+&lt;p>某大學的教授做了一項實驗，想要探討兩種模式對於拍照技巧的磨練&lt;br>
+A 組是量組，以量的做成績的計算方式，上交 100 張拿到 A，90 張拿到 B 等等；&lt;br>
+B 組是質組，學期末上交一張自認為最完美的照片，以這張作品評分&lt;/p>
+&lt;p>最後品質比較好的是哪一組呢？&lt;/p>
+&lt;p>教授發現是 &lt;code>A組&lt;/code>，因為被鼓勵大量拍攝，一開始可能拍出不好的照片，但不斷的試錯過程也提升了拍照技巧；&lt;br>
+B 組沒有規定不能大量拍攝，但因為被暗示要「追求完美」，所以反而會想太多，反而練習的次數下降，最終成果反而不這麼完美&lt;/p>
+&lt;p>當然練習也不是無腦的一直反覆做(詳見《刻意練習》一書)，但是人們會有個天性是&lt;code>追求完美，否則寧願不做&lt;/code>的心態，書中引用伏爾泰的一句話 &lt;code>至善者，善之敵&lt;/code>，寧可開始行動，慢慢修正，也不要一直埋著頭苦幹，就如同精實創業，你應該先從最小可行性產品開始，從市場得到反饋，反之人的習慣養成也是&lt;/p>
+&lt;h3 id="兩分鐘法則">兩分鐘法則&lt;/h3>
+&lt;p>作者提出 兩分鐘法則，不要怕不完美，假設你想培養做伏立挺身的習慣，不需要一開始就從 3,50 下開始，從 5 下開始就好，甚至 2 下也沒有關係，重點是 &lt;code>開始行動&lt;/code>；&lt;br>
+想要培養跑步不如從提醒自己要到戶外走走，等習慣後再慢慢增加強度，不要太好高騖遠，從&lt;code>兩分鐘&lt;/code>開始就好&lt;/p>
+&lt;h3 id="調整執行習慣的成本">調整執行習慣的成本&lt;/h3>
+&lt;p>如果希望建立習慣，我們應該要降低執行的成本，上面的兩分鐘法則是為了降低心理成本，在執行面上可以將東西歸位好，當要執行時就可以立馬行動不用在找東找西；&lt;br>
+又或是反過來，讓壞習慣的執行成本很高，作者分享到為了戒除不斷滑社交媒體，她與另一個好友互相改對方密碼，等到週五才可以跟對方要新的密碼登入，他發現到這樣的改變就大大降低他對社交媒體的依賴&lt;/p>
+&lt;h1 id="獎勵">獎勵&lt;/h1>
+&lt;p>有些時候好習慣的獎勵是有延遲性，例如說健身要過個數週才有成效，這也是為什麼好習慣不容易持續的關係，但我們還是能透過不同的方式去改變&lt;/p>
+&lt;h3 id="迴紋針策略">迴紋針策略&lt;/h3>
+&lt;p>有個成功的業務分享到，每當他打完一通電話給客戶，就把迴紋針從 A 桶搬移到 B 桶，透過投入迴紋針，他不知道要打多少通電話才會成交一通，但透過投擲迴紋針，他知道自己每次的電話都是有成果的，所以將&lt;code>目標可視化&lt;/code>是個很好追蹤的方式&lt;/p>
+&lt;p>小時候每次拿到好寶寶標章也是相同的道理，現在有許多的 App 可以幫忙追蹤，例如跑步也有跑步的里程，每次看到自己的累積，看到自己的成績穩定進步，確實有很大的滿足&lt;/p>
+&lt;p>如果可以的話讓目標追蹤很顯眼，這就會再轉變成下一個迴圈的&lt;code>提示&lt;/code>&lt;/p>
+&lt;h3 id="問責夥伴">問責夥伴&lt;/h3>
+&lt;p>也可以找個夥伴，告訴對方自己的目標後，由雙方互相提醒與鼓勵，透過人際關係給自己壓力與獎賞，是個不錯的作法&lt;/p>
+&lt;h1 id="結語">結語&lt;/h1>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">讓提示顯而易見
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">讓習慣變得有吸引力
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">讓行動輕而易舉
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">讓獎賞令人滿足
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>最終人生就是由一連串微小的行為所串連，如果我們可以更有意識地去打造自己的潛意識，那或許這樣能更貼近我們想要的生活，看完《原子習慣》讓我重新思考自己的生活，剛好適逢搬家，也是徹底打造新習慣的開端&lt;/p></description></item><item><title>[閱讀心得]《我們》、《1984》、《美麗新世界》反烏托邦三部曲</title><link>https://yuanchieh.page/posts/2018/2018-05-06-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97%E6%88%91%E5%80%911984%E7%BE%8E%E9%BA%97%E6%96%B0%E4%B8%96%E7%95%8C%E5%8F%8D%E7%83%8F%E6%89%98%E9%82%A6%E4%B8%89%E9%83%A8%E6%9B%B2/</link><pubDate>Sun, 06 May 2018 02:11:33 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-05-06-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97%E6%88%91%E5%80%911984%E7%BE%8E%E9%BA%97%E6%96%B0%E4%B8%96%E7%95%8C%E5%8F%8D%E7%83%8F%E6%89%98%E9%82%A6%E4%B8%89%E9%83%A8%E6%9B%B2/</guid><description>&lt;p>至從看了《娛樂至死》這本書後，開始思考「外在環境與內在基因如何影響人類思維」這類型的議題&lt;/p>
+&lt;p>《娛樂至死》大致上是在描述人類思考方式受到不同媒介，印刷式紙本與電視的影響，而有不同的轉變；&lt;br>
+電視時代充斥著大量的訊息，迫使人們思考開始變短促，在網路、社群時代這個影響越發劇烈，所以才有了金魚腦一詞&lt;/p>
+&lt;p>順著這個議題，近三週看了所謂 反烏托邦系列三部曲&lt;br>
+《我們》《1984》《美麗新世界》，所謂反烏托邦即是對於傳統的美好與幸福提出強烈的質疑，並以諷刺的文字來探討人們追求的完美生活。&lt;/p>
+&lt;h4 id="我們">《我們》&lt;/h4>
+&lt;p>這本以第一人稱視角，用短篇日記的方式推動劇情，大體上描述一個大一統帝國，人們只追求理性、直線、公式化的生活，每個公民都是為了大一統帝國而存在，沒有太多個人的思維；&lt;br>
+整個帝國是以科技為導向，並用一個玻璃罩限制帝國居民的移動，玻璃罩之外保留野生的叢林以及過著原始生活的野人。&lt;/p>
+&lt;p>主角是帝國中的首席飛船設計師，飛船設計目的是為了將這種美好理性的社會理念散佈到全宇宙，主角一開始以此為榮，深信人活著就是為了大一統的帝國而存在，不該有其他個人的想法；&lt;br>
+但後來遇上了一位女角，因為戀愛的衝動，開始有了自己的思想，而思想是一種罪。&lt;/p>
+&lt;p>整本書說實在我看起來也略顯冗長與沈悶，因為其實故事線不複雜、要闡述的道理也蠻直觀，作者花蠻多章節反覆的描述類似的事件，像是愛情、個人叛逆思想的萌芽、社會外在環境大一統規範間的拉扯。&lt;/p>
+&lt;h4 id="1984">《1984》&lt;/h4>
+&lt;p>描繪高壓統治的軍權帝國，老大哥用各種方式洗腦、改寫歷史，書中幾句話深刻切中要害&lt;br>
+「誰控制過去就控制未來，誰控制現在就控制過去。」&lt;br>
+主角的工作便是配合黨的政策竄改所有文書紀錄，今年生產部只生產了兩千頓糧食沒有達到政治口號的增量50%，沒關係改去年紀錄就好；&lt;br>
+當所有文書、報紙都被竄改，唯一的真相只留在作者腦中，但這真相就真的是「真相」嗎?!&lt;/p>
+&lt;p>主角後來愛上了一位叛逆的青春期少女(至少角色描繪起來很像)，到最後因為愛情而付出代價，主角一開始以為不論肉體如何折磨，只要夠堅持就可以保護心中的一方淨土；&lt;br>
+但是監控單位開始用各種酷刑折磨主角的思想，最後狠狠地把愛情也連根拔起，作者描述的十分寫實，非常的黑暗….&lt;/p>
+&lt;h4 id="美麗新世界">《美麗新世界》&lt;/h4>
+&lt;p>跟前兩本書描述方式恰好相反，但更令人毛骨悚然；&lt;br>
+書中描述人類由基因培養所批次製造，在出生時基因就已經決定好你的所有外觀、思想包含社經地位，出生後有所謂的「制約」，透過睡眠學習法不斷洗腦，例如說 討厭紅色，在5–7歲每天晚上播放5000次，自然而然長大後已經無法方便為什麼會討厭紅色，只會覺得「很自然就該討厭紅色」&lt;br>
+整個世界被管治者所規範，整體社會定期提供「索麻」，一種迷幻類似於毒品，四處皆有音樂、不用煩惱糧食，沒有傷痛沒有老化，這似乎就是「美麗的新世界」&lt;/p>
+&lt;p>後來故事推演到野人保留區，雙方的思想開始衝突，到底要痛苦的苦難還是美好的和諧? &lt;br>
+野人不斷用莎士比亞劇本的台詞來表達個人思想對於真善美、苦難的堅持等傳統美德，來諷刺與對抗新世界中的放蕩、及時行樂、被規範好受到制約的社會。&lt;/p>
+&lt;p>這幾本書建議在風光明媚的戶外看，因為很黑暗XD&lt;/p>
+&lt;p>這幾本書描繪的社會都很不同，但非常驚人的一致性就是&lt;br>
+1. 視個人思想為犯罪&lt;br>
+2. 剝奪愛情，但有趣的就是主角都是透過愛情找到自我的思想&lt;br>
+3. 去除家庭，完全去除親子間的羈絆&lt;br>
+4. 拒絕個人獨處，強調社會的和諧與一致&lt;/p>
+&lt;p>但我喜歡這種諷刺的筆法，因為他可以最大程度的激發我想捍衛思想、自由、愛情等，書中社會所排斥或禁止的不正好是身而為人最重要的因子嗎?!&lt;br>
+只是真的很黑暗，尤其是《1984》最後一部分…. 小心服用&lt;/p>
+&lt;p>三本書看來，我其實最喜歡《美麗新世界》，前陣子有遇到佈道者在傳教，他問我「如果可以到天堂無憂無慮，沒有痛苦，你應該也會想去吧?」&lt;br>
+那時候我愣住了快30秒，他只好訕訕地說「對嘛，沒有人喜歡在凡間痛苦的生活…. 」&lt;/p>
+&lt;p>當時我猶豫的點就是 什麼是永生? 什麼是天堂? &lt;br>
+無憂無慮沒有苦痛聽起來很好，但這樣還存活著是要幹嘛?! 又或是在這種狀態下怎麼知道自己還活著?! &lt;br>
+會不會就變成是一個美麗新世界?!&lt;/p>
+&lt;p>這或許就是我現在沒有宗教信仰的原因，又或是現在的自己沒有太多苦痛的經歷，所以不會也不想去思考這類的問題，只知道現在每天活著可以工作、可以運動、可以閱讀、可以思考就蠻充實的，我也不是抖M也不想一直處於苦痛的狀態XD&lt;/p>
+&lt;p>但就是不會去想過著無憂無慮的生活，就覺得很彆扭吧&lt;br>
+我還是搞不懂信仰宗教，又或是各方教義中的「天堂」「西方極樂世界」到底是怎樣的地方? 靈魂處於那種狀態下又可以幹嘛呢? 永生到底是怎樣的狀態?&lt;/p>
+&lt;p>有點不解但也沒有很在意&lt;br>
+上天給了一副牌，坐上台桌就盡興的賭到最後吧&lt;/p>
+&lt;p>* 之後想看《人類大歷史》《人類大命運》《槍砲鋼鐵與細菌》，用不同的角度來思考這個議題&lt;/p></description></item><item><title>[技術筆記] Designing Data-Intensive Applications 下</title><link>https://yuanchieh.page/posts/2018/2018-04-19-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8B/</link><pubDate>Thu, 19 Apr 2018 04:08:48 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-04-19-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8B/</guid><description>&lt;p>上集:&lt;a class="link" href="https://yuanchieh.page/posts/2018/2018-03-28-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8A/" target="_blank" rel="noopener"
+>Designing Data-Intensive Applications 上&lt;/a>&lt;/p>
+&lt;p>隨著軟體應用程式的發展，應用的侷限(bottleneck)從CPU移轉至資料的處理，資料的巨量、複雜性與改變的速度變成棘手的問題，也就是作者所定義的「Data-Intensive」資料密集的應用程式。&lt;/p>
+&lt;p>第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點：&lt;/p>
+&lt;ol>
+&lt;li>Scalability：&lt;br>
+大幅增加系統的乘載能力&lt;/li>
+&lt;li>Fault Tolerance / High Availability(HA)：&lt;br>
+當單一節點失效時，不影響系統的運作&lt;/li>
+&lt;li>Latency：&lt;br>
+如果用戶散佈全球，可以透過多節點部署使用戶地理位置最近的資料中心，降低網路延遲&lt;/li>
+&lt;/ol>
+&lt;h2 id="ch5-replication">Ch5. Replication&lt;/h2>
+&lt;p>Replication 也就是將相同的資料透過網路複製到多台機器上，有幾個好處&lt;br>
+1. 讓用戶可以取得地理位置最近的資料&lt;br>
+2. 即使部分機器失效，系統也可以繼續正常運作&lt;br>
+3. 增加機器 &lt;strong>讀&lt;/strong> 的負載能力&lt;/p>
+&lt;p>在架構上有三種 Single-Master / Multi-Master / Leaderless，Replication帶來許多好處，但是在系統實作面會有取多的衡量，例如說複本是要同步還是非同步、如何處理錯誤的複本節點、最終一致性的曲解、read-your-writes、monotonic-reads保證等問題。&lt;/p>
+&lt;h3 id="leaders-and-followers">Leaders and Followers&lt;/h3>
+&lt;p>每個擁有資料庫備份資料的節點稱為 replica，為了讓每筆寫入都可以被同步到replica上，常用的架構為 leader-base，也就是Leader 負責資料的寫入，並將資料同步到 Follower中保持同步。&lt;/p>
+&lt;p>這種replication架構被廣泛使用，包含Oracle / PostgreSQL / MySQL / Kafka等。&lt;/p>
+&lt;h3 id="sync-andasync">Sync and Async&lt;/h3>
+&lt;p>當Leader接收到寫入，這時候要決定說是否等到同步完全部的 follower才回傳成功，如果是全部 follower說成功才成功便是 Sync，若非則 Async，也可以設定超過某數量 follower 變成 Semi-Async；&lt;/p>
+&lt;p>Sync好處是確保follower都擁有最新的資料，避免用戶在follower讀取到過期資料，但缺點就是如果一個 follower卡住了就會阻擋整個系統運作，系統容錯能力就大幅下降；&lt;br>
+Async好壞處則剛好相法，寫入回應速度快，系統容錯好但用戶可能會讀取到過期的資料。&lt;/p>
+&lt;p>通常來說Leader-base系統都是以Async為主，因為讀取過期資料這點後續有其他方式可以彌補。&lt;/p>
+&lt;h3 id="handle-nodeoutages">Handle Node Outages&lt;/h3>
+&lt;p>當節點出錯要重新恢復時，會有不同的狀況，又可拆成 Leader / Follower來處理&lt;/p>
+&lt;p>Follower出錯要恢復或是加入新節點比較容易，只要資料記錄有追上Leader最新資料即可&lt;/p>
+&lt;p>但是Leader出錯就非常麻煩，必須要先 判定Leader死亡(通常透過Timeout) -&amp;gt; 選出新的Leader -&amp;gt; 整個系統承認新的Leader，並將寫入請求轉導到新的Leader上，這裡會有幾個容易出錯的地方&lt;/p>
+&lt;p>例如說 舊的Leader如果是採用Async，有可能會有部分寫入尚未同步到備份中所以會遺失，在Github採用MySQL案例中就發生過掉資料結果 Primary Key重複的現象；&lt;br>
+又或是程式沒設計好，意外選出多個Leader，產生人格分裂(Split brain)；&lt;br>
+Timeout設定也很重要，太短會導致網路波動就造成不必要的Leader切換，太長則遺失的資料可能會很多，這部分很麻煩；&lt;/p>
+&lt;p>基於這些理由，作者提到現在有蠻多公司都採用人工處理的方式。&lt;/p>
+&lt;h3 id="implementation-of-replication-logs">Implementation of Replication Logs&lt;/h3>
+&lt;ol>
+&lt;li>Statement-based replication&lt;br>
+最簡單的方式是直接將每筆寫入都pass到 replica上，但這會有幾個壞處，如 NOW() / RAND()等函式會因為執行的時候值而有所不同、Auto-Increment也會有所差異，此外還必須保證複製的過程寫入資料順序必須相同。&lt;/li>
+&lt;li>Write-ahead log (WAL) shipping&lt;br>
+將WAL的資料直接複製到replica就不會有上述的問題，但缺點是log相當底層，也就是會跟系統的儲存引擎嵌套很深，跨系統不易。&lt;/li>
+&lt;li>Logical (row-based) log replication&lt;/li>
+&lt;/ol>
+&lt;h3 id="problems-with-replication-lag">Problems with Replication Lag&lt;/h3>
+&lt;ol>
+&lt;li>Reading Your Own Writes&lt;br>
+當用戶更新資料到Leader上，如果該用戶馬上需要讀取該筆資料，可能Follower還沒有收到複製回傳了過期的資料；&lt;br>
+解決方法有 &lt;br>
+透過應用程式追蹤時間，當在更新後的一定時間內從Leader讀取資料、&lt;br>
+用戶紀錄更新資料的時間，由資料庫確保從replica取出正確的資料&lt;/li>
+&lt;li>Monotonic Reads&lt;br>
+當用戶從多個replica讀取資料，可能某些replica同步比較慢導致用戶讀取多次資料卻不同；&lt;br>
+可以綁定用戶在同一個replica讀取資料，避免不一致的資料狀況出現。&lt;/li>
+&lt;li>Consistent Prefix Reads&lt;br>
+同樣是因為replica同步有時間差，用戶可能會讀到順序錯亂的資料，例如問題勢必在答案之前出現(有問題才能有回答)&lt;/li>
+&lt;/ol>
+&lt;h3 id="multi-leader-replication">Multi-Leader Replication&lt;/h3>
+&lt;p>多Leader的架構系統容錯性更好、寫入的性能也可以提昇，但缺點是資料衝突的情況會很多，當發生衝突時很多時候必須由應用程式來解決。&lt;/p>
+&lt;h3 id="leaderless-replication">Leaderless Replication&lt;/h3>
+&lt;p>寫入和讀取都一次使用多個節點，透過量來保證資料的正確性與系統容錯性，例如總共有5個node(n)，只要我們可以寫入3個以上節點(w)與讀取時讀到3個節點以上(r)，在符合 w + r &amp;gt; n的情況下，就可以保證會讀取到最新的資料，此時系統可以容忍 n-w 個節點失效。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__ud8JMaGfu__JywzSmo0kLWw.png"
+loading="lazy"
+alt="https://tech.liuchao.me/2017/12/ddia-5/"
+>
+&lt;a class="link" href="https://tech.liuchao.me/2017/12/ddia-5/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/12/ddia-5/&lt;/a>&lt;/p>
+&lt;h2 id="ch6-partition">Ch6. Partition&lt;/h2>
+&lt;p>Partition分片主要是提升系統的Scalability，當大量的資料可以被平均分散到節點上，寫入和讀取「理論上」就可以隨著節點數成線性成長；&lt;/p>
+&lt;p>在實作上，Partition常與Replication做搭配，將資料分片並複製到其他節點上增加容錯空間&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__e5hRNbqh8dOc4lXntcu1ug.png"
+loading="lazy"
+alt="https://tech.liuchao.me/2017/12/ddia-6/"
+>
+&lt;a class="link" href="https://tech.liuchao.me/2017/12/ddia-6/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/12/ddia-6/&lt;/a>&lt;/p>
+&lt;p>有個良好的資料分片機制很重要，如果分片的方式不夠號，如遇上 hot-key產生歪斜skewed，導致資料不平均分散到節點上，會導致系統的性能無法得到顯著的提升，以下有兩種常見的分片機制&lt;/p>
+&lt;h3 id="partitioning-by-keyrange">Partitioning by Key Range&lt;/h3>
+&lt;p>一種常見的做法是將 Key排序並將某連續段的Key分片，這種做法好處是簡單實作、如果要範圍搜尋資料很方便；&lt;br>
+缺點是容易會有 hot-key的問題。&lt;/p>
+&lt;p>所以在套用上需要特別注意應用程式本身的資料Key特性，例如說感測器收集系統，採用 timestamp 當作key可以使後續日期範圍查詢非常容易，但缺點是當天的寫入都會集中在同一個partition上；&lt;br>
+可以考慮改成用 感測器編號，這樣寫入就可以平均分散，但相對就變成範圍讀取比較麻煩。&lt;/p>
+&lt;h3 id="partitioning-by-hash-ofkey">Partitioning by Hash of Key&lt;/h3>
+&lt;p>可以透過 hash function將key轉成可平均分散的雜湊值，好處是寫入可以更平均分散，但缺點就是失去了範圍搜尋；&lt;/p>
+&lt;p>Cassandra嘗試透過組合Key來融合上面兩種方式，Key的前半段用Hash決定partition位置，partition中則依照Key的後半段排序增強範圍搜尋；&lt;br>
+例如說(user_id, update_timestamp)，透過user_id分散用戶的資料，但如果有需要取得某用戶的範圍資料更新就可以用update_timestamp。&lt;/p>
+&lt;h3 id="partitioning-and-secondary-indexes">Partitioning and Secondary Indexes&lt;/h3>
+&lt;p>先前提的是透過 Primary Key，但如果要查詢 Secondary Key就會遇到不同的問題，例如說 汽車資料是 {carId , name , color}等，主鍵是carId並依此來分片，但如果用戶要查詢 color = ‘red’的車子就需要另外處理&lt;/p>
+&lt;h3 id="partitioning-secondary-indexes-bydocument">Partitioning Secondary Indexes by Document&lt;/h3>
+&lt;p>在個別partition中自行維護各自資料的 Secondary index table，所以用戶的讀取請求需要送到每個partition中並整合，也就是 scatter /gather。&lt;br>
+缺點就是讀取效率很差，因為可能某些partition回復比較慢整個請求就會被卡住。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__3OY9Re3mGd__GuWpjogmvOA.png"
+loading="lazy"
+alt="https://tech.liuchao.me/2017/12/ddia-6/"
+>
+&lt;a class="link" href="https://tech.liuchao.me/2017/12/ddia-6/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/12/ddia-6/&lt;/a>&lt;/p>
+&lt;h3 id="partitioning-secondary-indexes-byterm">Partitioning Secondary Indexes by Term&lt;/h3>
+&lt;p>與其個別partition分別維護Secondary index(local)，可以將相同的Secondary index紀錄統一儲存在某特定partition中，透過讀取該紀錄，再去所有紀錄所在的partition讀取資料即可。&lt;/p>
+&lt;p>至於該筆 Secondary index要記錄在哪可以透過前述的兩種方式分散到不同node上。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__yaaNNaAUaHSUFmodO0Dhtw.png"
+loading="lazy"
+alt="https://tech.liuchao.me/2017/12/ddia-6/"
+>
+&lt;a class="link" href="https://tech.liuchao.me/2017/12/ddia-6/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/12/ddia-6/&lt;/a>&lt;/p>
+&lt;p>這種方式提升讀取的效能，但缺點是寫入變得十分複雜，修改單一筆資料需要同步更新不同partition中的 Secondary Index，這在分散式中會有很多隱藏的問題。&lt;/p>
+&lt;h3 id="rebalancing-partitions">Rebalancing Partitions&lt;/h3>
+&lt;p>如果系統附載增加，可能會需要增加 partition的機器或是移除出錯的機器等，這時候會需要重新調整partition，將資料重新平衡到所有機器上。&lt;/p>
+&lt;p>平衡的方式有&lt;/p>
+&lt;ol>
+&lt;li>hash mod N：&lt;br>
+直接把 hash key mod {所有機器數}即可，但缺點是增加一台機器就會有大量資料需要搬移，造成不必要的負擔&lt;/li>
+&lt;li>Fixed number of partitions：&lt;br>
+將所有資料切成很多份，並平均分散到機器上，例如說 10台機器可以將資料分成 1000份，平均每台負擔 100份資料；&lt;br>
+此時如果有新機器加入，這10台機器每台抽9~10份搬移即可，如果要移除舊機器反之；&lt;br>
+這種方式有效降低不必要的資料搬移。&lt;/li>
+&lt;/ol>
+&lt;h3 id="dynamic-partitioning">Dynamic partitioning&lt;/h3>
+&lt;p>使用 Key-range partition不太方便，如果一開始設定錯誤，會導致資料太過集中於部分節點，如果要重新設定又會很麻煩；&lt;br>
+所以某些資料庫(HBase、RethinkDB)內部提供動態分割的方法，當發現 partition資料超過某個size，會自動分割並把資料分成兩個partition；&lt;br>
+如果資料大量刪除，也會自動合併成單一個partition；&lt;br>
+每個partition分散到一個節點上，而一個節點可能儲存多個partition。&lt;/p>
+&lt;p>Dynamic partition可支援 key-range partition和 hash-key partition。&lt;/p>
+&lt;h3 id="request-routing">Request Routing&lt;/h3>
+&lt;p>當用戶要發送請求，如何得知該往哪個節點發送呢? &lt;br>
+這個問題通稱為_service discovery_ ，任何透過網路的軟體都會遇上此問題，尤其是分散式系統。&lt;/p>
+&lt;p>主要解法有三種方式，&lt;br>
+client隨機發送請求到某節點，每個節點都有分片依據的紀錄；&lt;br>
+統一一個負責routing的節點；&lt;br>
+client端自行判斷紀錄分片的依據。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__1HtoefsjWPhIJav0Zj__21g.png"
+loading="lazy"
+>&lt;/p>
+&lt;h2 id="ch8-the-trouble-with-distributed-systems">Ch8. The Trouble with Distributed Systems&lt;/h2>
+&lt;h3 id="faults-and-partialfailures">Faults and Partial Failures&lt;/h3>
+&lt;p>分散式系統傳遞資訊都是靠網路，但網路的本身是不可靠的，所以分散式系統最大的疑慮便是會有&lt;strong>部分錯誤&lt;/strong>的產生，在某些時刻我們無法得知操作是否完全成功，所以在設計上必須考量這一點，設計出可容忍錯誤(Fault-Tolerance)的系統。&lt;/p>
+&lt;h3 id="unreliable-networks">Unreliable Networks&lt;/h3>
+&lt;p>談論一些網路的不可靠性，對比Telephone circuit 用硬體與固定頻寬的連線方式傳輸資料，TCP為了增進總體使用量會有flow control導致傳輸速度無法估測。&lt;/p>
+&lt;h3 id="unreliable-clocks">Unreliable Clocks&lt;/h3>
+&lt;p>時間在電腦系統扮演重要角色，大致有兩個時間屬性 &lt;strong>區間&lt;/strong>(Duration，如計算request時間)、&lt;strong>確切時間&lt;/strong>(points in time，錯誤的時間log)，再分散式系統中時間很tricky，因為溝通不是即時的，透過網路傳遞訊息會產生不可預測的延遲；&lt;br>
+再者每台電腦都有各自的石英震盪器計算時間，因為各種物理性質上的差異導致無法完全精準同步每台電腦的時間。&lt;/p>
+&lt;h3 id="monotonic-versus-time-of-day-clocks">Monotonic Versus Time-of-Day Clocks&lt;/h3>
+&lt;ol>
+&lt;li>Time-of-day clocks(又稱 wall time)：&lt;br>
+返回日曆時間，通常是透過NTP同步時間，但如果電腦時間太快或太慢，同步之後可能會產生時間跳躍，產生一些後遺症(如資料庫寫紀錄的跳針導致資料不一致)&lt;/li>
+&lt;li>Monotonic clocks：&lt;br>
+適合用來測量時間區間，「實際上他指的是系統啟動後流逝的時間，這是由變數jiffies來紀錄的。系統每次啟動時jiffies初始化為0，每來一個timer interrupt，jiffies加1，也就是說他代表系統啟動之後流逝tick數**」&lt;br>
+**(出處：&lt;a class="link" href="https://blog.csdn.net/peterlin666/article/details/32344355" target="_blank" rel="noopener"
+>[Timer学习]wall time和monotonic time&lt;/a>)但也因為如此，所以跨系統間比較Monotonic clocks是沒有意義的。&lt;/li>
+&lt;/ol>
+&lt;h3 id="timestamps-for-orderingevents">Timestamps for ordering events&lt;/h3>
+&lt;p>假想系統有2個Node，當兩個客戶A、B同時對同一筆資料做改寫，但是A的Request先到Node 1而 B先到Node 2，再處理併發時分散式系統通常採用LWW(Last-Write-Win)，所以更新後Node 1與Node 2資料就會不同步&lt;/p>
+&lt;h3 id="process-pauses">Process Pauses&lt;/h3>
+&lt;p>試想一個危險的情況，資料庫採用Single-Leader架構，Leader需要固定一段時間通知所有Follower Leader還活著，但如果Leader的執行卡住了過一段時間沒有通知，其餘Follower選出新的Leader後同時舊Leader復活，產生了雙Leader的分歧局面&lt;/p>
+&lt;p>在以下情況會產生程式執行被無預期卡住，如垃圾回收(GC)，這會導致程式運作直接卡死直到垃圾回收結束；&lt;br>
+在虛擬機中VM也有可能被暫時終止執行、又或是在CPU切換任務時系統負載過多而延遲等等因素&lt;/p>
+&lt;h3 id="response-time-guarantees">Response time guarantees&lt;/h3>
+&lt;p>上述問題產生於 應用程式不知道執行時會遇到怎樣的突發終止狀況，所以如果可以保證突發終止的時間是可預測的，就可以透過設計避免問題，但問題就是如何保證回應時間?&lt;/p>
+&lt;p>RTOS(real-time Operating System)保證CPU的時間切割是固定的，所以可以得知最糟狀況應用程式會被終止多久；&lt;br>
+但RTOS開發很貴，通常用於高度安全的系統設計如飛行系統，而且RTOS會限制應用程式可用的Library、寫法等，不適用於一般資料庫系統。&lt;/p>
+&lt;h3 id="the-truth-is-defined-by-themajority">The Truth Is Defined by the Majority&lt;/h3>
+&lt;p>分散式系統中，每個節點只能透過網路收發資料來確認彼此的狀態，但有時候節點運作正常但在與其他節點的網路溝通上出了問題，或是遇上GC整個節點卡住等，就有一樣會被其他節點誤認為「死亡」&lt;/p>
+&lt;p>正因為分散式系統解決了單一節點失效的問題，失效的決定則依賴多數的節點的決定。&lt;/p>
+&lt;h3 id="byzantine-faults">Byzantine Faults&lt;/h3>
+&lt;p>先前描述都是以節點失效為主，但如果節點會「說謊」呢? Byzantine Generals Problem 拜占庭將軍問題即是描述多節點在不知道彼此的情況下如何確保叛徒不會影響正確性&lt;/p>
+&lt;p>&lt;a class="link" href="https://zh.wikipedia.org/wiki/%E6%8B%9C%E5%8D%A0%E5%BA%AD%E5%B0%86%E5%86%9B%E9%97%AE%E9%A2%98" title="https://zh.wikipedia.org/wiki/%E6%8B%9C%E5%8D%A0%E5%BA%AD%E5%B0%86%E5%86%9B%E9%97%AE%E9%A2%98"
+target="_blank" rel="noopener"
+>拜占庭将军问题 - 维基百科，自由的百科全书&lt;/a>&lt;/p>
+&lt;p>結論大致是只要出錯的結點不超過 1/3即可保證整體的正確性。&lt;/p></description></item><item><title>[技術筆記] Designing Data-Intensive Applications 上</title><link>https://yuanchieh.page/posts/2018/2018-03-28-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8A/</link><pubDate>Wed, 28 Mar 2018 10:23:52 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-03-28-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8A/</guid><description>&lt;p>隨著軟體應用程式的發展，應用的侷限(bottleneck)從CPU移轉至資料的處理，資料的巨量、複雜性與改變的速度變成棘手的問題，也就是作者所定義的「Data-Intensive」資料密集的應用程式；&lt;br>
+作者前言提及 在現今Buzzword滿天飛 Big Data / NoSQL / Web Scale blablabla，身為技術人員應該更透徹的了解資料儲存的基本觀念，這些才是永恆不變的基石；&lt;br>
+有了清楚的概念，才能在不同的應用場景套用最適合的解法，老話一句&lt;/p>
+&lt;blockquote>
+&lt;p>沒有銀彈&lt;/p>
+&lt;/blockquote>
+&lt;p>此書切成三大部分：資料系統的基本組成(Foundation of Data Systems)、分散式資料儲存(Distributed Data)、取得資料(Derived Data)；&lt;br>
+作者章節設計循序漸進，先定義基本用語與資料系統的設計理念與實作方式，接著加深內容且不斷的引用前面所述說的觀念；&lt;br>
+以下是我簡單筆記本書2/3的內容，Derived Data目前有點看不懂所以就先暫時跳過 OTZ&lt;/p>
+&lt;h2 id="ch-1-reliable--scalable--maintainable">Ch 1. Reliable / Scalable / Maintainable&lt;/h2>
+&lt;p>再討論系統設計時，就必須先反問「想要設計出符合怎樣需求的系統」&lt;br>
+作者提出三大軟體設計的核心&lt;/p>
+&lt;h3 id="reliable">Reliable&lt;/h3>
+&lt;ol>
+&lt;li>運作需與使用者預期的相同&lt;/li>
+&lt;li>可以容忍用戶以非預期方式操作系統&lt;/li>
+&lt;li>效能需好到可以應付用戶需求&lt;/li>
+&lt;li>防止非授權登入與濫用&lt;/li>
+&lt;/ol>
+&lt;p>基本上就是要能夠在一定的錯誤容忍下運作正常，常見的錯誤有&lt;/p>
+&lt;ol>
+&lt;li>硬體錯誤：&lt;br>
+作者提及像硬碟的 MTTF(平均時間出錯)是10~50年，如果你的資料中心有10,000顆硬碟基本上預期是每天都會壞一顆! &lt;br>
+=&amp;gt; 常見解法是：增加硬體冗余、使用RAID、額外供電設備、異地備份等&lt;/li>
+&lt;li>軟體錯誤&lt;/li>
+&lt;li>人為錯誤&lt;/li>
+&lt;/ol>
+&lt;h3 id="scalable">Scalable&lt;/h3>
+&lt;p>隨著用戶增加，系統需要負擔的資料也成幾何增長，所以需要系統的擴充性去回答「我們如何增加運算資源來應付增長的流量?」&lt;br>
+再回答此問題之前，必須先知道如何描述「&lt;strong>此刻系統的負載量&lt;/strong>」，根據不同的系統設計有不同的衡量方式，例如常見的 request per seconds / 資料庫讀寫比 / 最大同時上線人數等等，也就是要找出不同的「&lt;strong>關鍵附載係數(Key Load Parameters)」&lt;/strong>；&lt;/p>
+&lt;p>衡量性能部分可以透過 percentile追蹤，分析回應速度的百分比圖，Amazon有做一個有趣的分析指出 最慢的Request意外發現是最有價值的客戶，因為往往他們的Request夾帶最多的資訊，所以也導致速度最慢；&lt;/p>
+&lt;p>作者舉 Twitter在2012年做用戶發送訊息為例：&lt;br>
+Twitter 有兩個主要操作&lt;br>
+1. 發 tweet：&lt;br>
+用戶發送新訊息(4.6K req/sec，高峰超過 12K req / sec)&lt;br>
+2. Home timeline：&lt;br>
+用戶查看他們追蹤的對象消息列 (300k req/sec)&lt;/p>
+&lt;p>在設計上有兩種方式：&lt;br>
+1. 發tweet時就是單純插入新的一筆紀錄，如果有用戶要讀home timeline就做 DB Join取出所有追蹤對象的訊息&lt;br>
+2. 針對每位用戶都Cache home timeline，如果有用戶新增tweet就加到對應追蹤用戶的cache中&lt;/p>
+&lt;p>Twitter後來從方法一轉至方法二，原因是因為方法二的讀取timeline速度快了兩個級別，所以傾向於 &lt;strong>花多點時間在寫入以節省龐大的讀取時間。&lt;/strong>&lt;/p>
+&lt;p>對於Twitter來說，用戶的追蹤數就是關鍵附載係數 **，**但每位用戶的追蹤數與被追蹤數差異十分的大，尤其是名人，所以Twitter後來採用兩種方法混用，一般用戶採用方法二，而名人則另外處理。&lt;/p>
+&lt;h3 id="maintainable">Maintainable&lt;/h3>
+&lt;p>軟體最大的花費不在於建置，而在於維護，此處又拆成三個子項目&lt;/p>
+&lt;ol>
+&lt;li>Operability&lt;br>
+透過一些方式可以讓軟體更好維運，例如 監控系統健康、錯誤追蹤系統、定期更新系統、隔離不同系統等&lt;/li>
+&lt;li>Simpilicity&lt;br>
+隨著系統營運不可避免功能一直加，系統也相對跟著複雜，這裡的簡易性不是說要去削減功能，而是**避免不必要的複雜性，**這裏複雜性的定義是「企圖加入實作層面的解法而跟解決問題無關」，要避免複雜性就必須透過 **抽象化(Abstraction)，**例如說高階語言理當不需要理會CPU的暫存器等操作，因為語言本身已經透過抽象化隱藏了不必要的實作複雜性。&lt;/li>
+&lt;li>Evolvability&lt;br>
+需求會加、功能會改，所以系統必須保留彈性面對改變。&lt;/li>
+&lt;/ol>
+&lt;h2 id="ch-2-data-models-and-query-languages">Ch 2. Data Models and Query Languages&lt;/h2>
+&lt;p>這一章探討資料儲存的形式，也就是 Relation / Document / Graph Data Model，資料儲存的形式很重要，這會決定性影響了應用程式的編寫以及底層儲存方式的不同；&lt;/p>
+&lt;p>Relation Data Model最為常見，將資料的關聯以tuple的集合儲存(也就是SQL的row)，但是現今的程式語言都是物件導向，所以要在應用程式中操作資料就必須透過ORM將資料轉換為物件形式；&lt;br>
+這也是為什麼會有 Document Data Model，因為資料(在沒有複雜關聯下)的本身就是個文本物件，這裡的Document偏向於描述可以用 JSON / XML 結構化語言描述的資料格式，例如 履歷 {name: “hello”, age: 25, ….}。&lt;/p>
+&lt;p>但現實上資料本身有不同的關聯性，有One to Many 也有 Many to Many，基本上採用何種Data Model可以從資料集多對多的關聯性複雜度來決定；&lt;br>
+如果資料僅有少部分多對多關聯，可以選擇採用Document Data Model，因為相對應用程式的代碼比較好寫，不需多一層ORM轉換、少有的多對多可以用應用程式代碼自己實踐Join功能；&lt;br>
+如果注重物件的多對多關聯性則可用 Relation Data Model；&lt;br>
+如果物件的關聯性相當複雜可以考慮 Graph Data Model，這也是我第一次接觸到此觀念，資料模型改以圖形化方式呈現，資料可分成vertice與edge，vertice比較像是儲存單體的資料，而edge則儲存vertice間的關係，透過圖形化的特性可以表達相當複雜、遞迴的關係，這部分可以參考我之前嘗試 &lt;a class="link" href="http://sj82516-blog.logdown.com/post/5823130" target="_blank" rel="noopener"
+>neo4j的筆記&lt;/a>。&lt;/p>
+&lt;p>當然上述只是單純以資料關聯與對應的模型來衡量，現實的技術採納需要有更全面通盤的考量。&lt;/p>
+&lt;p>這一章比較是在講古，把過去曾出現過的資料模型與對應的Query語言都稍微帶到。&lt;/p>
+&lt;p>最後筆記一點蠻有趣的觀點，作者提到 Document Database都會被誤稱為 schemaless，但其實更準確說法是 schema-on-read，雖然DB沒有顯性的資料欄位，但是在應用程式讀取時一樣會有資料的架構，對應的是Relation Database的schema-on-write；&lt;br>
+schema-on-read有點像是動態語言，資料的檢查在應用程式本身；而schema-on-write像靜態語言的型別檢查，在寫入時就先檢查了。&lt;/p>
+&lt;h2 id="ch-3-storage-and-retrieval">Ch 3. Storage and Retrieval&lt;/h2>
+&lt;p>這章節算是我覺得最有趣的一章，主要談到資料庫底層如何將資料存入硬碟中，以及如何快速的透過索引 Index 從硬碟取出資料；&lt;/p>
+&lt;p>首先作者用shell script編寫最簡單的資料庫&lt;/p>
+&lt;blockquote>
+&lt;p>db_set () { echo “$1, $2” &amp;raquo; database}&lt;br>
+db_get () { grep “^$1,” database | sed -e “s/^$1,//” | tail -n 1}&lt;br>
+$ db_set 123 ‘{name: “123”}’&lt;br>
+$ db_get 123&lt;/p>
+&lt;/blockquote>
+&lt;p>採用類似 CSV格式的 鍵-值儲存，將新的資料不斷append到文件上，最後搜尋時從文件最末的資料開始找起；&lt;br>
+這樣寫的效能很好，因為單純append資料速度非常快，但是讀取則需要O(n)的時間；&lt;/p>
+&lt;p>為了增加讀取的效能，我們可以建立索引，在記憶體中用Hash Table資料結構，儲存鍵對應欄位在硬碟的儲存位置，加速讀取的效能。&lt;/p>
+&lt;p>雖然這看起來很簡單，但實際上卻也有資料庫是採用此設計方式，如 Bitcask。&lt;/p>
+&lt;p>先前提到這種做法是不斷將新資料append到硬碟文件上，即使同樣的鍵也是，但是這樣文件總不能無止盡的增加下去，所以會有所謂的 compact process 壓實程序，也就是重整舊的文件，將冗余重複的鍵去除只保留最新的紀錄，減少不必要的過時資料儲存空間。&lt;/p>
+&lt;p>但上述方式有兩個缺點 &lt;/p>
+&lt;ol>
+&lt;li>索引必須小於記憶體總量否則性能會很差&lt;/li>
+&lt;li>不支援範圍讀取&lt;/li>
+&lt;/ol>
+&lt;h3 id="sorted-stringtable">Sorted String Table&lt;/h3>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__1AvQY5KBV2mRADK07aq4BA.png"
+loading="lazy"
+alt="圖片來源：https://tech.liuchao.me/2017/11/ddia-3/"
+>
+圖片來源：&lt;a class="link" href="https://tech.liuchao.me/2017/11/ddia-3/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/11/ddia-3/&lt;/a>&lt;/p>
+&lt;p>所以後來有提出新的作法 Sorted String Table (簡稱 SSTable)，差別在於索引改透過 依照字串順序排序後的資料結構儲存，這有點像是字典索引，當我們要查一個單字 hello 我們可以透過前後的字去找到相近的位置；&lt;/p>
+&lt;p>所以如果在記憶體中所以只有 he / hola，那我們至少知道 hello 勢必在此兩個位置中間，透過 順序讀 sequential read 可以非常快的在硬碟中找到資料。&lt;/p>
+&lt;blockquote>
+&lt;p>作者強調 順序讀寫對於硬碟的效能有很大的幫助，即使是SSD&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="b-tree">B Tree&lt;/h3>
+&lt;p>但是SSTable並不是最常用的資料系統儲存的方式，而是B Tree，B Tree是個平衡二叉樹，母節點紀錄多個區間值與對應的子節點，每個子節點則紀錄一段連續值。&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__sGWCREWf3auzlU2H1j6LEw.png"
+loading="lazy"
+alt="圖片連結：https://tech.liuchao.me/2017/11/ddia-3/"
+>
+圖片連結：&lt;a class="link" href="https://tech.liuchao.me/2017/11/ddia-3/" target="_blank" rel="noopener"
+>https://tech.liuchao.me/2017/11/ddia-3/&lt;/a>&lt;/p>
+&lt;p>在儲存方式上不是採用append only，而是將儲存空間切割固定大小的 Page，並把節點的資料放入，如果有新的資料產生會覆寫舊的Page，這點與SSTable大大不同。&lt;/p>
+&lt;p>在實作上，B Tree因為會先將Page資料暫存在記憶體中，為了避免資料遺失會在資料寫入時先將資料紀錄到append-only 的WAL(Write-Ahead Log)，所以一筆資料寫入其實會有兩次寫入硬碟動作。&lt;/p>
+&lt;p>B Tree 對比 SSTable 好處在於&lt;/p>
+&lt;ol>
+&lt;li>資料冗餘少&lt;/li>
+&lt;li>找尋不存在的鍵值比較快(SSTable必須查完所有舊資料才可以確定)&lt;/li>
+&lt;li>不需要 compact process去重整資料，作者提到雖然 compact process通常在背景執行，但你永遠無法預期何時系統會爆量，也就是說好死不死大量讀寫時卡到系統在 compact process就欲哭無淚，相對來說 B Tree的系統附載比較可預期；&lt;br>
+SSTable好處在於 B Tree切割Page容易有空間的破碎化與浪費，且部分資料更新也必須更動對應的Page；&lt;/li>
+&lt;/ol>
+&lt;h3 id="column-base">Column-Base&lt;/h3>
+&lt;p>一般資料庫在OLTP中都是以row-based為導向的；&lt;br>
+但是在OLAP中，我們常會將多個DB資料彙整到統一的資料倉儲中，所以資料量非常龐大，且每筆request也都要運算非常大量的資料，這時候有個新的做法以column-base儲存資料，這樣最大好處在於同一個column通常資料重複性高，例如顏色就那幾種、產品ID可能也會重複，這種特性可以使 &lt;strong>資料壓縮&lt;/strong> 得到非常好的效果；&lt;br>
+但缺點就是寫入很麻煩。&lt;/p>
+&lt;p>在底層紀錄上，B Tree無法套用在壓縮欄位上，因為索引是紀錄row-based的鍵，所以多個column欄位更動會導致過多的Page都要一并刷新；&lt;br>
+所以會採用 SSTable當作寫入硬碟的資料儲存方式，每次寫入都產生新檔案。&lt;/p>
+&lt;h2 id="ch-4-encoding-and-evolution">Ch 4. Encoding and Evolution&lt;/h2>
+&lt;p>在系統的演進上，需要注意相容性問題，可分成&lt;br>
+・向後相容：新的code可能讀取到舊資料&lt;br>
+・向前相容：舊的code可能讀取到新資料&lt;/p>
+&lt;p>程式在處理資料上會有兩種形式&lt;br>
+一種是 in memory，像是 object / array / int等，主要是方便CPU做運算；&lt;br>
+另一種在需要寫入檔案或是透過網路傳輸時，需要重整成字串的形式，也就是encode&lt;/p>
+&lt;p>常見的 encode形式有非常多種，包含JSON / XML /CSV，為了讓資料可以用最小容量傳遞，作者介紹了數種基於JSON的encode / decode技術，在encode的過程中要注意資料格式與型別需要可以decode。&lt;/p>
+&lt;p>原本JSON原始資料 66 bytes，透過不同的binary encode技術最終可以壓縮到 34 bytes!&lt;/p>
+&lt;h3 id="下集">下集&lt;/h3>
+&lt;p>&lt;a class="link" href="https://yuanchieh.page/posts/2018/2018-04-19-%E6%8A%80%E8%A1%93%E7%AD%86%E8%A8%98-designing-data-intensive-applications-%E4%B8%8B/" target="_blank" rel="noopener"
+>技術筆記 Designing Data-Intensive Applications 下&lt;/a>，第二部分主要探討分散式儲存資料會遇到的問題與解法，分散式系統有幾大優點&lt;/p></description></item><item><title>[閱讀心得] 娛樂至死</title><link>https://yuanchieh.page/posts/2018/2018-03-27-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97-%E5%A8%9B%E6%A8%82%E8%87%B3%E6%AD%BB/</link><pubDate>Tue, 27 Mar 2018 12:10:32 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-03-27-%E9%96%B1%E8%AE%80%E5%BF%83%E5%BE%97-%E5%A8%9B%E6%A8%82%E8%87%B3%E6%AD%BB/</guid><description>&lt;p>一開始會想讀這本書是因為看到學長的心得文，簡略提到印刷時代的思想比腳深層完整，而電視(網路)時代則是片斷瑣碎；&lt;br>
+當初看完心得不太認同，因為我會直覺地認為說「媒體只是載具，重點是人的思想」，也就是膚淺的人不論在哪個時代都是膚淺的；&lt;br>
+後來與學長留言討論一下，發現這本書的論述遠比我想像的深遠，今日拜讀後深感體悟自己的膚淺，所以特此紀錄讀後感。&lt;/p>
+&lt;p>自我背景並非傳播媒體相關，過去也鮮少接觸此類型的書，所以看起來蠻硬的，卻又很過癮，正因為少接觸所以在接收一些新觀點時會十分的震撼。&lt;/p>
+&lt;h4 id="書籍背景">書籍背景&lt;/h4>
+&lt;p>這次我買的是20週年再版的版本，此書出版於1985年代，處於電視蓬勃發展的世代，作者 波茲曼是著名的媒體文化理論家，談論到媒體受到載具科技的不同，導致人類文化上與思想上的惡行轉變，雖然這本書是論述電視時代，但是其觀點在網路時代更值得去省思。&lt;/p>
+&lt;p>這本書我自己拆成三個部分&lt;/p>
+&lt;ol>
+&lt;li>媒體傳播方式對於思想的影響：&lt;br>
+前兩個章節作者舉了一些案例說明，順便重重的打臉我剛才的假設&lt;/li>
+&lt;li>印刷式思想&lt;/li>
+&lt;li>電視式思想&lt;/li>
+&lt;/ol>
+&lt;h4 id="媒體傳播方式對於思想的影響">媒體傳播方式對於思想的影響&lt;/h4>
+&lt;p>不同的媒體偏好特定的內容，從而得以支配文化，作者舉例到 原始的煙霧訊息技術是沒辦法傳遞哲理，因為陣陣的煙霧不夠複雜，所以「形式會排斥內容」&lt;br>
+同樣的在電視螢光幕上，如果總統候選人是個135公斤的超重體重，理論上個人思想內容不該用其外表來衡量，但是透過視覺影像傳達就不免會抹殺其言論的精妙，同理「形式會排斥內容」&lt;/p>
+&lt;p>此外，「真理概念的表達和表達形式唇齒相依」，例如說在做研究報告時書面文獻的可信度遠比口語文獻來得高，因為書面文字比較容易驗證、駁斥且客觀；&lt;br>
+所以事實陳述形式的重要程度都視傳媒的影響力量而定。&lt;/p>
+&lt;h4 id="印刷式思想">印刷式思想&lt;/h4>
+&lt;p>作者定義了一個「闡釋時代」，闡釋是種思維模式，一種學習方式與表達途徑，包含著優異的概念、推理和條理思考能力、崇尚理性和秩序、客觀思維等等；&lt;/p>
+&lt;p>作者描述林肯和道格拉斯的七場著名辯論，整個雄辯的過程達七小時之久!討論內容涵蓋了歷史事件、政治議題、廢奴政綱等，講詞內容處處反應印刷式思維，包含論證與反證、主張與對立主張、基於文本的批評和檢驗對手的措辭，聽眾不單需要有豐富的背景知識，還需要有對於公眾事務參與的熱情與理性的批判思考，而這群聽眾在當時不是少數的貴族菁英，而是下至販夫走卒都有這樣的思維能力。&lt;/p>
+&lt;p>正因為使用純文字表達，重點著重在文字乘載的意念，所以內容往往更加嚴肅與豐富，不論是作者或閱眾都習慣理性思考去理解冷靜的抽象內容，並用嚴苛的態度去檢視內容前後的一致性與合理性。&lt;/p>
+&lt;h4 id="電視式思想">電視式思想&lt;/h4>
+&lt;p>十九世紀中期，電報改變傳遞資訊的方式，以極快的速度跨越浩瀚的距離，這改變了以往印刷時代追求理性的訴求，轉變成追求時效性、誇飾性的新聞；&lt;/p>
+&lt;p>作者提出所謂的行動資訊比，意即收到的資訊會有多大的比例導致行動的改變，在印刷時代這兩者的比較雷同；&lt;br>
+但是在電報時代之後，因為資訊大量產生與破碎化，人們面對資訊過剩，導致面臨社會與政治行為能力也逐步衰弱，例如說 要怎麼保護環境、如何降低核戰風險、通貨膨脹率、失業率與犯罪率等問題，雖然現今新聞號稱國際化，我們常常在電視都可以看到各國的新聞報導，但擁有這些破碎化的資訊頂多是茶餘飯後的話題，但不能提昇我們的思維進而去用行動解決問題。&lt;/p>
+&lt;p>**「給我娛樂，其餘免談」&lt;br>
+**這是書本的其中一個章節名，闡述在電視論述中娛樂是唯一的表現意識形態，以辯論節目為例，辯論的過程在於思考並反駁對方論述，但是這樣「思考」的過程在電視節目上是不討好的，所以很難在電視辯論節目上看到「讓我想想」、「你說的…是什麼意思」、「你的資料是引述哪些來源」等論述，因為這會拖慢節目速度，也容易讓觀眾感到無聊，但偏偏這些卻是批判思考重要的過程；&lt;br>
+取而代之的是表演藝術且娛樂感十足的演說，就好比 1984年的電視總統辯論會，每個候選人可發言五分鐘並質問對手一分鐘，試問這麼短的時間如何闡述「你對中美洲的外交政策為何」這樣的問題呢?&lt;br>
+所以候選人注重的不再是如何表述自己的理念，更重要的是如何在短短的數分鐘內建立「印象」&lt;/p>
+&lt;p>最後作者提到 &lt;strong>教育就是娛樂&lt;/strong>，這是個反諷的標題，在反思聲名遠播的電視教育節目 芝麻街，作者提出電視教育為了迎合電視節目的特性有幾大特色：&lt;br>
+隨時可以加入、不得令人心生疑惑、遠遠避開闡釋，所以我們只能在芝麻街中學到破碎化的知識，可能幾個單字、幾句片語，但我們永遠學不會真正的&lt;strong>學習方法&lt;/strong>，因為學習方法最基本的便是長期思索某個難題，但電視節目本身就是為了娛樂，強加教育目的於上頭根本達不到效果，只能自欺欺人。&lt;/p>
+&lt;blockquote>
+&lt;p>當然有一點很重要，作者並不排斥娛樂，但是當所有形式都以娛樂呈現就非常可怕&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="結語">結語&lt;/h4>
+&lt;p>作者在書中反覆提到兩本書 《1984》、《美麗新世界》，兩者都是在談論民眾會有墮落的趨勢，前者理念是高壓政府使民眾屈服；後者提及我們無需外力終將毀於自身所愛，在這電視時代，作者認同赫胥黎 《美麗新世界》的觀點，現在我們不用擔心真相會被隱藏，真正該擔心的是真相被繁瑣的小事給淹沒。&lt;/p></description></item></channel></rss>

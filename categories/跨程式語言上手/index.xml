@@ -1,0 +1,1362 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>跨程式語言上手 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8B/</link><description>Recent content in 跨程式語言上手 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 02 Apr 2021 08:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8B/index.xml" rel="self" type="application/rss+xml"/><item><title>【跨程式語言上手】Ruby 基礎教學</title><link>https://yuanchieh.page/posts/2021/2021-04-02-%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8Bruby-%E5%9F%BA%E7%A4%8E%E6%95%99%E5%AD%B8/</link><pubDate>Fri, 02 Apr 2021 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-04-02-%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8Bruby-%E5%9F%BA%E7%A4%8E%E6%95%99%E5%AD%B8/</guid><description>&lt;p>【跨程式語言上手】系列第一篇，最近換工作學習了 Golang / Ruby，可以說是設計理念處於對立面的程式語言，在學習中不斷拿兩者比較，找到很多有趣的地方&lt;br>
+在這樣的過程中，慢慢找出自己上手新程式語言的 pattern，也就是逐步填補自我疑問的過程，像是「怎麼宣告變數？」「怎麼寫測試？」「api server / http request 怎麼發？」「併發或效能怎麼處理？」等等共通的疑惑點&lt;/p>
+&lt;p>坊間有很多善心人士的教學，但往往都缺一點我想了解的資訊，例如 Google 搜尋「Ruby 教學」的中文素材，跑出這幾個很棒的教學&lt;/p>
+&lt;ol>
+&lt;li>高見龍大大的 &lt;a class="link" href="https://railsbook.tw/" target="_blank" rel="noopener"
+>為你自己學 Ruby on Rails&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://ihower.tw/rails/ruby.html" target="_blank" rel="noopener"
+>Ruby on Rails 實戰聖經&lt;/a>&lt;/li>
+&lt;li>Ruby 官網的 &lt;a class="link" href="https://www.ruby-lang.org/zh_tw/documentation/quickstart/3/" target="_blank" rel="noopener"
+>二十分鐘 Ruby 體驗&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;p>Ruby 教學會被綁在 Rails 教學中或許是 Ruby 生態特有的現象，但普遍程式語言教學也都缺少&lt;/p>
+&lt;ol>
+&lt;li>Testing：包含 Testing Framework / Unit Test / Mock、Stub&lt;/li>
+&lt;li>Module：Core Module / Local Module 怎麼載入&lt;/li>
+&lt;li>Concurrency：底層如何處理併發/平行運算&lt;/li>
+&lt;li>程式語言多用於後端，所以我會在意寫 api server / http request 的感覺是怎樣&lt;/li>
+&lt;/ol>
+&lt;p>可以說這幾點都是比較進階/偏科的議題，但對我的工作很重要，也是這系列的起源，&lt;code>我想要重新寫一份對我自己來說完整的程式語言教學&lt;/code>，過程中會拿我已經熟悉的程式語言如 Javascript 跟一點點的 Golang 做對比&lt;/p>
+&lt;blockquote>
+&lt;p>目標會著重於有經驗的程式設計師，已經熟練任一程式語言，想要快速上手或是品味另一門語言的人&lt;/p>
+&lt;/blockquote>
+&lt;p>以下內容會包含&lt;/p>
+&lt;ol>
+&lt;li>Ruby 設計理念與起源&lt;/li>
+&lt;li>基礎語法&lt;/li>
+&lt;li>模組&lt;/li>
+&lt;li>測試&lt;/li>
+&lt;li>Http / API 相關&lt;/li>
+&lt;li>其他補充&lt;/li>
+&lt;/ol>
+&lt;p>內容大量參考上附的參考資料，並融入自己的淺見，會隨著使用時間的拉長持續修改，有什麼不同的意見歡迎留言分享&lt;/p>
+&lt;h2 id="1-ruby-設計理念與起源">1. Ruby 設計理念與起源&lt;/h2>
+&lt;p>Ruby 是一門 Dynamic Language，運行在 Ruby Virtual Machine 上，本身是弱型別但沒有 JS 中隱式的轉型 (ex. 1 + &amp;ldquo;23&amp;rdquo;)，在 3.0 加入 Type safety 工具 &lt;code>TypeProf&lt;/code> 幫助檢查型別問題&lt;/p>
+&lt;p>透過範例簡單看一下 Ruby 幾個特別的設計理念&lt;/p>
+&lt;h3 id="ruby-is-designed-to-make-programmers-happy">Ruby is designed to make programmers happy&lt;/h3>
+&lt;p>出自於 &lt;a class="link" href="https://www.artima.com/articles/the-philosophy-of-ruby" target="_blank" rel="noopener"
+>The Philosophy of Ruby A Conversation with Yukihiro Matsumoto, Part I&lt;/a>，Ruby 給予開發者很高的自由度&lt;/p>
+&lt;ol>
+&lt;li>定義 symbol 在 Ruby 的框架下產生自己的 DSL，例如 &lt;a class="link" href="http://sinatrarb.com/" target="_blank" rel="noopener"
+>sinatra&lt;/a> 這個 web framework，看範例會以為根本不是 ruby 寫的&lt;/li>
+&lt;li>支援 Meta programming 可以在 Runtime 改變類別行為&lt;/li>
+&lt;li>可以複寫任意的方法，包含原生類別&lt;/li>
+&lt;li>同一種功能可以有非常多種寫法，光是迴圈可以用 while / for in / each / until / begin while 等&lt;/li>
+&lt;/ol>
+&lt;h3 id="seeing-everything-as-an-object">Seeing Everything as an Object&lt;/h3>
+&lt;p>在 Ruby 的世界中，幾乎每一個變數都是物件，包含 &lt;code>1+2&lt;/code> 也可以寫成 &lt;code>1.+(2)&lt;/code>，1 本身是 &lt;code>Integer 類別&lt;/code>裡頭有 + 這個方法&lt;br>
+這讓 Ruby 很適合 OOP，也帶來很多的彈性，像是在 operator overwrite&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Integer&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">alias&lt;/span> &lt;span class="ss">:plus&lt;/span> &lt;span class="ss">:+&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">other&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="nb">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_s&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="s2">&amp;#34; is adding &amp;#34;&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">other&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_s&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">plus&lt;/span> &lt;span class="n">other&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 輸出結果&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 1 is adding 2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 3&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Integer 是預設類別，Ruby 遇到類別重複宣告時會&lt;code>合併&lt;/code>，接著我們在 Integer 宣告 plus 是原本 + 的別名，接著覆寫 &lt;code>+&lt;/code> 先打印出 is adding 字串在回傳，在 Ruby 中預設 function 最後一行即使不顯式宣告也會 return&lt;/p>
+&lt;h3 id="透過匿名函式支援-functional-programming-style">透過匿名函式支援 Functional Programming Style&lt;/h3>
+&lt;p>在 Ruby 世界中，不像 Javascript / Golang 把 function 視為一等公民&lt;/p>
+&lt;blockquote>
+&lt;p>在程式語言中，所謂的一等公民條件是&lt;/p>
+&lt;ol>
+&lt;li>可以傳入 function 當作參數&lt;/li>
+&lt;li>可以被 function 當作 return 值&lt;/li>
+&lt;li>可以被儲存於資料結構中使用&lt;/li>
+&lt;/ol>
+&lt;/blockquote>
+&lt;p>但是 Ruby 也還是匿名函式的語法，大致如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">sum&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">total&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">x&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">proc&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">y&lt;/span>&lt;span class="o">|&lt;/span> &lt;span class="n">x&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">y&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sum_five&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="mi">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">sum_five&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">sum_five&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">sum_five&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>後續會有更詳細補充，但至少 Ruby 世界中也是可以做到 functional programming 的&lt;/p>
+&lt;p>綜合以上，Ruby 是一門彈性很大、很自由的語言，這是一把雙面刃，對於新手可能也不是這麼友善，畢竟有太多語法跟關鍵字要去熟悉&lt;/p>
+&lt;h3 id="如何安裝">如何安裝&lt;/h3>
+&lt;p>可以從官網下載安裝 &lt;a class="link" href="https://www.ruby-lang.org/en/documentation/installation/" target="_blank" rel="noopener"
+>Installing Ruby&lt;/a>，或是先安裝 Ruby 版本管理工具如 &lt;a class="link" href="http://rvm.io/" target="_blank" rel="noopener"
+>RVM&lt;/a>&lt;/p>
+&lt;h4 id="套件管理">套件管理&lt;/h4>
+&lt;p>安裝完 ruby 後，也同時安裝了 &lt;code>gem&lt;/code>，gem 是 ruby 套件管理工具，可以安裝或發佈自己的套件&lt;/p>
+&lt;blockquote>
+&lt;p>gem 我一開始理解成 npm，但 npm 層級高了一些，例如 gem 並沒有做到版本控制的功能，gem + bundle 比較是 npm 的組合&lt;/p>
+&lt;/blockquote>
+&lt;p>詳細可參考 &lt;a class="link" href="https://medium.com/@bag571ivy3470/ruby-%E7%9A%84-rvm-vs-gem-vs-bundle-%E7%9A%84%E5%B7%AE%E5%88%A5-fc9ab20a920" target="_blank" rel="noopener"
+>Ruby 的 Rvm VS Gem VS Bundler 的差別&lt;/a>&lt;/p>
+&lt;h2 id="基礎語法">基礎語法&lt;/h2>
+&lt;h3 id="變數宣告">變數宣告&lt;/h3>
+&lt;ol>
+&lt;li>不用宣告型別&lt;/li>
+&lt;li>變數可以改變型別&lt;/li>
+&lt;li>但是沒有隱式的型別轉換&lt;/li>
+&lt;li>變數的 &lt;code>scope 只有當前的 context&lt;/code>，但要注意匿名函式會讀取當前的 context，並不會一直往上查找，除非用全域變數 &lt;code>$&lt;/code> 開頭&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">123&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">123&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span> &lt;span class="c1"># 拋錯 TypeError (String can&amp;#39;t be coerced into Integer)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">func&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="c1"># 拋錯&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">upto&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">|&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="c1"># 這樣是可以的，因為 block 是用宣告當前的 context&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="vg">$sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">5&lt;/span> &lt;span class="c1"># 全域變數可以&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">func&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="vg">$sum&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="命名規則">命名規則&lt;/h4>
+&lt;ol>
+&lt;li>變數名稱常用蛇形命名法&lt;/li>
+&lt;li>變數全大寫代表&lt;code>常數&lt;/code>，但是常數被改會有 warning 不會有錯誤&lt;/li>
+&lt;li>Class/Module 名稱開頭大寫&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">naming_convetion&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">123&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">FIVE&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">FIVE&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">4&lt;/span> &lt;span class="c1"># warning: already initialized constant X&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="symbols">Symbols&lt;/h4>
+&lt;p>建立唯一且不可變的物件，用 &lt;code>:&lt;/code> 開頭，重複宣告都會指向同一份記憶體位置 (&lt;code>透過 object_id 識別&lt;/code>)，而字串每一次宣告都會在記憶體產生新的一份 String Object，如果是要單純用來識別 Symbol 效能會比 String 好上很多喔&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">hello&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="ss">:hello&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">world&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="ss">:hello&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">hello&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">world&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">hello&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">object_id&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">world&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">object_id&lt;/span> &lt;span class="c1">#true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">hello&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hello&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">world&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hello&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">hello&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">world&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">hello&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">object_id&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">world&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">object_id&lt;/span> &lt;span class="c1">#false&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="hash">Hash&lt;/h4>
+&lt;p>Ruby 有 Hash，可以用 &lt;code>=&amp;gt; 或 :&lt;/code> 分隔 key value，但是兩者有很大的差異&lt;/p>
+&lt;ol>
+&lt;li>=&amp;gt; 非常的自由，key 值可以是任意的值&lt;/li>
+&lt;li>: 的 key 只能是 symbol，如果放字串會直接轉成 symbol&lt;br>
+要非常小心 &lt;code>string 跟 symbol&lt;/code> 是不同的，實作上很容易踩到這個坑&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">b&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span> &lt;span class="c1"># nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="ss">:&amp;#34;123&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span> &lt;span class="c1"># &amp;#34;123&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span> &lt;span class="c1"># &amp;#34;123&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="ss">:&amp;#34;123&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span> &lt;span class="c1"># nil&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="ruby-中幾乎都是物件有內建很多便利的方法">Ruby 中幾乎都是物件，有內建很多便利的方法&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">methods&lt;/span> &lt;span class="c1"># 列出所有 Integer 包含的 method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">odd?&lt;/span> &lt;span class="c1"># 是不是偶數&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">class&lt;/span> &lt;span class="c1"># 類別&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_s&lt;/span> &lt;span class="c1"># 轉成字串&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="陣列">陣列&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">arr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">4&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">include?&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">push&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">pop&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="loop--control-flow">loop / control flow&lt;/h3>
+&lt;h4 id="條件式">條件式&lt;/h4>
+&lt;p>基本的 if / elseif / else 與三元判斷式&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">odd?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is odd&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">elsif&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">even?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is even&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;never happen&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">odd?&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">?&lt;/span> &lt;span class="s2">&amp;#34;x is odd&amp;#34;&lt;/span>&lt;span class="ss">:&amp;#34;x is even&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="switch-case">switch case&lt;/h4>
+&lt;ol>
+&lt;li>採用 case / when / else 語法，不用加 break&lt;/li>
+&lt;li>case 如果沒有接參數，則 when 條件可以放 statement / 如果有接參數，則 when 條件放常數&lt;/li>
+&lt;li>如果希望 case when 結果賦值給變數，可以用 when &amp;hellip; then&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">x&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">case&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">when&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">odd?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is odd&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">when&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">even?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is even&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;never happen&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">case&lt;/span> &lt;span class="n">x&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">when&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="o">..&lt;/span>&lt;span class="mi">10&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is in 1 to 10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;x is not in 1 to 10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">val&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">case&lt;/span> &lt;span class="n">x&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">when&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="o">..&lt;/span>&lt;span class="mi">10&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">then&lt;/span> &lt;span class="s2">&amp;#34;x is in 1 to 10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;x is not in 1 to 10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># val = &amp;#34;x is in 1 to 10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="迴圈">迴圈&lt;/h4>
+&lt;p>方式很多種&lt;/p>
+&lt;ol>
+&lt;li>先檢查條件的 for in / while / until&lt;/li>
+&lt;li>後檢查條件的 begin &amp;hellip; (when/until)&lt;/li>
+&lt;li>Enumerable 物件可以用 each&lt;/li>
+&lt;/ol>
+&lt;p>但&lt;code>沒有常見 for(initialExpression; conditionExpression; incrementExpression)&lt;/code> 宣告&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">arr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">4&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">while&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">size&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">i&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">i&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">until&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">size&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">i&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">i&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">begin&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">i&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span> &lt;span class="k">while&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">size&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">for&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">arr&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">i&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">each&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span> &lt;span class="nb">puts&lt;/span> &lt;span class="n">x&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="error-handling">Error handling&lt;/h4>
+&lt;ol>
+&lt;li>透過 raise 拋出錯誤&lt;/li>
+&lt;li>透過 rescue 接錯誤，可以更進階指定錯誤類型&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">begin&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">#... process, may raise an exception&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="no">ArgumentError&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">rescue&lt;/span> &lt;span class="no">ArgumentError&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;ArgumentError&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">rescue&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="n">error&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="n">error&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">#... error handler&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">#... executes when no error&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">ensure&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">#... always executed&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>進階資料請參考 &lt;a class="link" href="https://stackify.com/rescue-exceptions-ruby/" target="_blank" rel="noopener"
+>How to Rescue Exceptions in Ruby&lt;/a>&lt;/p>
+&lt;h3 id="function">Function&lt;/h3>
+&lt;ol>
+&lt;li>function 不用定義回傳值&lt;/li>
+&lt;li>呼叫可以省略括號&lt;/li>
+&lt;li>預設最後一行會回傳，不用在顯示宣告 return&lt;/li>
+&lt;li>如果呼叫的參數數量跟宣告不同會拋出錯誤&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">add&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">a&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">b&lt;/span> &lt;span class="c1"># 等同於 return a + b&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">add&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="class">Class&lt;/h3>
+&lt;ol>
+&lt;li>預設 Class 名稱開頭大寫&lt;/li>
+&lt;li>支援繼承 &lt;code>Successor &amp;lt; Predecessor&lt;/code>&lt;/li>
+&lt;li>要建立 instance 透過 &lt;code>Class.new&lt;/code>，會呼叫 class 中的 private method &lt;code>initialize&lt;/code>&lt;/li>
+&lt;li>宣告 instance 變數以 &lt;code>@&lt;/code> 開頭 / 宣告 class static 變數用 &lt;code>@@&lt;/code>&lt;/li>
+&lt;li>需要顯式指定針對 instance 變數的 getter/setter，或是用 &lt;code>attr_accessor/attr_writer/attr_reader&lt;/code> 增加&lt;/li>
+&lt;li>支援 public/protected/private，但跟其他語言的 private 不太同，以下節錄自高見龍大大的文章&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>因為在 Ruby 裡所謂的 private 方法的使用規定很簡單，就只有一條：「不能明確的指出 receiver」。用白話文講，就是「在呼叫 private 方法的時候，前面不可以有小數點」。也就是因為這樣，在 Ruby 的 private 方法其實不只類別自己內部可以存取，它的子類別也可以，並沒有像其它程式語言一樣的繼承限制&lt;/p>
+&lt;/blockquote>
+&lt;ol start="7">
+&lt;li>定義 static method 可以用 &lt;code>def self.method&lt;/code>，或是用 &lt;code>class &amp;lt;&amp;lt; self&lt;/code>&lt;/li>
+&lt;li>&lt;code>沒有 interface / method overloading / polymorphism&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">attr_accessor&lt;/span> &lt;span class="ss">:name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">initialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">age&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@age&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">age&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">hello&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;Hello, my name is &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="vi">@name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nc">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="nf">show_specy&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;we are Mammals&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm">=begin 等同於上者，此方法適和於大量定義
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> class &amp;lt;&amp;lt; self
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> def show_specy
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> puts &amp;#34;we are Mammals&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> end
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> end
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm">=end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">protected&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">my_protected_method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;my protected method&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">private&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">my_little_secret&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;private methods&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">show_specy&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">p1&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;yoyo&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">p1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">p1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hello&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># puts p1.age 對應第5點，不能直接呼叫 .age 取得 age 變數&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Teacher&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="no">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">initialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">age&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">major&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">super&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">age&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@major&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">major&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">can_access_parent_private_method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">my_protected_method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">my_little_secret&lt;/span> &lt;span class="c1"># 這樣可以讀取 parent private method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">#self.my_little_secret &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">t1&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Teacher&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;Mark&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s2">&amp;#34;English&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">t1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">hello&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">t1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">can_access_parent_private_method&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">t1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">send&lt;/span> &lt;span class="ss">:my_little_secret&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">t1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">send&lt;/span> &lt;span class="ss">:my_protected_method&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Ruby 物件比想像中複雜，尤其是支援 Meta programming，進階資料可以參考 &lt;a class="link" href="https://spreered.medium.com/ruby-%E7%9A%84%E7%B9%BC%E6%89%BF%E9%8D%8A-1-%E7%89%A9%E4%BB%B6%E5%B0%8E%E5%90%91%E5%A6%82%E4%BD%95%E5%AF%A6%E8%B8%90-10324ec7546d" target="_blank" rel="noopener"
+>Ruby 的繼承鍊 (1) 物件導向如何實踐&lt;/a>&lt;/p>
+&lt;h3 id="匿名函式-block--proc--lambda">匿名函式 block / Proc / lambda&lt;/h3>
+&lt;ol>
+&lt;li>block 代表程式碼區塊，少數 Ruby 中&lt;code>不是物件&lt;/code>的存在，必須依附在 function 上，透過 yeild 呼叫 block 執行，單行宣告用 &lt;code>{...}&lt;/code>，多行用 &lt;code>do ... end&lt;/code>&lt;/li>
+&lt;li>Proc 是物件，不限制參數，return 時是代表當時的 context return，透過 proc.call 執行&lt;/li>
+&lt;li>lambda 是特殊的 Proc，會嚴格檢查參數，return 就如同一般的 function return&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">upto&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span> &lt;span class="p">{&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="n">ele&lt;/span>&lt;span class="o">|&lt;/span> &lt;span class="nb">puts&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 可以判斷是不是有 block 被傳入，如果有則用 yeild 呼叫執行&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">hello&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nb">block_given?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">yield&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;world&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">hello&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;message from hello: &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Proc / lambda 可以儲存於變數備用&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">my_proc&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Proc&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;from proc &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">my_lambda&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lambda&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;from lambda &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">block&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;before call&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">block&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;func&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;after call&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">my_lambda&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="c1"># before call/n from lambda func/n after call&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># proc 宣告於最上層 context，所以 return 時會連帶結束整個程式&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">my_proc&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="c1"># before call/n from proc func&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="有趣的語法-symbol">有趣的語法 &lt;code>&amp;amp;:symbol&lt;/code>&lt;/h4>
+&lt;p>網路上有些說法是 &lt;code>{|x| x[:symbol]}&lt;/code> 的縮寫，讓我們看下去&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">attr_reader&lt;/span> &lt;span class="ss">:name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">initialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">[&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;2222&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">name_list&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="c1"># 兩者相同&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">name_list&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="ss">:name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span> &lt;span class="n">name_list&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>參數用 &amp;amp; 開頭代表參數是以 Proc 傳入，他跟一般的參數 args是切開的&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">some_method&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="n">args&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">block&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;args: &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">args&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">inspect&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;block: &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">block&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">inspect&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">some_method&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="ss">:whatever&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># args: [1,2,3, :whatever]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># block: nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">some_method&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="ss">:whatever&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># args: [1,2,3]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># block: #&amp;lt;Proc:0x007fd23d010da8&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="2">
+&lt;li>在 Ruby 呼叫 object method 可以用 send 的方式&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">attr_reader&lt;/span> &lt;span class="ss">:name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">initialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">send&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="3">
+&lt;li>&amp;amp;:symbol 實際上會去呼叫 :symbol#to_proc ，而在 Symbol 中有定義 to_proc 行為，也會有人去自定義 class 中的 to_proc 方法&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Symbol&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">to_proc&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Proc&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">receiver&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">receiver&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">send&lt;/span> &lt;span class="nb">self&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>綜合上述，可以拆解成&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="n">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">[&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;2222&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="ss">:name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 可以拆解成下者&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">x&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">send&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>也就是 receiver 會收到 symbol 的方法呼叫，參考自 &lt;a class="link" href="https://stackoverflow.com/questions/1217088/what-does-mapname-mean-in-ruby" target="_blank" rel="noopener"
+>What does map(&amp;amp;:name) mean in Ruby?&lt;/a>&lt;/p>
+&lt;p>其他優秀的資訊&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://5xruby.tw/post/discover-ruby-block" target="_blank" rel="noopener"
+>Ruby 探索：Blocks 深入淺出&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://medium.com/@jinghua.shih/ruby-%E5%A6%82%E4%BD%95%E7%90%86%E8%A7%A3-ruby-block-2387b74f188b" target="_blank" rel="noopener"
+>[Ruby] 如何理解 Ruby Block&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;h3 id="concurrency--parallelism">Concurrency &amp;amp; Parallelism&lt;/h3>
+&lt;ol>
+&lt;li>Ruby 支援 Process ，可用於處理 CPU-Heavy issue&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>Ruby 在 2.0 導入 Cope on Write，當 process fork 時如果 value 沒有改動則使用同一份記憶體空間，降低 fork 對於記憶體資源無謂的佔用&lt;/p>
+&lt;/blockquote>
+&lt;ol start="2">
+&lt;li>Ruby 支援 Thread，適用於處理 IO Event，但如果是 CPU-Heavy issue 則沒有幫助，因為 Ruby 有 GIL (Global Interpreter Lokc) 所以&lt;code>無法併發，一次只能執行一個 thread&lt;/code>，這跟 Ruby VM 實作有關，如果是 &lt;code>JRuby 則沒有此問題&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>Thread releases GIL when it hits blocking I/O operations such as HTTP requests, DB queries, writing / reading from disk and even sleep&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s1">&amp;#39;benchmark&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">ELE_AMOUNT&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1000&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">PROCESS_NUM&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">arr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">Array&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="no">ELE_AMOUNT&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="nb">Array&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="no">ELE_AMOUNT&lt;/span>&lt;span class="p">){&lt;/span>&lt;span class="nb">rand&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="o">...&lt;/span>&lt;span class="mi">9&lt;/span>&lt;span class="p">)}}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="no">Benchmark&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">bm&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">10&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">bm&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bm&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">report&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;seq&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">total&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">reduce&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">sum&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">sum&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sum&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bm&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">report&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;parallel&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">read&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">write&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">IO&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">pipe&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">upto&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="no">PROCESS_NUM&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Process&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">fork&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">p&lt;/span> &lt;span class="n">i&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">step&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="no">ELE_AMOUNT&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">0&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="no">PROCESS_NUM&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">ceil&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">start_ele&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">step&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">total&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="n">start_ele&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">step&lt;/span>&lt;span class="o">].&lt;/span>&lt;span class="n">reduce&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">sum&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">sum&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sum&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">write&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">puts&lt;/span> &lt;span class="n">total&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Process&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">wait&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bm&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">report&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;thread&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">total&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">threads&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">[]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">upto&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="no">PROCESS_NUM&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">map&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">t&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Thread&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">step&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="no">ELE_AMOUNT&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">0&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="no">PROCESS_NUM&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">ceil&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">start_ele&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">step&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">total&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">arr&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="n">start_ele&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">step&lt;/span>&lt;span class="o">].&lt;/span>&lt;span class="n">reduce&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">sum&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">sum&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">ele&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sum&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">threads&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="n">t&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">threads&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">each&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="ss">:join&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="3">
+&lt;li>Fiber 是類似於 goroutine 的概念，更輕量的 user space thread，主要用來非同步的排程，適用於結合 Non-blocking IO，因為 Fiber 在 Context Switch 比 Thread 更為輕量&lt;br>
+範例來源：&lt;a class="link" href="https://engineering.universe.com/introduction-to-concurrency-models-with-ruby-part-i-550d0dbb970" target="_blank" rel="noopener"
+>Introduction to Concurrency Models with Ruby. Part I&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="no">EventMachine&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">run&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Fiber&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">page&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">http_get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;http://www.google.com/&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="n">page&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">response_header&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">status&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">200&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">about&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">http_get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;https://google.ca/search?q=universe.com&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># ... &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;Google is down&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">resume&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">http_get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">url&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">current_fiber&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Fiber&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">current&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">http&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">EM&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="no">HttpRequest&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">url&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">http&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">callback&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">current_fiber&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">resume&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">http&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">http&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">errback&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">current_fiber&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">resume&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">http&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Fiber&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">yield&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="4">
+&lt;li>Ruby 3.0 導入了基於 Actor 模式的 &lt;code>Ractor&lt;/code> ，真正能做到利用 Thread 達成 Parallelism，以前會需要 GIL 是為了避免 multi thread 之下的 deadlock / race condition 狀況，但是在 Ractor 中基本上 Object 都不會被共享，參考 &lt;a class="link" href="https://blog.golang.org/codelab-share" target="_blank" rel="noopener"
+>Share Memory By Communicating&lt;/a>
+有些文章會寫 Guild，但我查 Ruby 官方文件只有看到 Ractor&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>&lt;code>Do not communicate by sharing memory; instead, share memory by communicating.&lt;/code>&lt;br>
+意即如果希望在多個 Thread 中共享資訊，不要透過共享記憶體來溝通，而是透過通信交換資料達到共享資料的目的 &lt;br>
+因為共享記憶體就必須處理 lock，接著就要擔心 dead lock 等問題&lt;br>
+如果不共享記憶體，直接將資料透過通道等方式傳遞，就不用擔心以上的問題，也可以更好的並行運算&lt;/p>
+&lt;/blockquote>
+&lt;p>優良的資源參考&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://www.toptal.com/ruby/ruby-concurrency-and-parallelism-a-practical-primer" target="_blank" rel="noopener"
+>Ruby Concurrency and Parallelism: A Practical Tutorial&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://engineering.universe.com/introduction-to-concurrency-models-with-ruby-part-i-550d0dbb970" target="_blank" rel="noopener"
+>Introduction to Concurrency Models with Ruby. Part I / II&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.youtube.com/watch?v=Dtn9Uudw4Mo" target="_blank" rel="noopener"
+>RubyConf Taiwan 2019 - The Journey to One Million by Samuel Williams&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;h2 id="module">Module&lt;/h2>
+&lt;ol>
+&lt;li>Module 提供類似於 Namespace 角色，可以自定義方法與常數不用擔心與其他人衝突&lt;/li>
+&lt;li>Module 不能被實體化 (也就是不能被 new)，主要透過 mixin 擴充 Class
+在共享實作方面，Ruby 一個 Class 只能繼承一個 Parent，但是 Module 可以 mixin 多個，在沒有直接關係的情況下想要跨多個 Class 共享某些特定的方法，Module 是不錯的選擇&lt;/li>
+&lt;li>使用 Mixin 要小心多個 Module 可能會有不預期的互相干擾，例如修改同一個 instance 變數，有狀態要紀錄記得取一個比較特殊的名稱&lt;/li>
+&lt;li>如果 Module 中有 Class 宣告，要指定該 Class 可以用雙冒號 &lt;code>::&lt;/code> 連接例如 &lt;code>Module Name::Class Name&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">##### calculator.rb&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">module&lt;/span> &lt;span class="nn">Greeting&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">sayhi&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">puts&lt;/span> &lt;span class="s2">&amp;#34;hello, &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="vi">@name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">class&lt;/span> &lt;span class="nc">Hi&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">###### main.rb&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">require_relative&lt;/span> &lt;span class="s1">&amp;#39;./calculator&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="no">Greeting&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="no">Hi&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># 透過 include 達到 mixin 效果&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kp">include&lt;/span> &lt;span class="no">Greeting&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">initialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">name&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Person&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;yoyo&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sayhi&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Module 除了可以被 include 外，還有 extend 跟 prepend，請參考 &lt;a class="link" href="https://spreered.medium.com/ruby-%E7%9A%84%E7%B9%BC%E6%89%BF%E9%8D%8A-2-module-%E7%9A%84-include-prepend-%E5%92%8C-extend-ae4e1c940097" target="_blank" rel="noopener"
+>Ruby 的繼承鍊 (2) — Module 的 include、prepend 和 extend&lt;/a>&lt;/p>
+&lt;h3 id="程式碼拆分檔案">程式碼拆分檔案&lt;/h3>
+&lt;p>把全部程式碼塞在同一個檔案十分的可怕，透過適時的拆分可以讓程式碼更好維護，在 Ruby 中如果要 include 其他檔案的宣告，可以用 &lt;code>require_relative '檔案本身的相對路徑'&lt;/code>的方式&lt;br>
+目前看起來只有常數、Module、Class 會被自動 export，還再找到相關的文件說明&lt;/p>
+&lt;p>require 總共有幾種&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>require&lt;/code>：&lt;/li>
+&lt;/ol>
+&lt;ul>
+&lt;li>如果是相對路徑，則根據 &lt;code>$LOCAL_PAHT&lt;/code> 設定去找對應的 library，通常是用來找外部相依或是 gem&lt;/li>
+&lt;li>如果是絕對路徑，則直接載入對應檔案&lt;/li>
+&lt;/ul>
+&lt;ol start="2">
+&lt;li>&lt;code>require_local&lt;/code>:&lt;br>
+透過檔案的相對路徑找到檔案，主要是用於在自己專案中的其他檔案&lt;/li>
+&lt;/ol>
+&lt;h2 id="testing">Testing&lt;/h2>
+&lt;p>Ruby 並沒有內建的 Test Framework，評估後選用 RSpec，提供 TDD/BDD Style 語法，透過 describe / it 組合測試案例&lt;/p>
+&lt;ol>
+&lt;li>慣例是專案根目錄建立 spec 目錄，待測項目對應檔案名加上 _spec 結尾&lt;/li>
+&lt;/ol>
+&lt;h3 id="unit-test">Unit Test&lt;/h3>
+&lt;ol>
+&lt;li>支援 before / after / around(before + each)，執行頻率分成 each / all / suite&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>suite 是在整個 test file 只會跑一次，all 則是每個 describe 都會執行一次&lt;/p>
+&lt;/blockquote>
+&lt;ol start="2">
+&lt;li>如果是有變數要在每一次 test case 前執行，可以用 before(:each)，或是用 &lt;code>let(變數名稱){回傳值}&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>以下是一個簡單的運費計算&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;rspec&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">require_relative&lt;/span> &lt;span class="s1">&amp;#39;../calculator&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">describe&lt;/span> &lt;span class="no">Calculator&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">let&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:calculator&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="no">Calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">it&lt;/span> &lt;span class="s1">&amp;#39;small package should get $100 fee&amp;#39;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">fee&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">))&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">eq&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">it&lt;/span> &lt;span class="s1">&amp;#39;medium size should get $500 fee&amp;#39;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">fee&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">))&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">eq&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">500&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">before&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="vi">@calculator&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">around&lt;/span> &lt;span class="k">do&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">t&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">p&lt;/span> &lt;span class="s2">&amp;#34;before each test&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">t&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">run&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">p&lt;/span> &lt;span class="s2">&amp;#34;after each test&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">it&lt;/span> &lt;span class="s1">&amp;#39;large size should get $700 fee&amp;#39;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="vi">@calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">fee&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">))&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">eq&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">750&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="stub--mock--spy">Stub / Mock / Spy&lt;/h3>
+&lt;p>RSpec 提供 mock 方法叫做 double (出自於 stunt double 演員替身)&lt;/p>
+&lt;ol>
+&lt;li>double 可以憑空產生物件，可以自定義 function 與回傳值&lt;/li>
+&lt;li>double 可以只覆寫特定方法的回傳值 &lt;code>allow(instance).to receive(method).and_return(value)&lt;/code>&lt;/li>
+&lt;li>spy 不改方法的實作，只確認有沒有被呼叫，以及確認傳入的參數以及呼叫順序是否如預期&lt;/li>
+&lt;li>每一個 test case 後都會被自動 restore&lt;/li>
+&lt;li>因為是動態語言，所以要 &amp;ldquo;double(string)&amp;rdquo; 等方法都是可以的&lt;/li>
+&lt;/ol>
+&lt;p>運費計算加上一個 VIP 檢查&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">VIP_Service&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">is_vip?&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="s2">&amp;#34;do some query&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">describe&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">let&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:calculator&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">vip_service&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">VIP_Service&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># 這裡透過 mock 動態改變&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">allow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">vip_service&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">receive&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:is_vip?&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">and_return&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kp">false&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="no">Calculator&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">vip_service&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>spy 的案例請看官方文件範例&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s1">&amp;#39;rspec&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">Invitation&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">deliver&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">email&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">p&lt;/span> &lt;span class="n">email&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">describe&lt;/span> &lt;span class="s2">&amp;#34;Invitation&amp;#34;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">let&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:invitation&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">spy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;invitation&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">before&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">invitation&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">deliver&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;foo@example.com&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">invitation&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">deliver&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;bar@example.com&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">it&lt;/span> &lt;span class="s2">&amp;#34;passes when a count constraint is satisfied&amp;#34;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># 透過 have_recieved 看方法有沒有被呼叫&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">invitation&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">have_received&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:deliver&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">twice&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">it&lt;/span> &lt;span class="s2">&amp;#34;passes when an order constraint is satisifed&amp;#34;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># 加上 with 檢查方法呼叫時傳入的參數&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># 加上 ordered 代表要按照此順序呼叫&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">invitation&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">have_received&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:deliver&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">with&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;foo@example.com&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">ordered&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">invitation&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to&lt;/span> &lt;span class="n">have_received&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="ss">:deliver&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">with&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;bar@example.com&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">ordered&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="http-request--api-server">HTTP Request &amp;amp; API Server&lt;/h2>
+&lt;p>Ruby 並沒有提供 http server 的封裝，只有 tcp server，所以我們選用 &lt;a class="link" href="https://github.com/rack/rack" target="_blank" rel="noopener"
+>Rack&lt;/a> 這一套 library，他被 Ruby 生態圈廣泛採用的底層框架，如 RoR 也是&lt;/p>
+&lt;blockquote>
+&lt;p>Rack provides a minimal, modular, and adaptable interface for developing web applications in Ruby.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="api-server">API Server&lt;/h3>
+&lt;p>新增 server.ru，透過 &lt;code>$rackup server.ru&lt;/code> 啟動&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s1">&amp;#39;rack&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s1">&amp;#39;json&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">rack_proc&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lambda&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="o">|&lt;/span>&lt;span class="n">env&lt;/span>&lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">req&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">Rack&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="no">Request&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">env&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">case&lt;/span> &lt;span class="n">req&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">request_method&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="s2">&amp;#34;:&amp;#34;&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">req&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">path_info&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">when&lt;/span> &lt;span class="s2">&amp;#34;GET:/hello&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="mi">200&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;content-type&amp;#34;&lt;/span>&lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;application/json&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span> &lt;span class="o">[&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;hello&amp;#34;&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="n">req&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">params&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="s2">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span> &lt;span class="p">}&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_json&lt;/span> &lt;span class="o">]]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">when&lt;/span> &lt;span class="s2">&amp;#34;POST:/world&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">body&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">JSON&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">parse&lt;/span> &lt;span class="n">req&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">body&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">gets&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="mi">200&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;content-type&amp;#34;&lt;/span>&lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;application/json&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span> &lt;span class="o">[&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;hello&amp;#34;&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="n">body&lt;/span>&lt;span class="o">[&lt;/span>&lt;span class="s2">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="o">]&lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_json&lt;/span> &lt;span class="o">]]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="mi">406&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s2">&amp;#34;content-type&amp;#34;&lt;/span>&lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;html/txt&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span> &lt;span class="o">[&lt;/span>&lt;span class="s1">&amp;#39;not_implemented_yet&amp;#39;&lt;/span>&lt;span class="o">]]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">run&lt;/span> &lt;span class="n">rack_proc&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="http-request">HTTP Request&lt;/h3>
+&lt;p>參考 &lt;a class="link" href="https://www.twilio.com/blog/5-ways-make-http-requests-ruby" target="_blank" rel="noopener"
+>5 ways to make HTTP requests in Ruby&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s2">&amp;#34;http&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">response&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">HTTP&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;http://localhost:9292/hello&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="ss">:params&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span>&lt;span class="ss">:name&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;world&amp;#34;&lt;/span>&lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span> &lt;span class="n">response&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">parse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">response&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="no">HTTP&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">post&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;http://localhost:9292/world&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="ss">:body&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span>&lt;span class="ss">:name&lt;/span> &lt;span class="o">=&amp;gt;&lt;/span> &lt;span class="s2">&amp;#34;jojo&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">to_json&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">p&lt;/span> &lt;span class="n">response&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">parse&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>寫過最長的文章，整理了這一個禮拜上手 Ruby 的過程，Ruby 實際上還有非常多的 &lt;code>黑魔法&lt;/code>，跟新同事們一起上手的過程不斷發現驚喜(恐?!)&lt;br>
+必須坦白說上手到現在沒有很愛 Ruby，因為太自由了，又有太多關鍵字跟寫法，可能要在一段時間熟悉，之後再來慢慢補充&lt;/p></description></item></channel></rss>

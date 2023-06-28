@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>程式設計 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88/</link><description>Recent content in 程式設計 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sat, 06 Nov 2021 01:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88/index.xml" rel="self" type="application/rss+xml"/><item><title>《設計重構》讀後分享</title><link>https://yuanchieh.page/posts/2021/2021-11-06-%E8%A8%AD%E8%A8%88%E9%87%8D%E6%A7%8B%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB/</link><pubDate>Sat, 06 Nov 2021 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-11-06-%E8%A8%AD%E8%A8%88%E9%87%8D%E6%A7%8B%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB/</guid><description>&lt;p>&lt;img src="https://cf-assets2.tenlong.com.tw/product_images/images/000/031/183/pjpeg/9789864345229_bc.jpg?1631873566"
+loading="lazy"
+>
+&lt;a class="link" href="https://www.tenlong.com.tw/products/9789864345229?list_name=srh" target="_blank" rel="noopener"
+>天瓏購買連結&lt;/a>&lt;/p>
+&lt;p>不論是因為隨著產品變化而導致過往的程式設計不適合，或是單純設計人員沒有遵守基本設計原則而導致的設計錯誤，如果沒有持續的回顧並重構，會讓技術債越疊越高，而技術債最終體現在變更成本 (cost of change)，要加新功能越來越難加、或是加了莫名其他的地方開始壞掉，讓產品開發越來越艱難&lt;/p>
+&lt;p>但是識別程式壞味道有時沒這麼直覺，而《設計重構》用很清楚的方式整理，從發生壞味道的潛在原因、透過 Java SDK 的錯誤設計、最後給出實際範例，並指出適合的重構方式；而設計是需要因地制宜，所以有些壞味道本身是刻意的，這本書也適當的舉出一些反例，讓整個論述更加的完整&lt;/p>
+&lt;p>整本書僅 248 頁很推薦入手，總共整理 25 個壞味道，搭配 Design Pattern / Refactoring 系列的書可以相互佐證
+&lt;img src="https://yuanchieh.page/%27/post/2021/img/1106/code_smell_total.jpg%27"
+loading="lazy"
+>&lt;/p>
+&lt;p>以下紀錄一下我特別有感，以及實際遇到的程式壞味道&lt;/p>
+&lt;h2 id="抽象">抽象&lt;/h2>
+&lt;p>抽象是為了&lt;code>精簡和泛化來簡化實體&lt;/code>，具體的實現手法有&lt;/p>
+&lt;ol>
+&lt;li>提供清晰的概念邊界與唯一身份&lt;/li>
+&lt;li>映射領域實體&lt;/li>
+&lt;li>確保內聚性與完整性&lt;/li>
+&lt;li>賦予單一而重要的職責&lt;/li>
+&lt;li>避免重複&lt;/li>
+&lt;/ol>
+&lt;h3 id="31-缺失抽象">3.1 缺失抽象&lt;/h3>
+&lt;p>很多時候我們會用基本型別來表達一個應該被抽象化的概念，例如書籍中的 ISBN，ISBN 又有 10 碼 / 13 碼的區別，本身數字的組合又有個別的意義，如果我們只用基本型別 String 儲存，當遇到商業邏輯需要檢查 ISBN 碼、透過 ISBN 碼解讀資訊時，就會讓處理邏輯四處重複&lt;/p>
+&lt;p>解決方式是增加一個 ISBN class，讓原本的 Book 去引用 ISBN，讓檢查與解讀的 method 隱藏在 ISBN class 中&lt;/p>
+&lt;h3 id="32-命令式抽象化">3.2 命令式抽象化&lt;/h3>
+&lt;p>&lt;code>物件導向的設計原則是識別真實世界的事務，並用抽象化表示他 (映射領域實體)&lt;/code>，具體來說就是抽象的物件應該要表達事物的行為與其狀態，如果是習慣程序型思維而非物件型思維，容易產生資料與行為處理分開的場面，如 Data class 儲存所有的參數，DataHandler class 負責接收 Data class 的做參數並定義很多 method&lt;/p>
+&lt;p>修改的方式是找到適合的物件，讓資料與行為都分類到所屬的物件，用來表達一個清晰且完整的概念，如果是像 Data / DataHandler 或許可以考慮合併一起&lt;/p>
+&lt;p>過往在寫 js 時 Object Listeral 真的太方便了，往往 class 都變成單純的 method 而沒有狀態，直接吃 object 當作參數做運算，這讓程式碼的抽象化不完全，導致可理解性、可重用性低很多&lt;/p>
+&lt;p>反例：設計模式中有幾種都有命令式抽象化的壞味道，例如&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://refactoringguru.cn/design-patterns/strategy" target="_blank" rel="noopener"
+>策略模式&lt;/a>：每個策略都是獨立物件，在動態執行時當作參數傳入改變行為&lt;/li>
+&lt;li>&lt;a class="link" href="https://refactoringguru.cn/design-patterns/state" target="_blank" rel="noopener"
+>狀態模式&lt;/a>：將物件的不同狀態宣告成物件，在執行時切換不同狀態，方便讓每個行為可以有對應的操作&lt;/li>
+&lt;li>&lt;a class="link" href="https://refactoringguru.cn/design-patterns/command" target="_blank" rel="noopener"
+>命令模式&lt;/a>：將每個命令都宣告成物件&lt;/li>
+&lt;/ol>
+&lt;p>以上的物件宣告都有點違反原先的物件抽象化原則，但為了提高可重用性、可擴展性，這樣是可以接受的取捨&lt;/p>
+&lt;h2 id="封裝">封裝&lt;/h2>
+&lt;p>隱藏實作細節，實作關注點分離與資訊隱藏&lt;/p>
+&lt;h3 id="44-未利用封裝">4.4 未利用封裝&lt;/h3>
+&lt;p>當我們在一段邏輯中開始用大量的 if/else 、switch 檢查型別並給予不同操作時，就可能落入了未利用封裝的壞味道中，這會有幾個問題&lt;/p>
+&lt;ol>
+&lt;li>顯式型別檢查讓程式碼與具體型別耦合，降低可維護性，如果新增型別就需要改程式碼&lt;/li>
+&lt;li>如果呼叫方漏檢查型別，可能會有不預期的行為出現&lt;/li>
+&lt;/ol>
+&lt;p>透過&lt;code>多型&lt;/code>可以很好的解決問題，多引入一個超型別，接著各個類別實作相同的介面即可&lt;/p>
+&lt;h2 id="模組化">模組化&lt;/h2>
+&lt;p>透過集中和分解建立高內聚、低耦合的抽象&lt;/p>
+&lt;h3 id="53-循環依賴式模組化">5.3 循環依賴式模組化&lt;/h3>
+&lt;p>如果依賴關係圖有環出現，也就是超型別依賴於子型別，這會導致修改類別時不小心影響到其他的類別&lt;/p>
+&lt;p>出現的原因可能是&lt;/p>
+&lt;ol>
+&lt;li>職責拆分錯誤&lt;/li>
+&lt;li>把自己當作參數傳遞&lt;/li>
+&lt;li>實作 callback 時&lt;/li>
+&lt;li>依賴層級太多沒有注意到&lt;/li>
+&lt;/ol>
+&lt;p>例如說有一個雲端文件系統需要把文件加密，而加密需要文件的內容，變成 SourceDocument class 跟 DESEncryption class 相互依賴
+&lt;img src="https://yuanchieh.page/%27/post/2021/img/1106/module1.jpg%27"
+loading="lazy"
+>&lt;/p>
+&lt;p>解決辦法可以讓 SourceDocument 依賴於 IEncrytion，而 DESEncryption 實作 IEncrytion，這樣就沒有循環依賴以及 SourceDocument class 耦合於 DESEncryption 實作的問題
+&lt;img src="https://yuanchieh.page/%27/post/2021/img/1106/module2.jpg%27"
+loading="lazy"
+>&lt;/p>
+&lt;h2 id="層次結構-heirarchy">層次結構 (heirarchy)&lt;/h2>
+&lt;p>透過分類、合併、替換和排序等手法層次化抽象，例如動物學分類&lt;/p>
+&lt;h3 id="67-叛逆型-heirachy">6.7 叛逆型 heirachy&lt;/h3>
+&lt;p>子型別可以從超型別繼承行為，或是自行複寫行為，但如果子型別未照超型別介面實作，會破壞 &lt;code>is-a&lt;/code> 的繼承關係，進而違反里氏替換原則 (LPS)，這種違背超型別的承諾就是叛逆型層次結構&lt;/p>
+&lt;p>可能是因為超型別涵蓋太廣，或是子型別單純想重用某些行為而必須違背其餘行為的設計&lt;/p>
+&lt;p>例如有一個超型別是 CallSite，其中一個子型別 ConstantCallSite 為了提供不可變的特性，所以當呼叫 setTarget 時會拋出錯誤
+&lt;img src="https://yuanchieh.page/%27/post/2021/img/1106/heirarchy_1.jpg%27"
+loading="lazy"
+>&lt;/p>
+&lt;p>解決方法可以把子型別共用的行為再多抽一層超型別出來，共用相同的行為，其餘的各自型別處理
+&lt;img src="https://yuanchieh.page/%27/post/2021/img/1106/heirarchy_2.jpg%27"
+loading="lazy"
+>&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>從之前學習 SOLID 原則，到從反向用程式碼臭味來看為什麼需要 SOLID 算是一個蠻有趣的對照，再搭配 Refactoring 讓自己對於抽象的物件導向「抽象」、「封裝」、「繼承」有更多的了解與反思&lt;/p></description></item></channel></rss>

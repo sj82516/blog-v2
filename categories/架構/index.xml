@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>架構 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E6%9E%B6%E6%A7%8B/</link><description>Recent content in 架構 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 14 Jan 2022 01:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E6%9E%B6%E6%A7%8B/index.xml" rel="self" type="application/rss+xml"/><item><title>「領域驅動設計與簡潔架構入門實作班」上課筆記與心得：關於敏捷、 DDD 與 Event Storming - 上</title><link>https://yuanchieh.page/posts/2022/2022-01-14-%E9%A0%98%E5%9F%9F%E9%A9%85%E5%8B%95%E8%A8%AD%E8%A8%88%E8%88%87%E7%B0%A1%E6%BD%94%E6%9E%B6%E6%A7%8B%E5%85%A5%E9%96%80%E5%AF%A6%E4%BD%9C%E7%8F%AD%E4%B8%8A%E8%AA%B2%E7%AD%86%E8%A8%98%E8%88%87%E5%BF%83%E5%BE%97%E9%97%9C%E6%96%BC%E6%95%8F%E6%8D%B7-ddd-%E8%88%87-event-storming-%E4%B8%8A/</link><pubDate>Fri, 14 Jan 2022 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2022/2022-01-14-%E9%A0%98%E5%9F%9F%E9%A9%85%E5%8B%95%E8%A8%AD%E8%A8%88%E8%88%87%E7%B0%A1%E6%BD%94%E6%9E%B6%E6%A7%8B%E5%85%A5%E9%96%80%E5%AF%A6%E4%BD%9C%E7%8F%AD%E4%B8%8A%E8%AA%B2%E7%AD%86%E8%A8%98%E8%88%87%E5%BF%83%E5%BE%97%E9%97%9C%E6%96%BC%E6%95%8F%E6%8D%B7-ddd-%E8%88%87-event-storming-%E4%B8%8A/</guid><description>&lt;p>在 2022 年一開始就上到如此扎實、有收穫的課程真的是太讚了，之前在同事的介紹下認識了 Event Storming 並接觸到一些 DDD 的名詞，開始在網路上透過影音課程 &lt;a class="link" href="https://www.pluralsight.com/courses/fundamentals-domain-driven-design" target="_blank" rel="noopener"
+>Domain-Driven Design Fundamentals&lt;/a>、鐵人賽系列文章學習，在上課前也大概翻了一下 DDD 藍皮書，以上的教材都很不錯，也把名詞解釋跟 DDD 流程大致梳理一遍，但是蓋上書本、關掉網頁，&lt;code>我要怎麼導入？&lt;/code>&lt;/p>
+&lt;p>例如說 DDD 提到開發人員要找領域專家一起找出 Domain Model，並將 Domain 劃分出適合的 Bounded Context，但什麼是適合？我該怎樣知道不適合？當我找到適合的&amp;quot;感覺&amp;quot; A-ha Moment 是怎樣會發生？&lt;/p>
+&lt;p>在翻閱《Clean Architecture》一書也有同感，文章寫得非常清楚，也透過 Uncle Bob 的文筆重新認識了軟體架構，但&lt;code>然後呢？我該怎麼實作？&lt;/code>&lt;/p>
+&lt;p>在 DDD 一書闡述了軟體的建立需要攜手 Domain Expert 定義 Domain Model，並確保程式實作要跟 Model 保持一致，在圖表中拆分了 Entity / Value Object 等，以及提供很多元件間溝通的 Patten，但沒有說實作起來會怎樣 (講白了書本中沒有太多的程式碼) &lt;br>
+在 《Clean Architecture》 中描述的 SOLID / 分層原則 / 依賴性原則，但沒有說元件所謂的&lt;code>職責怎麼劃分&lt;/code>，有很多實作的細節跟取捨並沒有太多案例&lt;/p>
+&lt;p>Teddy 將兩者結合，用自己設計的 Kanban 系統，帶著學員跑過一次 DDD 建模的過程，並透過《Clean Architecture》實作，他說他很接近理想的軟體&lt;/p>
+&lt;blockquote>
+&lt;p>改動的成本只跟需求範圍有關，跟系統存在的時間無關&lt;/p>
+&lt;/blockquote>
+&lt;p>透過一個階段一個階段的討論與檢討，先試錯再回頭解釋名詞，這樣的學習方式我覺得比看書、看影片還要好很多，以下我將用時間軸分享 Teddy 上課的內容以及我們小組討論的演進，會有大量錯誤然後被糾正 ~打臉~ 的案例 XD&lt;br>
+內容有點細，不會完整介紹 DDD 跟 Event Storming，只會分享在實作上錯誤與老師的糾正&lt;/p>
+&lt;p>推個課程頁面 &lt;a class="link" href="https://teddysoft.tw/courses/clean-architecture/" target="_blank" rel="noopener"
+>領域驅動設計與簡潔架構入門實作班&lt;/a>，實際參與小組討論會清晰很多&lt;/p>
+&lt;h2 id="domain-driven-design">Domain Driven Design&lt;/h2>
+&lt;h3 id="ddd-基本介紹">DDD 基本介紹&lt;/h3>
+&lt;h4 id="1-什麼是-domain">1. 什麼是 Domain&lt;/h4>
+&lt;p>Domain 可以被拆分為 &lt;code>Problem Domain&lt;/code> 以及 &lt;code>Solution Domain&lt;/code>，Problem Domain 是指實際發生在世界上的問題，也就是公司所面臨的商業問題，例如外出想要叫車、肚子餓想要點外賣等，但是世界上的問題太多了，不會每一個都關注，所以總合來說&lt;/p>
+&lt;blockquote>
+&lt;p>利害關係人所在乎的實際問題就是你的 Domain&lt;/p>
+&lt;/blockquote>
+&lt;p>Uber 在乎用戶外出的通勤問題 / Food Panda 在乎用戶肚子餓想點外賣果腹的問題，各自有各自的 Problem Domain，並對此提出各自的解法 Solution Domain，之後討論將 Solution Domain 限縮在軟體設計上&lt;/p>
+&lt;p>回歸開發的根本，為什麼我們需要一直跟 PM / 利害關係人 (後續以&lt;code>領域專家&lt;/code>代稱) 不斷釐清問題，因為問題才是驅動一切的本質，如果今天不用寫一行程式碼就能解決問題，那何必動手，&lt;code>釐清問題是開發的第一步&lt;/code>&lt;/p>
+&lt;h4 id="2-什麼是-domain-model">2. 什麼是 Domain Model&lt;/h4>
+&lt;p>有了 Problem Domain，過往的習慣是直接進入開發設計，也就是對應到 Solution Domain，但這兩個 Domain 間有一個很大的鴻溝 (附圖路徑 A)，開發人員以為自己聽懂了需求就開始實作，而領域專家也以為開發人員真的懂了，最後等系統驗收時才發現根本做錯了&lt;/p>
+&lt;p>DDD 提倡領域專家與開發人員應該要先達成共識，將 Domain 建立出對應的模型 Model，讓雙方將共識轉換為圖形，並在過程中建立 &lt;code>Ubiquitous Language&lt;/code> 共同語言，等確認後開發人員才去實作 (附圖路徑 B)&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2022/img/0114/domain-model.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>比對路徑 A 、B，看似 B 繞了點遠路，但先透過 Domain Model 闡述 Solution 的長相並抽離實作，才能用最小的成本，讓領域專家及早確認解法的方向正不正確&lt;/p>
+&lt;blockquote>
+&lt;p>Q: 是不是所有問題都要建 Domain Model?&lt;br>
+A: 不是，只有當商業邏輯足夠複雜才需要，單純的 CRUD、報表系統是不需要的&lt;/p>
+&lt;/blockquote>
+&lt;p>Event Storming 是一個建立 Domain Model 的方法，從 High Level 到 Low Level 持續演化的過程&lt;/p>
+&lt;h4 id="3-domain-model-要越真越好嗎">3. Domain Model 要越真越好嗎&lt;/h4>
+&lt;p>所謂的「真」是指實際世界的真實性，Teddy 上課舉例：「樣品屋是不是越像真的實體屋越好？」&lt;br>
+答案是「不一定!」，重新思考 Domain Model 是 Solution Domain 的一環，所以真正的重點是源頭的 Problem Domain，今天建商蓋樣品屋是希望用戶購買實體屋，但如果今天建商蓋完就銷售一空，那根本連樣品屋都不用蓋&lt;/p>
+&lt;p>只要 Model 能夠剛好解決問題就好，over design 或 under design 都是不好的，這點在後續的實際操作會再補充&lt;/p>
+&lt;h2 id="event-storming">Event Storming&lt;/h2>
+&lt;p>以 Kanban 系統 &lt;a class="link" href="https://ssl-ezscrum.csie.ntut.edu.tw/ezKanban-stable" target="_blank" rel="noopener"
+>ezKanban&lt;/a>，Teddy 擔任領域專家 (兼任開發人員XD) 帶大家跑過 Event Storming，以下介紹 Kanban 的核心商業邏輯&lt;/p>
+&lt;ul>
+&lt;li>Visualize：視覺化表達&lt;/li>
+&lt;li>Limit WIP：每一個工作階段的進行中工作 (WIP) 有數量限制&lt;/li>
+&lt;li>Manage Flow：管理工作流程
+建模工具使用 &lt;a class="link" href="https://miro.com/app/dashboard/" target="_blank" rel="noopener"
+>Miro&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>進行順序按照階層從 Big Picture 開始與領域專家討論核心的用戶行為，接著到 Process Modeling 補充更多的規則、行動，最後才是 Software Design
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/event-storming-level.png"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="1-big-picture-找出-domain-event">1. Big Picture: 找出 Domain Event&lt;/h3>
+&lt;p>先拉出一條箭頭表達時間軸，先後順序，將 User Story 中的關鍵事件 (Domain Event) 先條列出來，所謂的&lt;code>事件是會改變系統狀態&lt;/code>，例如電商系統用戶加購物車、結帳等，反之&lt;code>讀取不是事件，因為不會改變系統狀態&lt;/code>，不管 Data 讀取幾次都不會有變化&lt;/p>
+&lt;p>事件是代表發生過的事情，所以都會用過去式表達，例如看板系統中的&lt;/p>
+&lt;ul>
+&lt;li>Workflow Created&lt;/li>
+&lt;li>Workflow Deleted&lt;/li>
+&lt;li>Stage WIP set
+等等&lt;/li>
+&lt;/ul>
+&lt;p>在討論過程中，務必記得&lt;/p>
+&lt;ul>
+&lt;li>不要出現技術用語，例如資料庫怎麼儲存、實作要套什麼 Design Patten&lt;/li>
+&lt;li>不要被 UI 綁架了!
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/domain-model-impl.png"
+loading="lazy"
+>
+因為我們是看著 Teddy 已經實作好的 ezKanban，所以 Domain Event 很多，實務上看各自系統規模，而且 &lt;code>Event Storming 是持續演進，不用求一步到位&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>上圖是我們小組建立 Domain Event，其中有三點錯誤&lt;/p>
+&lt;h4 id="a-時間軸順序性">a. 時間軸順序性&lt;/h4>
+&lt;p>我們一開始把 User Created / User Logined 放在同一列上，同一列在 Event Storming 代表這兩個事件是在差不多時間點發生，但理論上 User Create 必然在 User Logined 之前，所以不該放在同一列上&lt;/p>
+&lt;h4 id="b-不要被-ui-綁架">b. 不要被 UI 綁架&lt;/h4>
+&lt;p>這是一個非常有趣的案例，在 ezKanban 中你必須在畫面上點擊「Layout Edit」才能編輯工作流程的框架，所以我們組內討論很直覺的想這個事件很重要，所以就補了一個 「Layout Mode Entered」，但老師說不對!! &lt;code>被 UI 綁架了&lt;/code>，這只是一個實作細節，我今天可以換一個按鈕或 UI 流程做到同一件事，這屬於應用層面的邏輯&lt;/p>
+&lt;p>Domain Event 又可細分成兩種 Core Domain Event / Application Domain Event，前者是滿足核心商業邏輯的事件、後者是應用程式執行時需要的事件，今天以看板系統，用戶哪會關心什麼 Layout Mode，那是你&lt;code>實作的事情&lt;/code>，所以不該把這個 Event 放在上面&lt;/p>
+&lt;p>我自己後來在反思這件事情，我嘗試用這樣的邏輯去釐清&lt;/p>
+&lt;blockquote>
+&lt;ul>
+&lt;li>我能不能用不同的 UI Flow 取代當前的事件？ 例如在 Board 頁面就區分出「版位調整」/「工作調整」，如果可以的話，那就是應用事件&lt;/li>
+&lt;li>今天我實作在多平台 Web / App / Server 都需要這個事件嗎？如果要那有可能是核心，如果只有 Web 要實作其他平台不用，那肯定是應用事件&lt;/li>
+&lt;/ul>
+&lt;/blockquote>
+&lt;p>這麼在意是不是 Core Domain Event 的用意是讓 Domain Model 保持簡潔，太多細節參雜會混淆討論&lt;/p>
+&lt;h4 id="c-不要被-db-綁架---任務驅動而非指令驅動">c. 不要被 DB 綁架 - 任務驅動而非指令驅動&lt;/h4>
+&lt;p>在條列 Domain Model 時，我與組員都有一個疑問 &lt;code>「一個 Stage 有 10 個屬性都能夠 CRUD，那我要全部列出來嗎？例如 Stage 的標題、說明欄等，那我是要寫一個 Stage Updated 就好還是要寫 Stage Name Updated？」&lt;/code>&lt;/p>
+&lt;p>除了不要被 UI 綁架外，也不要被資料庫綁架了! 今天用戶才不管你怎麼 CRUD，他真正在意是&lt;code>能不能完成他手中的任務&lt;/code>，例如說今天我去 ATM 領錢，系統顯示&lt;/p>
+&lt;ol>
+&lt;li>說法 A: 您已提領 1000 元&lt;/li>
+&lt;li>說法 B: 已更新您的帳戶餘額為原餘額減去1000 元&lt;/li>
+&lt;/ol>
+&lt;p>相信你提款後看到說法 B 應該會傻眼，請以「用戶想要完成什麼任務」的角度描述 Domain Event&lt;/p>
+&lt;h4 id="d-用說故事的方式去釐清-model-表達力">d. 用說故事的方式去釐清 Model 表達力&lt;/h4>
+&lt;p>我在操作 ezKanban 先跑了建立工作流程，最後才發現 ezKanban 有 Team 的概念，Team 可以邀請其他 User 當作 Member 共享 Project，因為我比較晚看到所以 Team 相關的事件放在時間軸後面&lt;/p>
+&lt;p>最後 Teddy 問說：「這樣的 Model 表達了什麼含意？」Model 的意義在於&lt;code>圖形化我們想要解決的問題與發生順序&lt;/code>，也就是用戶的使用歷程與每一個使用案例，今天用說故事的方式會像&lt;/p>
+&lt;ol>
+&lt;li>故事 A:「用戶今天想要使用看板系統，他先註冊了帳號並登入，接著建立專案，並開始設定自己的工作流程&amp;hellip;&amp;hellip; 最後他邀請他的成員加入，大家一起操作看板」&lt;/li>
+&lt;li>故事 B: 「用戶今天想要使用看板系統，他先註冊了帳號並登入，接著建立團隊，邀請他的成員加入，大家一起操作看板，接著建立專案，並開始設定團隊的工作流程&amp;hellip;&amp;hellip;」&lt;/li>
+&lt;/ol>
+&lt;p>兩個故事都說得通，但 Teddy 覺得故事 B 更符合他的使用場景，團隊的建立會在工作流程之前，所以調整後的 Domain Event 大致長這樣
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/domain-model-impl-r.png"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="2-big-picture---劃分-bounded-context">2. Big Picture - 劃分 Bounded Context&lt;/h3>
+&lt;p>洋洋灑灑列出 Domain Event 後，接下來要來分群，想像成是買房畫隔間，設計圖應該要能清楚辨識出這是一個商務辦公室還是一個小家庭自住用，透過隔間去表達系統的意圖
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/room.png"
+loading="lazy"
+>
+*附圖從 Google 搜尋，不用懂室內設計但也大致能看出左右兩張圖的不同&lt;/p>
+&lt;p>我們小組一開始思考方式是「不然就每個物件一間，Workflow 一間 / Board 一間等」，如圖示
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/bound-wrong.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>Teddy 看到我們如此設計，他反問說「你們的隔間有反應出 &amp;ldquo;看板系統&amp;rdquo; 這個意圖嗎？如果從外部使用者的角度，他看到 Workflow / Board / Stage 這麼多細節對嗎？」&lt;/p>
+&lt;p>正確的隔間應該是
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/bound-right.png"
+loading="lazy"
+>
+區分成三塊：&lt;/p>
+&lt;ul>
+&lt;li>Core Domain：Kanban 是我們的核心領域，&lt;code>千萬不要外包&lt;/code>&lt;/li>
+&lt;li>Generic Domain：User / Team 屬於通用性功能&lt;/li>
+&lt;li>Support Domain：圖上沒有，如金流、外部通知系統，這種的找外包即可，不一定要自己開發&lt;/li>
+&lt;/ul>
+&lt;p>如何知道自己的隔間是否正確？回到商業邏輯與說故事的方式，劃分 Bounded Context 後是否能正確拆解出公司的核心與非核心商業邏輯&lt;/p>
+&lt;blockquote>
+&lt;p>大家最關心的微服務，通常是一個 Bounded Context 一個部署的元件&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="3-big-picture---加入-role--externel-system">3. Big Picture - 加入 Role / Externel System&lt;/h3>
+&lt;p>加入觸發的角色 / 外部系統，這一步驟相對單純，角色是系統中動作的執行者
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/role.png"
+loading="lazy"
+>
+HotSpot 是當討論過程卡住、發生意見不同、命名不同時可以貼著註記，避免討論被卡住，最後可以看哪一個區塊是大家最沒有共識的&lt;/p>
+&lt;h3 id="4-process-modeling---加入-command--read-model">4. Process Modeling - 加入 Command / Read Model&lt;/h3>
+&lt;p>這一步相對單純&lt;/p>
+&lt;ul>
+&lt;li>Command 是觸發 Domain Event 的動作，基本上就是把完成式改成現在式表達&lt;/li>
+&lt;li>Read Model 則是完成 Command 所需的參數
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/command.png"
+loading="lazy"
+>&lt;/li>
+&lt;/ul>
+&lt;h4 id="a-建立事件是否要傳入-id">a. 建立事件是否要傳入 id&lt;/h4>
+&lt;p>有趣的小細節是 Create Board 時我們把 board_id 也寫出來，小組討論時會覺得 DB 會自動產生 id 所以不用寫到 read model，但 Teddy 說 &lt;code>「錯，我哪管你 id 是 DB 產生還是前端用 UUID 產生，這是實作細節，Board 就是需要 id 識別」&lt;/code>，再次強調，不要陷入 UI/DB 的細節&lt;/p>
+&lt;h3 id="5-process-modeling---加入policy">5. Process Modeling - 加入Policy&lt;/h3>
+&lt;p>Policy/Rule/Process 是指 &lt;code>事件完成後觸發的流程&lt;/code>，千萬不要跟動作需要完成的驗證搞混，例如說&lt;/p>
+&lt;ul>
+&lt;li>輸入 Email 註冊時，Email 必須符合格式 =&amp;gt; 這是驗證&lt;/li>
+&lt;li>密碼輸錯三次後，需要封鎖帳號 =&amp;gt; 這是 Policy&lt;/li>
+&lt;/ul>
+&lt;p>驗證是實作細節在 Event Storming 中不表達，Policy 才是我們現階段要關注的，以下是舉例「全家推出領取包裹後，可以八折買拿鐵」
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/policy.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>這邊偷夾帶一張白色的便利貼，Teddy 說他確實也遇到有些驗證是重要的商業邏輯，他自己變形增加了白色便利貼，表示 Command 的驗證規則&lt;/p>
+&lt;blockquote>
+&lt;p>到這一步我們可以發現 Event Storming 很好的描述了一個故事
+「User want receive package, we have to check his id card, after user have received package, he can purchase latte 20% off」&lt;br>
+這就是 Event Storming 的魅力&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="6-software-design---加入-model">6. Software Design - 加入 Model&lt;/h3>
+&lt;p>接下來進入實作細節，Model 可以想做是物件，比對 Command 應該是哪一個物件負責，條列後最終把 Model 的大致關係也描繪，大致如下
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/model-wrong.png"
+loading="lazy"
+>
+因為 Stage / Swimlane 一者是橫向一者是直向，兩者可以互相包含，所以圖表有點複雜，圖表複雜代表程式碼實作一定也不好寫，該怎麼優化呢？&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2022/img/0114/model-right.png"
+loading="lazy"
+>&lt;/p>
+&lt;ul>
+&lt;li>抽一個 Lane 代表 Stage / Swimlane，這樣關係就單純很多&lt;/li>
+&lt;li>更精準表達商業邏輯，另外一個重點是 &lt;code>Workflow 與 Stage 關聯而不是 Lane&lt;/code>，因為 Workflow 預設第一層必須是 Stage，透過圖表表示出核心的設計邏輯&lt;/li>
+&lt;/ul>
+&lt;h4 id="a-model-拆分很看商業邏輯">a. Model 拆分很看商業邏輯&lt;/h4>
+&lt;p>同學在課堂上詢問：「如果我有多個支付，我是不是要把每個 CreditCardPay / ApplePay 都寫成一個 Model？」 &lt;br>
+Teddy 反問：「為什麼需要？如果 Pay 只是一個付款手段，如果沒有很大的差異，一個 Pay 表達實作時再拆分就好」&lt;br>
+我接著提問：「那為什麼 Stage / Swimlane 要拆分？他們也只是一個橫的一個直的」&lt;/p>
+&lt;p>Teddy 表示 &lt;code>因為在看板的 Domain 中，直的代表工作階段 / 橫的代表工作流程是截然不同的，這是非常核心的商業邏輯&lt;/code>，所以 Model 要拆到多細，要不要真的把每個實作的物件都表達，完全看領域專家與開發人員是否很重視每個元件的獨立性與表達性&lt;/p>
+&lt;h3 id="7-software-design---找出-aggregate">7. Software Design - 找出 Aggregate&lt;/h3>
+&lt;p>最後一步! 也是很抽象的一步，將 Model 分群，有些 Model 明顯是其他 Model 的附庸 ，例如說訂單細項 Order Item 是訂單 Order 的附庸，每次 Order Item 的改動會影響 Order 的計算，會進階影響例如折價券等計算，所以 Order Item 最好不要直接調整，由 Order 統一調整才能確保資料的&lt;code>一致性&lt;/code>&lt;/p>
+&lt;p>要不要把 Model Aggregate 成一塊有兩個作用力&lt;/p>
+&lt;ul>
+&lt;li>資料一致性&lt;/li>
+&lt;li>併發操作&lt;/li>
+&lt;/ul>
+&lt;p>Teddy 帶我們思考的方式是&lt;/p>
+&lt;blockquote>
+&lt;p>今天我改動 Model A，那我可不可以同時改動 Model B ? 我在 Workflow name 的時候，可以同時操作 Board 嗎？&lt;/p>
+&lt;/blockquote>
+&lt;p>切記不要用 Database Relation 思考，例如 User 刪除 Order 也要跟著被刪除，這樣 Aggregate 永遠切不開，更直觀地說 &lt;code>要包 Transaction 操作的都就放在同一個 Aggregate&lt;/code>&lt;br>
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/aggregate-right.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>找出 Aggregate 後，需要找一個 Model 當作 Root，往後 Aggregate 內的 Model 都由他來控制，&lt;code>外人不可直接操作內部 Model&lt;/code>，任何跨 Aggregate 操作只能保證最終一致性&lt;/p>
+&lt;h3 id="延伸變體還是很想把讀取也放入-event-storming-可以嗎">延伸變體：還是很想把讀取也放入 Event Storming 可以嗎？&lt;/h3>
+&lt;p>Teddy 上課一直強調讀取隨便寫就好，怎麼髒都沒關係因為 Command 才會影響系統狀態 XD Query 效能問題等又是 DB 細節，本身也不是 Event Storming 該關注的層級&lt;/p>
+&lt;p>但協作上大家還是想把 UI 放到討論中 / Read Model 如果有前端可能也希望在寫得細一點，這些都可以自己延伸，Teddy 也分享有些流程 UI 可以幫助說明的話他也會放進去，例如 Command 後回傳另一張 Read Model / UI 圖示放在 Read Model 旁邊等
+&lt;img src="https://yuanchieh.page/post/2022/img/0114/ui.png"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="延伸問題開發只要這一份文件就好了嗎">延伸問題：開發只要這一份文件就好了嗎？&lt;/h3>
+&lt;p>文件的維護也是我課前很想了解的部分，在 DDD 藍皮書中不斷強調 &lt;code>Domain Model 跟程式碼實作要高度一致&lt;/code>並持續演進，但工作多年有良好維護文件習慣的人還真的是少數，尤其是文件越多份維護的成本就更高，所以我課後就問 Teddy 他們團隊開發是不是只有這一份文件，他說基本上是，資料庫部分因為他是走 Event Sourcing 所以不用另外的 Schema 設計文件，如果不是頂多再一份 DB Schema 文件就足夠了&lt;/p>
+&lt;h2 id="ddd---tacticle-design--strategic-design">DDD - Tacticle Design &amp;amp; Strategic Design&lt;/h2>
+&lt;p>跑過一次 Event Storming 再回來看 DDD 廣為人知的兩張圖就比較能理解了，這邊只額外補充兩件事&lt;/p>
+&lt;h4 id="1-entity-與-value-object-區分">1. Entity 與 Value Object 區分&lt;/h4>
+&lt;p>前者是具有 id 在 Conext 下有唯一識別性的物件，後者是內容重要但是不是同一個物件不太關心，例如說紙鈔，大多系統下我們只關心紙鈔的面額，甭管你是左邊的 100 元還是右邊的 100 元，所以是 Value Object / 但如果是印鈔系統，同樣是 100 元還是要用 id 區分不同的紙鈔，這時就是 Entity 了&lt;/p>
+&lt;h4 id="2-如果有驗證需求可以考慮用-value-object">2. 如果有驗證需求，可以考慮用 Value Object&lt;/h4>
+&lt;p>一個實作的小細節，如果以往都是用欄位儲存一個基礎型別，例如 string email，要增加驗證就會很瑣碎，封裝一個 Email 物件並在 constructor 統一驗證會比較簡潔&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>重點小整理：&lt;/p>
+&lt;ul>
+&lt;li>以商業核心為出發&lt;/li>
+&lt;li>用說故事的方式跑 Event Storming&lt;/li>
+&lt;li>不要落入實作細節&lt;/li>
+&lt;li>如果有需要，可以自己變體適應組織&lt;/li>
+&lt;/ul>
+&lt;p>上完課自己重新覆盤，沒想到花這麼多時間才整理完，DDD 用靜態的學習方式真的很抽象，大腦一直轉不過去，上完 Teddy 的課才覺得那扇門被打開了一個縫，看到理想軟體開發的光明 XD&lt;/p>
+&lt;p>這一篇主要整理 DDD，下一篇預計整理 Clean Architecture 與如何跟 DDD 結合，希望這些紀錄對大家有幫助，最後在幫 Teddy 老師推廣一下他的&lt;a class="link" href="https://teddysoft.tw/courses/clean-architecture/" target="_blank" rel="noopener"
+>課程&lt;/a>，只有實際跑過一次Event Storming 才能真正學會，如果有什麼建議或糾錯再麻煩留言&lt;/p></description></item><item><title>《單體式系統到微服務》讀後分享 - 下</title><link>https://yuanchieh.page/posts/2021/2021-12-05-%E5%96%AE%E9%AB%94%E5%BC%8F%E7%B3%BB%E7%B5%B1%E5%88%B0%E5%BE%AE%E6%9C%8D%E5%8B%99%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB-%E4%B8%8B/</link><pubDate>Sun, 05 Dec 2021 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-12-05-%E5%96%AE%E9%AB%94%E5%BC%8F%E7%B3%BB%E7%B5%B1%E5%88%B0%E5%BE%AE%E6%9C%8D%E5%8B%99%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB-%E4%B8%8B/</guid><description>&lt;h2 id="第四章分解資料庫">第四章：分解資料庫&lt;/h2>
+&lt;p>上一章是用系統的層級討論如何拆分，但系統最難拆分的部分無疑是 &lt;code>資料庫&lt;/code>，所以作者花了很大的篇幅描述多種資料庫拆分的方式&lt;/p>
+&lt;h3 id="分解模式">分解模式&lt;/h3>
+&lt;h4 id="模式一共享資料庫">模式一：共享資料庫&lt;/h4>
+&lt;p>所有的服務共享一個資料庫，這是一個不太好的選擇，因為&lt;code>無法保證誰控制了資料&lt;/code>，每個服務都有讀寫、修改 Schema 的能力，這暗示了缺乏商業邏輯的凝聚力
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/share.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="模式二資料庫視圖">模式二：資料庫視圖&lt;/h4>
+&lt;p>如果仍希望多個服務間共享一個資料庫，可以透過視圖 (View Table) 減輕耦合上的困擾，因為視圖可以有獨立的權限管理並隱藏底層實際儲存的邏輯；
+視圖的功能取決於資料庫本身的限制，要小心資料是否過時等問題
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/view.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="模式三資料庫包裝服務">模式三：資料庫包裝服務&lt;/h4>
+&lt;p>將資料庫隱藏在服務後面，從&lt;code>資料庫依賴轉變成服務依賴&lt;/code>，這可以當作轉移的第一步，先避免資料庫耦合持續惡化，透過一層服務封裝與隱藏實際的資料庫邏輯&lt;/p>
+&lt;p>書中案例是銀行的權限管理，多個服務因應不同的場景持續堆疊新的權限管理在資料庫中，透過拆分出權限服務，將權限調整限縮單一服務，後續再考慮拆分獨立資料庫，有點像上一章提到的&lt;a class="link" href="https://yuanchieh.page/post/2021/2021-12-03-%E5%96%AE%E9%AB%94%E5%BC%8F%E7%B3%BB%E7%B5%B1%E5%88%B0%E5%BE%AE%E6%9C%8D%E5%8B%99%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB-copy/#%E6%A8%A1%E5%BC%8F%E4%BA%8C%E6%8A%BD%E8%B1%A1%E5%88%86%E6%94%AF" target="_blank" rel="noopener"
+>抽象分枝&lt;/a>&lt;/p>
+&lt;p>跟視圖相比的好處是不需要映射現有的資料表，且可以透過程式邏輯控制更複雜的操作，只是上游介接的服務需要調整
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/service.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="模式四資料庫服務介面">模式四：資料庫服務介面&lt;/h4>
+&lt;p>如果客戶端是 BI 工具需要直接透過 SQL 端點讀取，最好是建立專門的資料庫作為公開的讀取端點，對映引擎負責同步資料，可以透過批次處理、串流同步工具 (作者推薦 &lt;a class="link" href="https://debezium.io/" target="_blank" rel="noopener"
+>Debezium&lt;/a>)，處理的複雜度仰賴於內部資料庫與對外資料庫的差異，如從 Cassandra 映射到 SQL DB
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/endpoint.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="先分割資料庫還是程式碼">先分割資料庫還是程式碼&lt;/h3>
+&lt;h4 id="先分割資料庫">先分割資料庫&lt;/h4>
+&lt;p>要小心跨資料庫 Join、一致性與完整性問題，如果要特別注意資料一致性問題可以採取此方法，缺點是短期效益不大，依然要面臨單體式架構&lt;/p>
+&lt;p>可以透過程式中的 Storage Layer 將 Domain 對應到獨立的 Table / Database&lt;/p>
+&lt;h4 id="先分割程式碼">先分割程式碼&lt;/h4>
+&lt;p>先分割程式碼更容易了解新服務需要的資料，也能夠提早獨立部署新服務，但有可能拆分完程式碼就沒有繼續拆分資料庫&lt;/p>
+&lt;h3 id="資料一致性">資料一致性&lt;/h3>
+&lt;p>如果需要針對不同的 Domain 操作可以在 SQL 資料庫中用 Transaction 包起來確保原子性，但是分散式架構就需要用別的方式確保原子性&lt;/p>
+&lt;h4 id="方法一二階段提交">方法一：二階段提交&lt;/h4>
+&lt;p>透過一個協調者，與多個服務溝通並確保大家一起 commit 或一起 rollback，演算法複雜且效率差，如果居中的協調者失敗則會出現非一致性問題
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/2pc.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="方法二saga">方法二：Saga&lt;/h4>
+&lt;p>避免長時間鎖定資料，將每個執行步驟模組化獨立運作，個別服務都要處理異常事件時的補償行為，參考 &lt;a class="link" href="https://docs.microsoft.com/zh-tw/azure/architecture/reference-architectures/saga/saga" target="_blank" rel="noopener"
+>Saga 分散式交易模式&lt;/a>，但要小心 Saga 模式的複雜度很高
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/saga.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h2 id="第五章成長過程中的痛苦">第五章：成長過程中的痛苦&lt;/h2>
+&lt;p>導入微服務會遇到很多的挑戰，尤其是當團隊人數與微服務數量持續增加時，可能會開始出現以下問題&lt;/p>
+&lt;h3 id="1-大規模所有權">1. 大規模所有權&lt;/h3>
+&lt;p>當要改動程式碼時，會依照程式碼所有權概念而有所不同，如果是強大的程式碼所有權則需要再修改前告知持有者；弱所有權或是集體所有權則是直接修改不需要額外通知&lt;/p>
+&lt;p>通常一開始都是集體所有權，大家分工開發而沒有特定的任務，但是當人數超過 100 人，通常好的團隊都是&lt;code>強所有權&lt;/code>，讓每個團隊專注於特定領域&lt;/p>
+&lt;h3 id="2-重大變革">2. 重大變革&lt;/h3>
+&lt;p>當微服務改動時，如果沒有謹慎思考破壞原本的介面，則相依的服務也會跟著被破壞，例如提升 API 版號時，記得要公告並保留一定的支援時間&lt;/p>
+&lt;h3 id="3-報告">3. 報告&lt;/h3>
+&lt;p>過往單體式資料庫要拉報表相對簡單，但如果拆分微服務，不同團隊採用不同的資料庫，要確保最終再產生報告時有同步相同的資料&lt;/p>
+&lt;h3 id="4-監控和疑難排查">4. 監控和疑難排查&lt;/h3>
+&lt;p>分散式系統的監控與排查難度會比單體式高非常多，可以使用 ELK / Fluentd 等技術彙整，並增加系統的&lt;code>可觀測性&lt;/code>，Observability 的概念算是把 Monitoring 再往前推進一步，可以參考 &lt;a class="link" href="https://ithelp.ithome.com.tw/articles/10265190" target="_blank" rel="noopener"
+>喬叔帶你上手 Elastic Stack - 探索與實踐 Observability：01 - 前言 &amp;amp; 淺談 Observability&lt;/a>；在追蹤部分，可以把每一個呼叫都產生對應的關聯 ID，追蹤在不同微服務間的通信，可以參考開源工具 &lt;a class="link" href="https://www.jaegertracing.io/" target="_blank" rel="noopener"
+>Jaeger&lt;/a>&lt;/p>
+&lt;h3 id="5-當地開發者經驗">5. 當地開發者經驗&lt;/h3>
+&lt;p>當有更多服務時，要在本地端開發變成一場夢魘，雖然說有 Docker 等容器化技術，但如果像 JVM 需要吃大量資源，可能會耗盡開發者的本地端資源，如果是使用 k8s 可以考慮用 &lt;a class="link" href="https://www.telepresence.io/" target="_blank" rel="noopener"
+>Telepresence&lt;/a>，部署完整服務在雲端，開發者可以運行特定服務在本地端其餘依賴雲端的服務&lt;/p>
+&lt;h3 id="6-全域與本地優化比較">6. 全域與本地優化比較&lt;/h3>
+&lt;p>雖然說微服務可以讓各個團隊彈性的採用技術，但從整體的角度太過分散的技術棧可能會導致費用上或是維護上的困難；但如果太集中化管理，強迫各個團隊採用相同的技術又失去了微服務的部分好處&lt;/p>
+&lt;p>這可以用前幾章描述的可逆與不可逆決策，如果是不可逆如雲端供應商等，則需要跨團隊的討論，但可逆的決策如採用函式庫、嘗試新的程式語言則可以放手給團隊決定，最好是可以讓&lt;code>每個團隊出一名技術負責人組成跨部門小組&lt;/code>，同時兼容全域與本地優化的可能&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>以上是從書中摘錄的內容，因為還沒有太多的實際經驗，只能照本宣科，無法像安德魯大叔寫出抽象化程度夠也包含足夠扎實的經驗分享，期許自己未來有更多經驗能夠重新補充文章內容&lt;/p>
+&lt;p>好的架構設計是持續演進的，建議是從 Monolithic -&amp;gt; Modulized Monolithic -&amp;gt; Microservices，如果無法模組化單體式，那只會得到更糟糕的微服務，微服務本身透過獨立的服務形成高強度、難以違背的模組化，問題就回到程式設計的最源頭如何設計出&lt;code>高內聚+低耦合的模組&lt;/code>，往下預計還有幾個知識點的延伸 DDD / Event Storming / Clean Architecture / Observability (遠望&lt;/p></description></item><item><title>《單體式系統到微服務》讀後分享 - 上</title><link>https://yuanchieh.page/posts/2021/2021-12-03-%E5%96%AE%E9%AB%94%E5%BC%8F%E7%B3%BB%E7%B5%B1%E5%88%B0%E5%BE%AE%E6%9C%8D%E5%8B%99%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB-%E4%B8%8A/</link><pubDate>Fri, 03 Dec 2021 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-12-03-%E5%96%AE%E9%AB%94%E5%BC%8F%E7%B3%BB%E7%B5%B1%E5%88%B0%E5%BE%AE%E6%9C%8D%E5%8B%99%E8%AE%80%E5%BE%8C%E5%88%86%E4%BA%AB-%E4%B8%8A/</guid><description>&lt;p>微服務因應容器化技術、持續整合與交付工具成熟，成為顯學好一段時間了，但這不代表我們就應該導入微服務，終究微服務只是一項技術(或說是架構)，如果沒有設定一個正確的目標，並用適當的指標時時關注，那導入任何新技術最後都會是一場災難，微服務更是；
+我很喜歡這篇分享，先檢視團隊的 CI/CD、monitoring 機制是否健全再來思考微服務 &lt;a class="link" href="https://www.facebook.com/hatelove/post/10223238347681539" target="_blank" rel="noopener"
+>https://www.facebook.com/hatelove/post/10223238347681539&lt;/a>&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/GBTdnfD6s5Q"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>這部影片是 Sam Newman (本書作者)與 Martin Fowler 對談，，主要從寫書的動機開始，後面談到了為什麼要導入微服務、導入理由以及資料庫、團隊如何應對等，基本上跟書的結構互相呼應，GOTO 蠻用心的影片一個段落就會打 Tag 以及統整，後續要回顧很方便；後來經歷才知道 Sam Newman 之前 &lt;a class="link" href="https://samnewman.io/about/" target="_blank" rel="noopener"
+>在 ThoughtWorks 工作 12 年&lt;/a>&lt;/p>
+&lt;p>以下針對每章節做一些分享與總結，並融合一些看過的資料&lt;/p>
+&lt;h2 id="第一章足夠的微服務">第一章：足夠的微服務&lt;/h2>
+&lt;p>微服務是泛指&lt;code>圍繞業務領域建模的可獨立部署之服務&lt;/code>，這邊的重點有兩個&lt;/p>
+&lt;ol>
+&lt;li>圍繞業務領域&lt;/li>
+&lt;li>可獨立部署&lt;/li>
+&lt;/ol>
+&lt;h3 id="1-圍繞業務領域">1. 圍繞業務領域&lt;/h3>
+&lt;blockquote>
+&lt;p>Conway&amp;rsquo;s Law: 任何設計系統的組織，都將不可以避免的產生以組織通訊架構為副本之設計&lt;/p>
+&lt;/blockquote>
+&lt;p>組織的架構某種程度跟程式架構雷同，都應該追求高內聚低耦合，否則會因跨組別的高溝通成本，而讓組織的生產力下降，進而讓大家選擇對自己最方便的解法而非全局最佳解&lt;/p>
+&lt;p>把康威定律轉成工程師的比喻會是&lt;/p>
+&lt;blockquote>
+&lt;p>If you have four groups working on a compiler, you&amp;rsquo;ll get a 4-pass compiler&lt;/p>
+&lt;/blockquote>
+&lt;p>過往組織的分組是透過職能，如 RD 組成一個 RD 部門負責、IT 部門負責部署與維運、業務部門負責產品端的其餘事項，所以業務端發起需求後，需要先與 RD 部門溝通、RD 部門開發後請 IT 部門部署，層層的跨部門溝通讓新功能上線很慢，此時組織的重點是以職能內聚而分業務內聚，延伸分享之前整理的筆記 &lt;a class="link" href="https://yuanchieh.page/posts/2021/2021-06-15-youtube-%E7%9B%B4%E6%92%ADfred%E8%81%8A%E8%81%8Asolid%E8%A8%AD%E8%A8%88%E5%8E%9F%E5%89%87%E6%95%B4%E7%90%86/" target="_blank" rel="noopener"
+>Fred聊聊SOLID設計原則&lt;/a>，SOLID 原則中的 Single Responsibility 可以從業務角度去思考&lt;/p>
+&lt;p>因應軟體需要更高頻次的功能部署，開始以業務領域來做組織的架構，例如 Amazon 的 two pizza team 追求&lt;code>you build it, you run it&lt;/code>的精神，讓每個團隊從需求設計到上線反應速度更快&lt;/p>
+&lt;h3 id="2-獨立部署">2. 獨立部署&lt;/h3>
+&lt;p>組織依照業務領域切開後，會需要可以隨時按照團隊的節奏部署服務，並確保其餘服務不受影響，這也就是&lt;code>獨立部署&lt;/code>的重要性&lt;/p>
+&lt;p>在設計服務，要確保服務的低耦合，否則會陷入更新一個服務要連帶更新其餘多個服務，變成&lt;code>可怕的分散式單體式架構&lt;/code>，這就延伸到開頭分享的 FB 文章 - 團隊是否有良好的 CICD、是否有良好的 Log 架構與 Tracing 系統&lt;/p>
+&lt;h3 id="3-自身擁有的資料">3. 自身擁有的資料&lt;/h3>
+&lt;p>&lt;code>微服務不應該共享資料庫&lt;/code>，如果其餘服務需要資料，應該要透過服務介面而非直接存取資料，避免程式碼拆分最後卻在資料庫耦合，消抹了獨立部署的功用&lt;/p>
+&lt;h3 id="微服務好處">微服務好處&lt;/h3>
+&lt;p>主要體現在靈活性&lt;/p>
+&lt;ol>
+&lt;li>部署獨立性：改善系統規模與強健性 (Robust)、可混用不同技術&lt;/li>
+&lt;li>更好分工：不同團隊專注不同的 code base&lt;/li>
+&lt;/ol>
+&lt;h3 id="單體式架構">單體式架構&lt;/h3>
+&lt;h4 id="1-單一程序">1. 單一程序&lt;/h4>
+&lt;p>將所有程式碼放入單一程序部署的系統中&lt;/p>
+&lt;h4 id="2-模組化單體式">2. 模組化單體式&lt;/h4>
+&lt;p>將單一程序模組化，讓每個模組都能獨立運作，只是部署會統一部署，甚至可以讓不同模組使用不同的資料庫；非常推薦 Shopify 的分享 &lt;a class="link" href="https://shopify.engineering/shopify-monolith" target="_blank" rel="noopener"
+>Under Deconstruction: The State of Shopify’s Monolith&lt;/a>，預計之後再展開討論&lt;/p>
+&lt;h3 id="耦合與內聚">耦合與內聚&lt;/h3>
+&lt;p>內聚是指「程式碼同變動、共留存」，當今天改 A 功能時，僅需要確保 A 功能相關的服務改動，降低變動成本&lt;/p>
+&lt;p>耦合是指「資訊隱藏」，把相對經常性變動的部分與靜態的部分分開，有個穩定的模組邊界，又可細分成實作耦合、時間耦合、部署耦合、領域耦合&lt;/p>
+&lt;h3 id="小結">小結&lt;/h3>
+&lt;p>第一章定義了微服務、單體式架構，並分析背後設計原理與最終反應的架構優劣，但需要小心 &lt;code>單體式不等同於傳統&lt;/code>，不要污名化單體式，應該要用更客觀的角度權衡架構選擇&lt;/p>
+&lt;p>最後作者推薦 DDD 協助業務領域的定義與拆分&lt;/p>
+&lt;h2 id="第二章遷移計畫">第二章：遷移計畫&lt;/h2>
+&lt;p>微服務是個技術選擇而非目的，再導入前應該先謹慎思考&lt;/p>
+&lt;ol>
+&lt;li>想要解決的問題是什麼？想要解決的問題跟公司利益是否一致？用戶是否會因此受益？&lt;/li>
+&lt;li>是否比較過替代方案？是不是其他「無聊的技術」就能解決問題？&lt;/li>
+&lt;li>如何衡量導入微服務的成效？怎麼再導入過程知道方向是否正確？&lt;/li>
+&lt;/ol>
+&lt;h3 id="為什麼選擇微服務">為什麼選擇微服務&lt;/h3>
+&lt;p>如果是因為下列原因而想要導入微服務，可以先思考看看替代方案是否可行&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>導入目的&lt;/th>
+&lt;th>微服務的潛在優點&lt;/th>
+&lt;th>替代方案&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>增加團隊自主性&lt;/td>
+&lt;td>拆分微服務讓團隊的規模小、擁有相對權力，可以更有效的工作&lt;/td>
+&lt;td>分配責任有很多方式，並不一定要改架構，可以將程式碼所有權分屬不同的團隊，像是採取模組化單體式結構，例如 shopify&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>縮短上市時間&lt;/td>
+&lt;td>單獨針對微服務進行變更與部署&lt;/td>
+&lt;td>在思考生產力問題時，應該要先檢視開發流程的貧頸在何處，作者提到他的顧問生涯中發現是需求傳遞過程耗費最多時間而非開發，所以應該先審視與量測軟體開發的每個步驟&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>有效擴展負載&lt;/td>
+&lt;td>單個微服務可以獨立擴展，更動態的調整個別服務的規模&lt;/td>
+&lt;td>單體式的水平擴展依然是很有效的擴展方式，如果當下遇到效能貧頸，直接擴展而非導入微服務可能是相對快速又有效的選擇&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>增進強健性&lt;/td>
+&lt;td>拆分微服務後，可個別依據業務需求而區分出核心與非核心的微服務，進而提供不同的強健性調整&lt;/td>
+&lt;td>透過 Load Balancer、Event Queue 搭配單體式系統的水平擴展，一樣可以增進強健性，把資源投注在診斷系統原因可能會更有幫助&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>擴展開發人員&lt;/td>
+&lt;td>在《人月神話》中只有把項目拆分成可獨立作業的項目，增加人力才有辦法加速開發否則多餘的人力是沒有搬著的，微服務透過良好的介面隔離實作，讓團隊要加人相對容易&lt;/td>
+&lt;td>重點擺在&lt;code>團隊與服務的所有權要保持一致&lt;/code>，可以透過模組化單體式分工合作&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>擁抱新技術&lt;/td>
+&lt;td>微服務因為是獨立部署，不同服務間可以採取完全不同的技術架構&lt;/td>
+&lt;td>這是微服務很明顯的優勢，替代方案可以考慮向 JVM 支援 Java, Scala, Kotlin 等同家族語言，或是像 Graal VM 同一個 Runtime 支援多種語言&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="微服務何時是不好的主意">微服務何時是不好的主意&lt;/h3>
+&lt;ol>
+&lt;li>模糊領域：錯誤定義服務邊界會很可怕，因為會造成跨服務的連鎖改動&lt;/li>
+&lt;li>新創公司：可能有點爭議，但這呼應到上一點，如果公司的商業模式還沒有穩定，那自然就無法切出正確的服務邊界&lt;/li>
+&lt;li>客戶安裝與軟體管理：如果是要把軟體打包給庫戶，使用微服務可能會不太好，要考量到客戶的管理能力&lt;/li>
+&lt;li>&lt;code>沒有充分理由時&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;h3 id="組織變革">組織變革&lt;/h3>
+&lt;p>作者較哨如何在組織內導入新的技術，分享 John Kother 博士的組織變革步驟，大致上溝通、小幅嘗試、看到初步效益、融入組織
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/revolution.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;p>再產生變革時，要注意到變革成本，Jeff Bezos 將變革分成兩類：第一類是必然、不可逆的，第二類是可逆、可變化的，第一類需要長期討論、謹慎的思考，第二類可以讓高判斷力的個人或組織迅速做出；
+&lt;code>沒有經常下決策的人通常會誤把第二類當作第一類，讓所有決策都停滯不前&lt;/code>
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/decision.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;p>這也呼應到之前工作時公司導入敏捷開發，固然看到快速迭代、持續驗證與微調的優勢，但內部也時常在爭論如小規模實驗是否真的有效、用戶會不會因為實驗而大量流失等等，現在反思起來就是沒有把第一類與第二類決策溝通清楚的緣故&lt;/p>
+&lt;h3 id="如何開始">如何開始&lt;/h3>
+&lt;p>作者推崇透過 DDD 幫助定義服務邊界，並採用 Event Storming 讓大家對於模型有共同的理解&lt;/p>
+&lt;p>接著往內檢視團隊的組成，團隊成員是否有足夠的技能？例如說微服務要透過事件溝通導入 Kafka，那團隊是否有 Kafka 熟悉的人才？如果沒有要花多少時間跟資源調整？&lt;/p>
+&lt;h3 id="如何確定轉移是否有效">如何確定轉移是否有效&lt;/h3>
+&lt;p>可以設立定期檢查點，再一定時間檢查定性與定量措施，定量措施包含發布週期、故障率、部署次數、性能監控等，但要小心定量的指標會變成陷阱，例如團隊追求部署次數而盲目更新 (就跟 RD 貢獻度看程式碼行數壹樣的可笑)，所以需要搭配定性措施，訪談成員對於轉移過程的感受&lt;/p>
+&lt;h2 id="第三章分割單體式架構">第三章：分割單體式架構&lt;/h2>
+&lt;p>當通過上面兩章的討論，確定要導入微服務時，回首現實要面對的時龐大、架構混亂的單體式架構&lt;/p>
+&lt;h4 id="1-重組單體式系統">1. 重組單體式系統&lt;/h4>
+&lt;p>傳統程式碼通常以技術分類而非業務領域分類，例如 Model / Controller / View 等資料夾拆分，要重新以業務領域拆分並找出對應的程式碼會是一項大工程，此時可以參考市面上重構與管理 legacy code 的方法&lt;/p>
+&lt;h4 id="2-模組化單體式-1">2. 模組化單體式&lt;/h4>
+&lt;p>可以考慮將功能建立獨立的模組，例如 Java 的 Jar 檔、Ruby 的 Gem 等，拆出獨立的模組未來要獨立部署成微服務也會比較容易&lt;/p>
+&lt;h4 id="3-漸進重寫">3. 漸進重寫&lt;/h4>
+&lt;p>試著先重構現有的程式碼，接著在重新實現功能，如果原本程式碼中的邏輯沒有先梳理清楚就貿然重寫，只會把過時且複雜的邏輯重新復刻，並拖累轉移的速度&lt;/p>
+&lt;h3 id="遷移模式">遷移模式&lt;/h3>
+&lt;h4 id="模式一絞殺榕-strangler-fig">模式一：絞殺榕 (Strangler Fig)&lt;/h4>
+&lt;p>由 Martin Fowler 在看到絞殺榕生長聯想的系統遷移模式 &lt;a class="link" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank" rel="noopener"
+>StranglerFigApplication&lt;/a>，一開始種子在樹上生長，接著落地後持續成長，最後母樹會死亡&lt;/p>
+&lt;p>套用類似的邏輯在軟體系統上，最直覺的做法是重寫一個新系統直接遷移就好，但往往事情更複雜，一次性重寫新系統需要更多的時間並冒著更大的風險；&lt;br>
+學習絞殺榕，讓新系統可以相容於舊系統，接著再逐步抽離新系統，最後完成轉移汰換舊系統，讓每一個步驟更小並降低風險，如果中間犯錯可以很快退返，或是終止轉移也不會有任何問題
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/%e7%b5%9e%e6%ae%ba%e6%a6%95.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;p>方法適用於上層的服務，如果是系統內比較底層的服務會比較難套用 (後續介紹)，實作上可以在單體式架構前多一個代理器如 HTTP Proxy 或是 Message Queue，遷移步驟大概是&lt;/p>
+&lt;ol>
+&lt;li>當新系統實作尚未完成時，原本的 Request 持續流向舊系統&lt;/li>
+&lt;li>新系統完成後可先部署，但此時還未對外開放&lt;/li>
+&lt;li>透過金絲雀部署，先放手部分流量到新系統&lt;/li>
+&lt;li>確保沒問題，流量完整切換至新系統，汰換舊系統
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/pipe.png"
+loading="lazy"
+>&lt;/li>
+&lt;/ol>
+&lt;p>在導入代理器時，要注意 &lt;code>Smart Endpoints and Dumb Pipes&lt;/code>，不要讓代理器承擔過多的職責，例如說因為舊系統支援 soap 但新系統要支援 grpc，與其讓代理器判斷 soap -&amp;gt; 舊系統 / grpc 走新系統，還不如直接對外公開兩個協定，而舊系統再把 soap 格式轉換到新系統的 grpc
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/proxy.png"
+loading="lazy"
+>
+延伸閱讀 &lt;a class="link" href="https://medium.com/@nathankpeck/microservice-principles-smart-endpoints-and-dumb-pipes-5691d410700f" target="_blank" rel="noopener"
+>Microservice Principles: Smart Endpoints and Dumb Pipes&lt;/a>&lt;/p>
+&lt;h4 id="模式二抽象分支">模式二：抽象分支&lt;/h4>
+&lt;p>當要抽離的組件是系統的底層，例如使用者通知功能，如果要直接改寫會必須把實作端與呼叫端一次改動，此時最好是&lt;/p>
+&lt;ol>
+&lt;li>為要替換的功能建立抽象&lt;/li>
+&lt;li>讓舊系統的其他功能依賴介面而非實作&lt;/li>
+&lt;li>提供微服務的實作&lt;/li>
+&lt;li>切換抽象並使用實作&lt;/li>
+&lt;li>刪除舊實作
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/abs.png"
+loading="lazy"
+>&lt;/li>
+&lt;/ol>
+&lt;p>在安德魯大叔的部落格中有提到相同的概念 &lt;a class="link" href="https://columns.chicken-house.net/2016/10/03/microservice2/" target="_blank" rel="noopener"
+>微服務架構 #2, 按照架構，重構系統&lt;/a>，身份驗證組件幾乎是所有功能都會相依的組件，要從單體式架構抽出來前，記得先抽象化，確保功能引用都依賴抽象化，最後才替換微服務實作，這樣最後失敗要切換回去也非常方便，這又呼應回 Martin Fowler 在絞殺榕文章說的&lt;/p>
+&lt;blockquote>
+&lt;p>when designing a new application you should design it in such a way as to make it easier for it to be strangled in the future.&lt;/p>
+&lt;/blockquote>
+&lt;p>果然大師們說的道理都是相通的&lt;/p>
+&lt;h4 id="模式三平行模式">模式三：平行模式&lt;/h4>
+&lt;p>如果是非常核心、重要的功能如金流，在重寫成新微服務時，可以採用平行模式雙邊寫入，每日進行比對直到沒有出錯時在切換，降低微服務上線的風險&lt;br>
+github 有開源一個 Ruby gem &lt;a class="link" href="https://github.com/github/scientist" target="_blank" rel="noopener"
+>scientist&lt;/a>，專門做平行化實驗的比較
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/parallel.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="裝飾者模式">裝飾者模式&lt;/h4>
+&lt;p>如果當前系統無法被修改，卻需要攔截呼叫並額外增加行為，可以考慮用裝飾者模式，透過代理服務器在呼叫完原系統後，額外呼叫微服務；但要小心違反 dump pipe 的風險&lt;br>
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/decoration.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="模式四變更資料擷取">模式四：變更資料擷取&lt;/h4>
+&lt;p>同樣是不修改當前系統，也不想用裝飾者模式，但同樣希望在行為變動時觸發微服務，如會員註冊後，要打印會員卡，可以透過資料儲存的方式，例如資料庫的 trigger、定期 polling 資料庫；但要小心耦合在資料庫
+&lt;img src="https://yuanchieh.page/post/2021/img/1203/data.jpg"
+loading="lazy"
+>&lt;/p>
+&lt;h4 id="模式五使用者介面組成">模式五：使用者介面組成&lt;/h4>
+&lt;p>UI 端也可以把頁面拆解成不同的組件，例如 &lt;a class="link" href="https://micro-frontends.org/" target="_blank" rel="noopener"
+>Micro Frontend&lt;/a>，因應 Web 標準的發展支援 custom element，讓不同的團隊可以採用不同的技術實做不同的組件，透過 DOM event 跨組件通信&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>前三張談了組織與程式碼架構，評估導入微服務的優劣、大方向上導入的方式，後面兩張會繼續談最難拆分的資料庫搬移以及導入後隨著組織成長會遇到的困境&lt;/p></description></item><item><title>AWS Aurora 架構研究以及與自駕 MySQL 的差異</title><link>https://yuanchieh.page/posts/2021/2021-07-02-aws-aurora-%E6%9E%B6%E6%A7%8B%E7%A0%94%E7%A9%B6%E4%BB%A5%E5%8F%8A%E8%88%87%E8%87%AA%E9%A7%95-mysql-%E7%9A%84%E5%B7%AE%E7%95%B0/</link><pubDate>Fri, 02 Jul 2021 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-07-02-aws-aurora-%E6%9E%B6%E6%A7%8B%E7%A0%94%E7%A9%B6%E4%BB%A5%E5%8F%8A%E8%88%87%E8%87%AA%E9%A7%95-mysql-%E7%9A%84%E5%B7%AE%E7%95%B0/</guid><description>&lt;p>公司使用 MySQL，近日遇到一些讀取的瓶頸，有了使用 AWS Aurora 的討論，剛好上一週看到 &lt;a class="link" href="https://plaid.com/blog/exploring-performance-differences-between-amazon-aurora-and-vanilla-mysql" target="_blank" rel="noopener"
+>Exploring performance differences between Amazon Aurora and vanilla MySQL&lt;/a> 才赫然發現 AWS Aurora 底層儲存架構會影響使用場景，跟預期的自駕 MySQL 搭配 Replica 有不同的效果&lt;/p>
+&lt;p>以下這篇將探討&lt;/p>
+&lt;ol>
+&lt;li>MySQL 儲存的基本原理&lt;/li>
+&lt;li>Aurora 的儲存架構&lt;/li>
+&lt;/ol>
+&lt;p>資料源自於&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://plaid.com/blog/exploring-performance-differences-between-amazon-aurora-and-vanilla-mysql" target="_blank" rel="noopener"
+>Exploring performance differences between Amazon Aurora and vanilla MySQL&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases" target="_blank" rel="noopener"
+>Amazon Aurora: Design Considerations for High Throughput Cloud-native Relational Databases&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;h2 id="mysql-儲存的基本原理">MySQL 儲存的基本原理&lt;/h2>
+&lt;p>關聯式資料庫最基本要保障 ACID，其中 Durability 是最基本的核心功能，保證寫入成功的資料不會因為系統 crash 等問題而遺失，在 MySQL 寫入的流程大概是&lt;/p>
+&lt;ol>
+&lt;li>將更新寫入 Redo Log buffer (WAL)，等待 commit 確定就刷新到硬碟保存紀錄避免遺失資料&lt;/li>
+&lt;li>如果資料有被讀取到 memory 中，則更新 Page 內容並標記為 dirty&lt;/li>
+&lt;li>背景運行的程序在 checkpoint 時機觸發時將 dirty page 與 redo log 的內容更新於硬碟上的 data file&lt;/li>
+&lt;/ol>
+&lt;p>其中有幾個目的&lt;/p>
+&lt;ol>
+&lt;li>減少 disk I/O 並保障連續性寫入：&lt;br>
+如果每一筆資料進來就馬上更新硬碟上的儲存，這會拖垮 DB 效能，所以 MySQL 讀寫時是以 &lt;code>page&lt;/code> 為單位，如果發現更新的 page 在記憶體中會標記為 dirty page，後續再 checkpoint 統一更新到硬碟中&lt;/li>
+&lt;li>Redo Log 避免系統 Crash 而資料遺失：&lt;br>
+為了避免資料遺失，所以會先寫入 Redo Log，所以又稱作 Write Ahead Log 先寫入 log 再操作，Redo Log 是一個順序性持續寫入的 Log，所以寫入效能比隨機性更新還要好，當系統 crash 後，會來檢查 Redo Log 中是否存在沒有更新到資料庫硬碟的資料；&lt;br>
+具體寫入硬碟時機看 &lt;code>innodb_flush_log_at_trx_commit&lt;/code>，預設 1 為每一筆都及時寫入硬碟中&lt;/li>
+&lt;li>定期同步到硬碟中：&lt;br>
+每個操作都有先寫入 Redo Log，但這是為了災難復原而用，資料庫的資料會以 Page 形式儲存於硬碟中，所以定期到 checkpoint 會把 dirty page 從記憶體更新到硬碟中&lt;/li>
+&lt;/ol>
+&lt;h3 id="binlog">Binlog&lt;/h3>
+&lt;p>Binlog 適用於系統異地恢復/建立 Replica，Binlog 不像 Redo Log 會保存所有的操作，只會保存對於資料有異動的行為，例如 update / delete 等&lt;/p>
+&lt;p>寫入時機在 commit 完成時，會在 commit 結束前 / lock 釋放前寫入硬碟，避免資料異常，具體的寫入頻率要看 &lt;code>sync_binlog&lt;/code>，預設為 1 代表每一筆 commit 就寫一次，可以設定為 n 代表 n 筆 commit 才寫入但就會有遺失資料的風險&lt;/p>
+&lt;h3 id="undo-log">Undo log&lt;/h3>
+&lt;p>如果 isolation level 開到 repeatable read，則 MySQL 採用 MVCC，讓每個 transaction 只會讀取到自己 transaction 開始前的最新資料，而不被並行的 transaction 所影響&lt;/p>
+&lt;p>之所以需要 undo log 是當 transaction rollback 時，需要知道自己要回滾的狀態，所以 undo log 必須保存到 transaction 執行完畢才可以刪除，長度會是 &lt;code>執行最久的 transaction&lt;/code>&lt;/p>
+&lt;h2 id="aurora-架構">Aurora 架構&lt;/h2>
+&lt;p>Aurora 是 AWS 基於雲端建構的關聯式資料庫服務，兼容於 MySQL / PostgreSQL，主要想解決幾個問題&lt;/p>
+&lt;ol>
+&lt;li>容錯能力：&lt;br>
+硬碟可能會壞 / 主機可能會有問題 / 甚至 Data Center 都會出意外，尤其是在雲端分散式系統中，機器數增加帶來更高的出錯機會，Aurora 每一個 replica 都會對應 3 個 AZ 各 2 個 node 總共 6 個 node 儲存資料，大幅增加容錯能力&lt;/li>
+&lt;li>擴展性：&lt;br>
+傳統的資料庫架設於單一主機上，讀取會受限於 Disk I/O 的貧頸，Aurora 將 Compute / Storage 分離，可以針對需求獨立升級，並增加跨區域、跨 AZ 的 Read Replica&lt;/li>
+&lt;/ol>
+&lt;p>但有這麼多好處卻不用受到太多的性能影響，聽起來有點美好的不切實際，例如備份到多個儲存 node 就需要擔心資料一致性/效能的問題，除了原本的 Disk I/O 又多了一段 Network I/O，Aurora 在不同的地方作出了對應的調整&lt;/p>
+&lt;h2 id="2-durability-at-scale">2. DURABILITY AT SCALE&lt;/h2>
+&lt;h3 id="21-replication-and-correlated-failures">2.1 Replication and Correlated Failures&lt;/h3>
+&lt;p>Aurora 跟很多分散式儲存的服務很像，採用多數讀寫的機制，只要確保&lt;/p>
+&lt;ol>
+&lt;li>Vw + Vr &amp;gt; V&lt;/li>
+&lt;li>Vw &amp;gt; V / 2&lt;/li>
+&lt;/ol>
+&lt;p>V 代表節點數量，如果 Vw 寫入節點數量超過 1/2 節點都成功才成功，且 Vr 讀取數量是讀取多數則&lt;/p>
+&lt;p>最基本的數量會取 3，則 Vw / Vr 只要有 2 個 node 存活則可以繼續運作，容錯率是 33%，但文件中說到 Aurora 選擇 6 個 node分散在 3 個 AZ，這樣可以預防一個 AZ 以及一個額外錯誤下讀取還不會中斷&lt;/p>
+&lt;h3 id="22-segmented-storage">2.2 Segmented Storage&lt;/h3>
+&lt;p>為了降低同時機器故障而導致破壞多數的可能，要盡可能降低 MTTF(平均錯誤時間)與 MTTR(平均復原時間)，Aurora 以 10GB 當作一個區段，產生 6 個備份並分散到 3 個 AZ 稱之為 PG(Protection Group)，一個 Storage Volume 就是由多個 PG 所組成，實體上就是由 EC2 加上一群分割的 SSD 組成，最大可支援到 64TB&lt;/p>
+&lt;p>Segment 是最小獨立單位 (也就是會壞掉是獨立一個 Segment 壞)，AWS 會負責持續監控與復原，目前復原一個 Segment 約 10秒鐘 (網路帶寬為 10Gbps 下)，所以出現破壞多數的場景：兩個 node 在 10秒鐘內同時壞掉且一個 AZ 掛掉又不包含同時壞掉的 node 機率就微乎其微&lt;/p>
+&lt;blockquote>
+&lt;p>小結：這邊談的是 AWS 在持久性上的優化，將最小的儲存單位定在 10GB，讓復原速度變快 / 產生 6 組備份增加容錯&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="the-log-is-the-database">THE LOG IS THE DATABASE&lt;/h2>
+&lt;h3 id="31-the-burden-of-amplified-writes">3.1 The Burden of Amplified Writes&lt;/h3>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2021/img/0702/mysql-old.png"
+loading="lazy"
+>
+先看第一版 Aurora 嘗試的架構 - 傳統的鏡像同步架構，一台 Primary Instance 負責寫入儲存於 EBS 並同時備份到另一份 EBS 中，有一台 Replica Instance 同步 Primary 的寫入並儲存於兩份 EBS 中，可以看到一個 MySQL 寫入最多會觸發五個 I/O binlog / redo log / frm(metadata) / double-write，要等到全部寫入結束才算是操作成功，這會拉長回應時間，更糟糕的是圖片中步驟 1,3,5 (為什麼有5?) 是同步且順序寫入&lt;/p>
+&lt;h3 id="32-offloading-redo-processing-to-storage">3.2 Offloading Redo Processing to Storage&lt;/h3>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2021/img/0702/aurora.png"
+loading="lazy"
+>
+相反的 Aurora 透過 Redo Log 同步，讓 Storage level 負責 Redo Log 寫入與更新 Data file，同時分送給 Replica 更新記憶體中 page 的資料；&lt;br>
+不像過往 MySQL 需要在 Checkpoint / background / cache 空間不足時刷新資料到硬碟中，全部由 Storage Service 負責，大幅降低了 Network I/O&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2021/img/0702/perf.png"
+loading="lazy"
+>
+從 Benchmark 可以看到，每筆 Transaction 所需的 I/O 從 7.4 變成 0.9，完成的 Transaction 數也提升了 35 倍&lt;/p>
+&lt;p>這同時也降低了復原的時間，傳統 DB 需要從 Redo Log 上一次的 checkpoint 開始逐條執行，但 Aurora 的復原是從 Storage level 向其他備份拉 Segment，復原速度可以在一分鐘以內&lt;/p>
+&lt;h3 id="33-storage-service-design-points">3.3 Storage Service Design Points&lt;/h3>
+&lt;p>Storage Service 核心設計要降低寫入請求的延遲，所以把大部分的儲存工作都移至背景執行，尤其是更好地利用 CPU 去換取 Disk 寫入時間，例如舊的 Page 要垃圾回收可以在背景用 CPU 執行而不要延遲前景在處理寫入請求，所以 Aurora 的背景運作不會影響前景，不同於傳統 DB 如果背景在 Checkpoint 刷新硬碟則會造成前景寫入的延遲&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2021/img/0702/storage.png"
+loading="lazy"
+>
+Storage Service 收到請求會執行&lt;/p>
+&lt;ol>
+&lt;li>放入 Memory 中&lt;/li>
+&lt;li>寫入硬碟，寫入請求成功&lt;/li>
+&lt;li>排序，並確認寫入紀錄是否有遺漏&lt;/li>
+&lt;li>透過 gossip 跟其他節點要遺漏的紀錄&lt;/li>
+&lt;li>更新到 page 中&lt;/li>
+&lt;li>定期同步到 s3&lt;/li>
+&lt;li>定期清除舊的 page&lt;/li>
+&lt;li>定期檢查 page 的驗證碼&lt;/li>
+&lt;/ol>
+&lt;p>除了步驟 1, 2 會影響前景寫入，其餘步驟都可以非同步且於背景執行&lt;/p>
+&lt;h2 id="4-the-log-marches-forward">4. THE LOG MARCHES FORWARD&lt;/h2>
+&lt;p>接著要確保 rumtime、replica 都保持一致性，究竟是如何不使用昂貴的 2pc 卻又能保持一致性&lt;/p>
+&lt;h3 id="41-solution-sketch-asynchronous-processing">4.1 Solution sketch: Asynchronous Processing&lt;/h3>
+&lt;p>前面提過 Aurora 是透過 redo log 同步，每一筆 log 都有 持續遞增的 LCN (Log Sequence Number)，因為寫入成功只要多數的 node 同意即可，所以有些 node 可能會缺少幾個 log，可以透過 LCN 去跟其他 node 索取遺失的 log&lt;/p>
+&lt;p>考量到多 transaction 的情況，每個 transaction 執行順序有所不同，在過程會陸續把 commit 送到 storage service 儲存 (到 complete) 階段，但如果發生了系統故障時，重新恢復後需要把沒有 commit 的 transaction 都 rollback，假設 DB 目前最高完成寫入的 LCN 稱為 VCL (Volume Complete LSN))，在復原中任何 LCN 高於 VCL 都會被遺棄，因為代表沒有被 complete&lt;/p>
+&lt;p>更進階這些高於 VCL 的 LCN 會被標記成 CPL (Consistency Point LSNs)，接著定義出 VDL 為那些在低於 VCL 中最高的 CPL，例如 CPL 有 900,1000, 1100 但是 VCL 為 1007，則 VDL 為 1000，這代表 storage service complete 到 1007 但是持久化儲存到 1000&lt;/p>
+&lt;blockquote>
+&lt;p>這一整段沒有到非常理解，待之後慢慢思考&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="42-normal-operation">4.2 Normal Operation&lt;/h3>
+&lt;p>Aurora 會同時處理大量的寫入請求，每一筆 redo log 都會產生一個大於 VDL(被持久化保存的 LCN)的 LCN，但為了不要讓 LCN 的遞增遠大於 Storage Service 所能保存的速度，LSN Allocation Limit (LAL) 預設為 10萬筆，意即 Aurora 最多並行 10 萬筆進行中的 transaction 避免寫入速度跟不上&lt;/p>
+&lt;p>每一個 PG 中的每一個 Segment 只會保存部分的 redo log，但會有一個 link 指向上一份 log 所在的 PG，這用來追蹤目前所完成最大的 LCN，並且在與其他 node gossip 時可以知道缺漏的 log&lt;/p>
+&lt;h4 id="read">Read&lt;/h4>
+&lt;p>如同大多數的 DB，Aurora 會在 buffer 中 cache page ，如果 cache miss 則從 disk 讀取，此時傳統 DB 會優先移除 dirty page 並寫回硬碟中；但 Aurora 並不需要刷新 dirty page (因為 storage service 已經獨立更新)，相反的是把 page LCN 大於等於 VDL 的 page 移除並讀取最新被持久化的page&lt;/p>
+&lt;p>前面提到 Aurora 透過多數讀取確保一致性，但大多數時機並不需要，Aurora 會在 Page 讀取時紀錄 Page LCN 當作 read point，接著只要讀取的 storage node VDL 確定在 read point 之後，就代表該 node 有該 page 完整最新的資料，而且因為每個 segment 都有紀錄 LCN 與 link，所以能很快知道資料要到哪一個 segment 讀取&lt;/p>
+&lt;p>同時每個 PG 會維護一份目前最低的 Protection Group Min Read Point LSN (PGMRPL)，這代表低於此數字的 LCN 的 page 都不會再被讀取，這樣垃圾回收就能移除過舊的 log&lt;/p>
+&lt;h3 id="replica">Replica&lt;/h3>
+&lt;p>一個 write node 可以搭配 16 個 read replica 並共用相同的 storage service，writer 會把 redo log 也同步給 reader，如果 log 有在 cache 中則更新，否則就直接丟棄&lt;/p>
+&lt;p>因為 reader 跟 storage service 的 redo log 更新是錯開，所以 reader 在更新 log 時要確保 LCN 是小於等於 VDL / 如果 log 是 mini-transaction 的一部分則更新，確保跟所有的 database 看到相同內容&lt;/p>
+&lt;p>預期 reader 的延遲會在 20ms 以內&lt;/p>
+&lt;h3 id="43-recovery">4.3 Recovery&lt;/h3>
+&lt;p>傳統 DB 在災難復原時，會去讀取 redo log 中還沒被 checkpoint 執行的 log，搭配 undo log 將失敗的 transaction rollback，但這執行過程蠻花時間，而 Aurora 沒有這方面困擾&lt;/p>
+&lt;p>首先會檢查每一個 PG，找出讀取多數中可以確保已經完成的寫入多數紀錄 VDL，高於 VDL 的 LCN 全部捨棄，接著一樣需要透過 undo log 去 rollback，整個過程約 10秒以內&lt;/p>
+&lt;h2 id="5-putting-it-all-together">5. PUTTING IT ALL TOGETHER&lt;/h2>
+&lt;p>接著看完整的架構圖
+&lt;img src="https://yuanchieh.page/post/2021/img/0702/architech.png"
+loading="lazy"
+>
+社群版的 MySQL InnoDB 引擎在寫入操作時會修改 buffer 中的 page 與寫入 WAL redo log buffer，等到 commit 時再把 redo log buffer 寫入硬碟中；而被修改的 page 要則透過 double-write buffer 避免只更新部分 page，page 寫入會發生在背景 / checkpoint / cache 移除時；
+此外還有一些 B+Tree 操作與相關的 mini trasaction (MTR) 如拆分、合併 B+Tree page 需要是原子性操作&lt;/p>
+&lt;p>在 Aurora 版本中，redo log record 就代表每一個 MTR 操作，最新的一筆 log 被標記成 consistency point；Aurora 提供相同的 isolation level&lt;/p>
+&lt;p>其餘就是架構的說明，以及各方面的性能表現，就不贅述了&lt;/p>
+&lt;hr>
+&lt;h2 id="aurora-對比-mysql-有什麼隱憂">Aurora 對比 MySQL 有什麼隱憂&lt;/h2>
+&lt;p>因為 Aurora 如果 primary 跟 read replica 在同一個 region 下，則會共用 storage service，這也就代表 undo log 會是同一份，如果今天 read replica 有一筆執行非常久的 transaction，則 undo log 也會跟變大導致 primary 效能下降&lt;/p>
+&lt;p>這個在傳統 MySQL 不會發生，因為如 3.1 提到 MySQL 是透過 binlog 同步各自的 MySQL 維護各自的 redo log / undo log 所以 read replica 不會有任何影響 primary 的時候&lt;/p>
+&lt;p>最後作者指出有幾個解法&lt;/p>
+&lt;ol>
+&lt;li>調整 read replica 預設 isolation level 為 read commited，就不會用到 undo log(需注意預設為 repeatable read)&lt;/li>
+&lt;li>Aurora 選擇 binlog relica，就跟傳統的 mysql 一樣&lt;/li>
+&lt;li>拿在 S3 的備份資料，用其他大數據工具分析&lt;/li>
+&lt;li>Aurora 支援 clone，備份一組新的設定&lt;/li>
+&lt;/ol>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>翻整個 Aurora 架構有很多生硬的地方沒有完全搞懂，但是看到這種解 bug 追根究底到底層架構還是覺得很過癮，之後會持續的優化文章內容，如果有哪裡有建議跟指教再麻煩留言～&lt;/p></description></item></channel></rss>

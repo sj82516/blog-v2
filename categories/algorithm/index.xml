@@ -1,0 +1,1514 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Algorithm on Yuanchieh</title><link>https://yuanchieh.page/categories/algorithm/</link><description>Recent content in Algorithm on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 01 Jun 2022 01:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/algorithm/index.xml" rel="self" type="application/rss+xml"/><item><title>【刷題長知識】Mercle tree 識別子樹相同與否</title><link>https://yuanchieh.page/posts/2022/2022-06-01-%E5%88%B7%E9%A1%8C%E9%95%B7%E7%9F%A5%E8%AD%98mercle-tree-%E8%AD%98%E5%88%A5%E5%AD%90%E6%A8%B9%E7%9B%B8%E5%90%8C%E8%88%87%E5%90%A6/</link><pubDate>Wed, 01 Jun 2022 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2022/2022-06-01-%E5%88%B7%E9%A1%8C%E9%95%B7%E7%9F%A5%E8%AD%98mercle-tree-%E8%AD%98%E5%88%A5%E5%AD%90%E6%A8%B9%E7%9B%B8%E5%90%8C%E8%88%87%E5%90%A6/</guid><description>&lt;p>今天在解 &lt;a class="link" href="https://leetcode.com/problems/binary-tree-longest-consecutive-sequence-ii/" target="_blank" rel="noopener"
+>549. Binary Tree Longest Consecutive Sequence II&lt;/a>，在評論區發現有趣的解法 Merkle Tree，說來解法也很單純，就是 tree 節點會 (左子樹的 hash value + 右子樹的 hash value + 自己的 hash value) 再取一次 hash value 代表整棵 tree，所以需要 O(n) 的時間複雜度與空間複雜度，n 為節點數&lt;/p>
+&lt;p>&lt;img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Hash_Tree.svg/310px-Hash_Tree.svg.png"
+loading="lazy"
+>&lt;br>
+圖片來自 wiki&lt;/p>
+&lt;p>#549 程式碼大致是，以下代碼的來源是 &lt;a class="link" href="https://leetcode.com/problems/find-duplicate-subtrees/discuss/106030/Python-O%28N%29-Merkle-Hashing-Approach" target="_blank" rel="noopener"
+>awice-Python, O(N) Merkle Hashing Approach&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl">&lt;span class="k">def&lt;/span> &lt;span class="nf">findDuplicateSubtrees&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="bp">self&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kn">from&lt;/span> &lt;span class="nn">hashlib&lt;/span> &lt;span class="kn">import&lt;/span> &lt;span class="n">sha256&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">hash_&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">S&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">sha256&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">S&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">S&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">hexdigest&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">def&lt;/span> &lt;span class="nf">merkle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="s1">&amp;#39;#&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">m_left&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">merkle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">left&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">m_right&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">merkle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">merkle&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">hash_&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">m_left&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nb">str&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">m_right&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">merkle&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">merkle&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">collections&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">defaultdict&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">list&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">merkle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">root&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="n">nodes&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">pop&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="n">nodes&lt;/span> &lt;span class="ow">in&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">values&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nodes&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>透過 hash value 比對兩個 subtree 是否相同，以上解法要小心有 hash collision 問題，最好重新檢查一下比較保險&lt;/p>
+&lt;p>Merkle Tree 在現實中有什麼應用呢？ 以下內容參考自  &lt;a class="link" href="https://medium.com/geekculture/understanding-merkle-trees-f48732772199" target="_blank" rel="noopener"
+>Understanding Merkle Trees&lt;/a>&lt;br>
+主要會出現在樹狀結構且需要快速找出這兩棵 Tree / Subtree 差異之處，例如&lt;/p>
+&lt;ul>
+&lt;li>Git 在 pull request 需要快速知道是從哪個 git commit tree 開始不同 / file tree 中有哪些檔案有異動需要同步&lt;/li>
+&lt;li>Blockchain 中需要知道交易鏈上的某筆交易是否存在於該區塊中&lt;/li>
+&lt;li>分散式資料庫中在同步資料時，要確認哪部分資料有落差需要同步，如 Dynamo DB 中&lt;/li>
+&lt;/ul>
+&lt;p>讓我們更深入看一下 Git 內部實作&lt;/p>
+&lt;h1 id="git-internals---git-objects">Git Internals - Git Objects&lt;/h1>
+&lt;p>&lt;a class="link" href="https://git-scm.com/book/en/v2/Git-Internals-Git-Objects" target="_blank" rel="noopener"
+>https://git-scm.com/book/en/v2/Git-Internals-Git-Objects&lt;/a>&lt;/p>
+&lt;p>讓我們先來看一下 Git 內部怎麼儲存資料，Git 內部有一個 key-value database，裡面會儲存 hash key 與對應的內容 (Object)，包含的類型有檔案 (blob) / 資料夾 (tree) / commit 都會以這樣的方式儲存，不同的類型會 hash function 的參數會有所不同，但都是透過 SHA-1 產生&lt;/p>
+&lt;p>以上的內容會儲存在 &lt;code>.git/object&lt;/code> 的路徑&lt;/p>
+&lt;h3 id="blob-objects">Blob Objects&lt;/h3>
+&lt;p>檔案包含文字圖檔等都是 blob 形式，我們可以透過&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>$git hash-object&lt;/code> 將指定的檔案或內容儲存到 git database 中，並取得 hash code&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>$git cap-file&lt;/code> 輸入對應的 hash code 可以取出對應的內容&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>如官方案例&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">$ mkdir &lt;span class="nb">test&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="nb">cd&lt;/span> &lt;span class="nb">test&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git init
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">echo&lt;/span> &lt;span class="s1">&amp;#39;test content&amp;#39;&lt;/span> &lt;span class="p">|&lt;/span> git hash-object -w --stdin
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">d670460b4b4aece5915caf5c68d12f560a9fe3e4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ find .git/objects -type f
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">.git/objects/d6/70460b4b4aece5915caf5c68d12f560a9fe3e4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p d670460b4b4aece5915caf5c68d12f560a9fe3e4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">test&lt;/span> content
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在 .git/objects 下可以看到 &lt;code>d6/70460b4b4aece5915caf5c68d12f560a9fe3e4&lt;/code>，git 會把 40 碼 hash code 拆成 2 + 38，前 2 碼變成資料夾名稱＋後 38 碼變成檔案名稱，如果試著直接讀取 file 會發現無法識別，主要是 Git 會用 zlib 壓縮內容&lt;/p>
+&lt;h3 id="tree-objects">Tree Objects&lt;/h3>
+&lt;p>資料夾在 Git 中以 Tree 的格式儲存，其內容會儲存路徑下 tree / blob 的 hash code&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">$ mkdir -p test1/test2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;123&amp;#34;&lt;/span> &amp;gt; test1/test2/test.txt
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git add .
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git commit -m &lt;span class="s2">&amp;#34;init&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p master^&lt;span class="o">{&lt;/span>tree&lt;span class="o">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">040000&lt;/span> tree b5a59142d85435f6a41a972e376a422fc6b2df93 test1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p b5a59142d85435f6a41a972e376a422fc6b2df93
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">040000&lt;/span> tree 33dacd7d9ac656ddebea4ecfc8ab9a87b37c2736 test2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p 33dacd7d9ac656ddebea4ecfc8ab9a87b37c2736
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">100644&lt;/span> blob d800886d9c86731ae5c4a62b0b77c437015e00d2 test.txt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其中 &lt;code>master^{tree}&lt;/code>是代表 master branch 的目錄，內容儲存第一層的所有檔案與資料夾 test1，接著一層一層往下找就能找到 test.txt&lt;/p>
+&lt;ul>
+&lt;li>如果我們更新 test.txt 會發生什麼事？&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;456&amp;#34;&lt;/span> &amp;gt; test1/test2/test.txt
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p master^&lt;span class="o">{&lt;/span>tree&lt;span class="o">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">040000&lt;/span> tree ff1e53b4ff4c130ece8c9f12cdcc3f2613a779e7 test1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p b5a59142d85435f6a41a972e376a422fc6b2df93
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">040000&lt;/span> tree 33dacd7d9ac656ddebea4ecfc8ab9a87b37c2736 test2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p e9e2bd5dfa2916e3b1cba933bd9250a9822406e4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">100644&lt;/span> blob 4632e068d5889f042fe2d9254a9295e5f31a26c7 test.txt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到 test.txt 因為內容改變而 SHA key 也改變，同樣的 test1 、test2 對應的 tree object SHA key 已經變成了，所以只要底下的 blob 改變 tree SHA key也會跟著改變&lt;/p>
+&lt;p>我暫時沒有找到直接把資料夾轉成 hash code 並儲存的方式，在文件中只有記載當在 staging 區增加檔案時，git 會幫忙建立 index 與 tree&lt;/p>
+&lt;h4 id="每次變動-git-都會儲存整份檔案內容這樣-gitobjects-就會超肥">每次變動 git 都會儲存整份檔案內容，這樣 .git/objects 就會超肥？&lt;/h4>
+&lt;p>沒錯，會非常肥，所以 git 提供指令可以清除檔案太舊的資料，參考 &lt;a class="link" href="https://stackoverflow.com/questions/5613345/how-to-shrink-the-git-folder" target="_blank" rel="noopener"
+>How to shrink the .git folder&lt;/a>，在 git 文件中有更詳細描述 &lt;a class="link" href="https://git-scm.com/book/zh-tw/v2/Git-Internals-Maintenance-and-Data-Recovery" target="_blank" rel="noopener"
+>10.7 Git Internals - Maintenance and Data Recovery&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">$ git repack -a -d --depth&lt;span class="o">=&lt;/span>&lt;span class="m">250&lt;/span> --window&lt;span class="o">=&lt;/span>&lt;span class="m">250&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="commit-objects">Commit Objects&lt;/h3>
+&lt;p>在 git 中 commit 儲存是樹狀結構，當執行 $ git commit 時，git 會產生 commit object 並記錄 commit 訊息 / 時間 / 作者與 parent commit，如&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">$ git add .
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git commit -m &lt;span class="s2">&amp;#34;init&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git remove .
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git commit -m &lt;span class="s2">&amp;#34;delete&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git log
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">commit 8864a737bf54b251c878655c263dc9b1e16640e2 &lt;span class="o">(&lt;/span>HEAD -&amp;gt; master&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">.....
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> delete
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">commit ff226f74f095fd1acb5c965583688be28ad3bbb4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">....
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> init
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ git cat-file -p 8864a737bf54b251c878655c263dc9b1e16640e2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">parent ff226f74f095fd1acb5c965583688be28ad3bbb4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">author Yuanchieh &amp;lt;sj82516@gmail.com&amp;gt; &lt;span class="m">1654239635&lt;/span> +0800
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">committer Yuanchieh &amp;lt;sj82516@gmail.com&amp;gt; &lt;span class="m">1654239635&lt;/span> +0800
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">delete
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="sha-key-如何運算">SHA key 如何運算&lt;/h3>
+&lt;p>在文件最後有補充如何計算 blob 的 SHA key，這邊參考龍哥教學 【&lt;a class="link" href="https://gitbook.tw/chapters/using-git/how-to-calculate-the-sha1-value" target="_blank" rel="noopener"
+>冷知識】那個長得很像亂碼 SHA-1 是怎麼算出來的？&lt;/a> &lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ruby" data-lang="ruby">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 引入 SHA-1 計算函式庫&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">require&lt;/span> &lt;span class="s2">&amp;#34;digest/sha1&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 要計算的內容&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">content&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;Hello, 5xRuby&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 計算公式&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">input&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;blob &lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">content&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">length&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="se">\0&lt;/span>&lt;span class="si">#{&lt;/span>&lt;span class="n">content&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">puts&lt;/span> &lt;span class="no">Digest&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="no">SHA1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">hexdigest&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">input&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 得到 &amp;#34;4135fc4add3332e25ab3cd5acabe1bd9ea0450fb&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>總結：在 Git 中檔案與 Commit 都是以樹狀結構儲存，只要節點下的子節點有變動，往上一路到跟節點的 Hash key 都會跟著改變，透過 Mercle Tree 就可以在 O(N) 找到變動的地方&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>刷題有時候有趣的不是單純答案寫出來，而是看到討論區有各種牛鬼蛇神的強大解法，許多資料結構或演算法在日常的系統中都扮演重要的角色&lt;/p></description></item><item><title>【算法】Segment Tree 與 Binary Indexed Tree 解題整理</title><link>https://yuanchieh.page/posts/2022/2022-05-23-%E7%AE%97%E6%B3%95segment-tree-%E8%88%87-binary-indexed-tree-%E8%A7%A3%E9%A1%8C%E6%95%B4%E7%90%86/</link><pubDate>Mon, 23 May 2022 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2022/2022-05-23-%E7%AE%97%E6%B3%95segment-tree-%E8%88%87-binary-indexed-tree-%E8%A7%A3%E9%A1%8C%E6%95%B4%E7%90%86/</guid><description>&lt;p>當需要在某一陣列中，求某一段區間的數值和或是最小值，如果是靜態資料，也就是陣列內容不會再改變，我們可以用 &lt;code>prefix sum&lt;/code> 在 constant time 取得結果&lt;/p>
+&lt;p>但如果陣列的值會改變，就需要每次都重新計算 prefix sum，此時的時間複雜度會是 O(N)，有沒有更快的方法呢？&lt;/p>
+&lt;p>這邊有兩個相似的樹狀結構 &lt;code>Segment Tree / Binary Indexed Tree&lt;/code> (又稱 Fenwick Tree) 可以用 &lt;code>O(logN)&lt;/code> 解決動態區間和的問題，其中 Segment Tree 可以更廣泛解決區間極值的問題&lt;/p>
+&lt;p>相關題目&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://leetcode.com/problems/range-sum-query-mutable/" target="_blank" rel="noopener"
+>307. Range Sum Query - Mutable&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://leetcode.com/problems/range-sum-query-2d-mutable/" target="_blank" rel="noopener"
+>308. Range Sum Query 2D - Mutable&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://leetcode.com/problems/count-of-smaller-numbers-after-self/" target="_blank" rel="noopener"
+>315. Count of Smaller Numbers After Self&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://leetcode.com/problems/count-of-range-sum/" target="_blank" rel="noopener"
+>327. Count of Range Sum&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;h2 id="segment-tree">Segment Tree&lt;/h2>
+&lt;p>教學影片：&lt;a class="link" href="https://www.youtube.com/watch?v=xztU7lmDLv8" target="_blank" rel="noopener"
+>Segment Tree Data Structure - Min Max Queries&lt;/a>&lt;/p>
+&lt;p>Segment Tree 與 BIT 的概念雷同，原本我用 prefix sum 遇到更新時要用 O(n) 整個重建，但如果我把&lt;code>區間切小，每次更新只要影響到部分區間&lt;/code>，對應的讀取要篩選符合的區間讀取，妥協後 &lt;code>讀取與更新都控制在 log(N)&lt;/code>，但區間該怎麼切以及如何實作呢？ 這就是 Segment Tree 與 BIT 不同之處&lt;/p>
+&lt;p>Segment Tree 用陣列儲存區間值，需要&lt;code>兩倍額外記憶體空間&lt;/code>，原陣列放在新陣列的最後，接著往前跟新區間 (parent = idx/2)，如下圖 (從影片截圖而來)&lt;br>
+&lt;img src="https://yuanchieh.page/post/2022/img/0522/segment_tree.png"
+loading="lazy"
+> &lt;br>
+所以區間是 2 -&amp;gt; 4 -&amp;gt; 8 這樣往上疊加&lt;/p>
+&lt;p>初始化程式碼為&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">SegmentTree&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">public&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SegmentTree&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&amp;amp;&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">offset_&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">resize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">offset_&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 先把原陣列放在最後
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// parent = 左 child + 右 child
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">offset_&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="o">--&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">void&lt;/span> &lt;span class="nf">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 因為有移動，所以要加上 offset_
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">index&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">diff&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">val&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeIdx&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 更新時要更新全部的 parent
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeIdx&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">diff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">private&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>透過 &lt;code>O(N)&lt;/code> 即可完成初始化，我們將原陣列放在最後，並往上疊加出多個區間，Update 需要 &lt;code>O(logN)&lt;/code>，因為要往前把相關的區間都要更新一次&lt;/p>
+&lt;p>接著重點是 range query，傳入 left / right (閉區間) 要在 &lt;code>O(logN)&lt;/code> 解決，重點，&lt;/p>
+&lt;ul>
+&lt;li>如果我們查找的範圍會涵蓋完整區間，往上找區間值&lt;/li>
+&lt;li>反之，則取得當下的值，並往下一個區間邁進
+&lt;img src="https://yuanchieh.page/post/2022/img/0522/segment_tree_explain.png"
+loading="lazy"
+>&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">int&lt;/span> &lt;span class="nf">sumRange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">left&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">left&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">right&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">&amp;lt;=&lt;/span> &lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 如果是左指針，且指到區間右側，當下取值
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeLeftIndex&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 如果是右指針，且指到區間左側，當下取值
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="o">--&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果想要查詢整段區間的指標移動，我們可以觀察出一個重點&lt;/p>
+&lt;blockquote>
+&lt;p>偶數 index 都在區間的左側 / 奇數 index 是在區間的右側&lt;/p>
+&lt;/blockquote>
+&lt;p>因為我們是用 left / right 去找區間和，所以我們要找&lt;code>left 往右找與 right 往左找的共同區間&lt;/code>，總共分成 4 種情況考慮&lt;/p>
+&lt;ol>
+&lt;li>left 指向偶數：&lt;br>
+代表我們會&lt;code>拿整個區間&lt;/code>，因為區間的左側是偶數，當目前 left 就指向偶數，代表要取出整個區間&lt;/li>
+&lt;li>left 指向奇數：&lt;br>
+代表我們&lt;code>不可以拿區間當作代表，因為奇數是區間的右側&lt;/code>，再往下就到另一個區間，所以我們要直接取值&lt;/li>
+&lt;li>right 指向偶數： &lt;br>
+right 跟 left 邏輯剛好相反，我們&lt;code>只能拿 right 往左的區間，因為偶數是 parent 左側&lt;/code>，再往下移就到下個區間，所以要拿當前值&lt;/li>
+&lt;li>right 指向奇數：&lt;br>
+因為&lt;code>奇數是區間的右側&lt;/code>，代表我們可以拿整個區間為當前值&lt;/li>
+&lt;/ol>
+&lt;p>以上圖為例&lt;/p>
+&lt;ol>
+&lt;li>左指針指向 -2，此時是區間的右側，符合條件 2，拿完 -2 往下一個區間走 / 右指針只在區間右側符合條件4，往上一個區間&lt;/li>
+&lt;li>左指針持續指向區間左側符合條件1、右指針指向區間右側符合條件4，一路往上指到同一個區塊，直接拿完整段區間 (8~-5)&lt;/li>
+&lt;/ol>
+&lt;p>影片參考資料是左閉右開的計算方式，但這樣我覺得再取出區間和比較不好做，所以參考 leetcode 解答調整成目前的閉區間算法&lt;/p>
+&lt;h3 id="307-range-sum-query---mutable-完整解法">307. Range Sum Query - Mutable 完整解法&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">SegmentTree&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">public&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SegmentTree&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&amp;amp;&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">offset_&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">resize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">offset_&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">offset_&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="o">--&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">2&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">void&lt;/span> &lt;span class="nf">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">index&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">diff&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">val&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeIdx&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeIdx&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">diff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeIdx&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">sumRange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">left&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">left&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">right&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">&amp;lt;=&lt;/span> &lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeLeftIndex&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeLeftIndex&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeRightIndex&lt;/span>&lt;span class="o">--&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeLeftIndex&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nodeRightIndex&lt;/span> &lt;span class="o">/=&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">private&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">offset_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">nodes_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">NumArray&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">public&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">NumArray&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&amp;amp;&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">tree_&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">SegmentTree&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nums&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">void&lt;/span> &lt;span class="nf">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">tree_&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">sumRange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">left&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">tree_&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">sumRange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">left&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">right&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">private&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SegmentTree&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">tree_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm">/**
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> * Your NumArray object will be instantiated and called as such:
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> * NumArray* obj = new NumArray(nums);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> * obj-&amp;gt;update(index,val);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> * int param_2 = obj-&amp;gt;sumRange(left,right);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cm"> */&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="binary-index-tree">Binary Index Tree&lt;/h2>
+&lt;p>1994 年的論文 &lt;a class="link" href="https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=B6DEEDCB6E5C3DE95856CE6E24EB8C53?doi=10.1.1.14.8917&amp;amp;rep=rep1&amp;amp;type=pdf" target="_blank" rel="noopener"
+>A New Data Structure for Cumulative
+Frequency Tables&lt;/a> / 我覺得講得很好的影片 &lt;a class="link" href="https://www.youtube.com/watch?v=uSFzHCZ4E-8" target="_blank" rel="noopener"
+>Fenwick Tree (Binary Index Tree) - Quick Tutorial and Source Code Explanation&lt;/a>&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2022/img/0522/bit.png"
+loading="lazy"
+>
+這張圖是從論文截圖而來，實作技巧非常巧妙，他利用 &lt;code>Last Significant Bit (LSB) 來決定區間的範圍&lt;/code>，如果 LSB 是 xxx1，則只儲存當前一個數，如果 LSB 是 xx10，則儲存當前兩個數，以此類推，所以可以看到 &lt;code>1, 3 等只會儲存當前 1 個數、8 會儲存往前 8 個數&lt;/code>&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/2022/img/0522/bit_update.png"
+loading="lazy"
+>
+所以更新時會需要更新所有相關區間，上面這張圖是代表當你更新 index i 時，需要往上調整的 bit index，例如更新 idx 1 時，因為 bit[2]、bit[4]、bit[8] 都有包含 idx 1，所以都要一併更新&lt;/p>
+&lt;p>實作方面非常簡單，透過 &lt;code>2 補數 i &amp;amp; -i 即可取得 LSB&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 1: 0001
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">//-1: 1111
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 1 &amp;amp; -1 =&amp;gt; 0001
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 6: 0110
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">//-6: 1010
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 6 &amp;amp; -6 =&amp;gt; 0010
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="nf">getParent&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>讓我們看查詢會變得如何：
+&lt;img src="https://yuanchieh.page/post/2022/img/0522/bit_iterate.png"
+loading="lazy"
+>
+圖片表達如果你要某個 prefix sum，你必須往前輪詢的 index，例如要找 idx 1~9 的 prefix sum，則需要 &lt;code>bit[9] + bit[8]&lt;/code>，搭配上一張圖 bit[9] 只有儲存 idx 9 這個元素，而 bit[8] 儲存了 idx 1-8 個元素&lt;/p>
+&lt;p>實作方面同樣透過 2 補數，只是變成往下減&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">int&lt;/span> &lt;span class="nf">getNextInterval&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>整體實作&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;span class="lnt">71
+&lt;/span>&lt;span class="lnt">72
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">BIT&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">public&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">BIT&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&amp;amp;&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">size&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// index 從 1 開始比較好計算
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">resize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">size&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">arr_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">resize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 初始化只要往下一個 parent 加
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="c1">// 後面 iterate 會疊上去
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">size&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">bitIdx&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bit_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">bitIdx&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">arr_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">parent&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">getParent&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">bitIdx&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">parent&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bit_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">parent&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">bitIdx&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">void&lt;/span> &lt;span class="nf">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">diff&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">val&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">arr_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">arr_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">index&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 更新記得要全部包含的區間都更新
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bit_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">diff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">index&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">getParent&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">prefixSum&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">index&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 取值要往前推
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">index&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">getNextInterval&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">private&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">bit_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">std&lt;/span>&lt;span class="o">::&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">arr_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">getParent&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">getNextInterval&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">NumArray&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">public&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">NumArray&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">vector&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">&amp;gt;&amp;amp;&lt;/span> &lt;span class="n">nums&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">tree_&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BIT&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nums&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">void&lt;/span> &lt;span class="nf">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">tree_&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">val&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="nf">sumRange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">left&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">tree_&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">prefixSum&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">right&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">tree_&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">prefixSum&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">left&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">private&lt;/span>&lt;span class="o">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">BIT&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">tree_&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="小結bit-vs-segment-tree">小結：BIT vs Segment Tree&lt;/h3>
+&lt;p>整理一下兩者&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>比較&lt;/th>
+&lt;th>&lt;/th>
+&lt;th>&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>操作&lt;/td>
+&lt;td>Segment Tree&lt;/td>
+&lt;td>Binary Index Tree&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>記憶體空間&lt;/td>
+&lt;td>2 * n&lt;/td>
+&lt;td>n&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>初始化&lt;/td>
+&lt;td>O(n)&lt;/td>
+&lt;td>O(n)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>查詢&lt;/td>
+&lt;td>O(logN)&lt;/td>
+&lt;td>O(logN)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>更新&lt;/td>
+&lt;td>O(logN)&lt;/td>
+&lt;td>O(logN)&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>此外，使用上兩者有共同侷限 &lt;code>新增 / 移除元素需要重新初始化&lt;/code>&lt;/p>
+&lt;h4 id="兩者差異">兩者差異&lt;/h4>
+&lt;p>兩者都可以解決 #307 這道題目，但看似相同但還是有差異之處，簡單來說 &lt;code>Segment Tree 用途更廣，BIT 只能解決 Prefix Sum 計算&lt;/code>&lt;/p>
+&lt;p>例如 Segment Tree 還可以解決&lt;code>區間最小值/區間最大值&lt;/code>，而 BIT 是做不到的，為什麼？&lt;/p>
+&lt;p>因為 BIT 並不是儲存每一個值，而是在初始化就以區間的形式保存，如果是&lt;code>加法這種 invertible 算法&lt;/code>，意即我區間儲存 (a+b), 我可以透過 (a+b) - a 還原 b 的值；&lt;br>
+但求極值是 non invertable，如果要用 BIT 求極值，那麼在區間計算時就用儲存極值，這樣更新時就會出錯&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">原陣列：[3, 2]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">BIT: [, 3, 3(保存區間極值)]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">update (0, 1)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">BIT: [, 1, ?] =&amp;gt; 無法計算
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>所以 BIT 用途比較侷限，但優點是記憶體空間小，而且 bitwise 的計算速度會快更多&lt;/p>
+&lt;p>有一篇論文寫可以用兩個 BIT 實作區間極值的查詢，結果還是比 Segment Tree 快上許多，可以參考看看 &lt;a class="link" href="https://www.researchgate.net/profile/Mircea-Dima/publication/282222122_Efficient_Range_Minimum_Queries_using_Binary_Indexed_Trees/links/5d5ba500299bf1b97cf7961a/Efficient-Range-Minimum-Queries-using-Binary-Indexed-Trees.pdf?origin=publication_detail" target="_blank" rel="noopener"
+>Efficient Range Minimum Queries - using Binary Indexed Trees&lt;/a>&lt;/p></description></item><item><title>UUID 原理與實作分析 - 該如何挑選適合的 UUID 版本</title><link>https://yuanchieh.page/posts/2020/2020-12-01-uuid-%E5%8E%9F%E7%90%86%E8%88%87%E5%AF%A6%E4%BD%9C%E5%88%86%E6%9E%90-%E8%A9%B2%E5%A6%82%E4%BD%95%E6%8C%91%E9%81%B8%E9%81%A9%E5%90%88%E7%9A%84-uuid-%E7%89%88%E6%9C%AC/</link><pubDate>Tue, 01 Dec 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-12-01-uuid-%E5%8E%9F%E7%90%86%E8%88%87%E5%AF%A6%E4%BD%9C%E5%88%86%E6%9E%90-%E8%A9%B2%E5%A6%82%E4%BD%95%E6%8C%91%E9%81%B8%E9%81%A9%E5%90%88%E7%9A%84-uuid-%E7%89%88%E6%9C%AC/</guid><description>&lt;p>UUID 是一個被大量使用的演算法，分散式地產生大量&lt;code>不重複且固定為 128 bit&lt;/code>的 ID，分散式是指說多台機器每秒同時產生多筆 UUID，有極大概率這些 UUID 都不會發生重複，不需要有一台機器居中負責 ID 的管控與發放，反例像是 MySQL 資料庫中的 auto increment id&lt;/p>
+&lt;p>先提重點，如何選擇 UUID v1 ~ v5，參考 &lt;a class="link" href="https://stackoverflow.com/questions/20342058/which-uuid-version-to-use" target="_blank" rel="noopener"
+>Which UUID version to use?&lt;/a>&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>v4&lt;/strong>: 完全隨機，沒有特殊需求選這個，根據 uuid.js 統計有 &lt;code>77%&lt;/code> 用戶選擇這個&lt;/li>
+&lt;li>&lt;strong>v1&lt;/strong>: 組成包含 timestamp 與機器識別碼(MAC Address)，如果需要識別由哪一台機器在什麼時間點產生可以選這個，根據 uuid.js 統計有 &lt;code>21%&lt;/code> 用戶選擇這個&lt;/li>
+&lt;li>&lt;strong>v5 &amp;amp; v3&lt;/strong>: 可以指定 Namespace 與 Name，相同的 Namespace 與 Name 會產生相同的 UUID，v3 雷同 v5，差別在於 v5 會採用 SHA1 當作 Hash function 而 v3 採用 MD5，除了相容性等考量，否則請優先採用 v5，根據 uuid.js 統計有 &lt;code>1%&lt;/code> 用戶選擇這個&lt;/li>
+&lt;li>&lt;strong>v2&lt;/strong>: 不採用，連 RFC 文件也只有帶到定義，沒有實作規範&lt;/li>
+&lt;/ol>
+&lt;p>需要特別注意，如果是使用 &lt;a class="link" href="https://github.com/uuidjs/uuid" target="_blank" rel="noopener"
+>uuid.js&lt;/a> 的 v1，uuid 實作是沒有採用 MAC Address，所以如果有識別同一台機器產生的 uuid 的需求，需要自己另外實作，後面有更詳盡的補充&lt;/p>
+&lt;p>以下將摘要 &lt;a class="link" href="https://tools.ietf.org/html/rfc4122" target="_blank" rel="noopener"
+>RFC 4122 - A Universally Unique IDentifier (UUID) URN Namespace &lt;/a>，並比對每週有將近四百萬下載的 uuid.js 實作，有詢問作者一些細節，他也非常熱心補充很多有棒的資料，會一並整理分享&lt;/p>
+&lt;h2 id="rfc-4122">RFC 4122&lt;/h2>
+&lt;p>UUID 共有 128 bits，以下是 v1 實作規範&lt;/p>
+&lt;h3 id="412--layout-and-byte-order">4.1.2. Layout and Byte Order&lt;/h3>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201201/uuid.png"
+loading="lazy"
+>&lt;br>
+以下將介紹每個欄位的組成&lt;/p>
+&lt;h3 id="413--version">4.1.3. Version&lt;/h3>
+&lt;p>UUID 版本夾在 time_hi_and_version 最高效位元(most significant)中 4~7 bit，所以從 UUID string 就能看出版號&lt;/p>
+&lt;h3 id="414--timestamp">4.1.4. Timestamp&lt;/h3>
+&lt;p>Timestamp 總共是 60 bits，對於 UUID v1 來說是 UTC 時間且自 1582/10/15 00:00:00 (the date of Gregorian reform to the Christian calendar) 開始計算，如果機器沒有 UTC 時間，可以採用 local time，但是要確保 local time 是穩定的&lt;/p>
+&lt;h3 id="415--clock-sequence">4.1.5. Clock Sequence&lt;/h3>
+&lt;p>如果系統時間發生倒轉，或是 Node ID 發生改變，則會增加碰撞的可能性，所以透過 Clock Sequence 來紀錄，如果發現產生過的 UUID 採用的 Timestamp 比當下的時間還要晚時 (意即 Clock 時間被倒轉)，則 clock sequence 遞增，初始化則隨機產生&lt;/p>
+&lt;p>另外如果 Node ID 發生改變，那最好也將 clock sequence 隨機重置，降低碰撞的風險&lt;/p>
+&lt;p>需注意 clock sequence 的設定最好是在系統啟動後設定一次就不要再改變，降低跨系統產生碰撞的風險&lt;/p>
+&lt;h3 id="416--node">4.1.6. Node&lt;/h3>
+&lt;p>Node ID 採用 &lt;code>IEEE 802 MAC address&lt;/code>，如果有多個 MAC Address 任一挑一個有用的即可，如果沒有則隨機產生&lt;/p>
+&lt;p>以上是 v1 的欄位意義，v3、v5 則是把 Name 加上 Namespace 取雜湊，接著分配至上述的欄位中，v4 則全部隨機產生&lt;/p>
+&lt;h3 id="421--basic-algorithm">4.2.1. Basic Algorithm&lt;/h3>
+&lt;p>接著看最基本的演算法實作流程&lt;/p>
+&lt;ol>
+&lt;li>取得系統級別的全域鎖&lt;/li>
+&lt;li>讀取系統設定檔，包含 clock_seq / node id / timestamp&lt;/li>
+&lt;li>計算出 timestamp&lt;/li>
+&lt;li>取得 node id&lt;/li>
+&lt;li>如果保存 node id 與讀取的 node id 不同，重新設定 clock_seq&lt;/li>
+&lt;li>當前 timestamp 小於保存的 timestamp，clock_seq + 1&lt;/li>
+&lt;li>將目前計算的值保存回去&lt;/li>
+&lt;li>釋放鎖&lt;/li>
+&lt;li>將目前的 timestamp / clock_seq / node id 組合出 uuid&lt;/li>
+&lt;/ol>
+&lt;p>如果要高頻率製造 uuid，會遇到以下幾個效能貧頸與對應解法&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>每次存系統讀取資料很沒效率&lt;/code>:&lt;br>
+僅需要再系統啟動時讀取一次進 memory 即可，假設系統沒有穩定儲存空間，則每次都要隨機產生 clock_seq，這會導致碰撞機率增加，應該要盡量避免；如果確定 node id 都不會變，也可以不用保存直接返回即可&lt;/li>
+&lt;li>&lt;code>system clock 粒度不見得有到 100-nanoseconds&lt;/code>:&lt;br>
+System Clock Resolution：如果產生頻次不高，則直接將系統時間放大到 100-nano 的粒度即可，但如果系統單一時間產生過多 uuid，實作必須返回錯誤，或是暫停產生，直到系統時間正常，如果要提高粒度，也可以是在同一個系統時間內累計產生的 uuid 個數，&lt;/li>
+&lt;li>&lt;code>每次要回寫系統資料很沒效率&lt;/code>&lt;br>
+只需要定時更新儲存資料即可，將 timestamp 設定在比至今產生的 UUID 使用的 timestamp 大一點，但又不要大到超過 reboot 時的所需要的啟動時間，目的在於降低 clock sequence 重置的機會，在下方的建議實作中是每 10 秒寫入一次&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">timestamp&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="n">next_save&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">fp&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nf">fopen&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;state&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;wb&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">fwrite&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">st&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">sizeof&lt;/span> &lt;span class="n">st&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">fp&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">fclose&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">fp&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="cm">/* schedule next save for 10 seconds from now */&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">next_save&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">timestamp&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">10&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">10&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">1000&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">1000&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="4">
+&lt;li>&lt;code>跨進程分享狀態很沒效率&lt;/code>&lt;br>
+如果跨進程共享狀態很耗資源，可以每個進程切割一塊時間區段個別產生 uuid ，直到時間區段用完才去要新的&lt;/li>
+&lt;/ol>
+&lt;h3 id="43--algorithm-for-creating-a-name-based-uuid">4.3. Algorithm for Creating a Name-Based UUID&lt;/h3>
+&lt;p>v3 跟 v5 主要是在某一特定的 Namespace 下針對 Name 產生對應的 UUID，有以下特性&lt;/p>
+&lt;ol>
+&lt;li>相同的 namespace 相同的 name，不同系統時間一樣有相同的 uuid&lt;/li>
+&lt;li>相同 namespace 下不同 name，uuid 不同&lt;/li>
+&lt;li>相同 name 不同 namespace，uuid 不同&lt;/li>
+&lt;li>如果兩個 uuid 相同，則代表 namespace / name 相同&lt;/li>
+&lt;/ol>
+&lt;p>UUID 欄位則是透過 Name + Namespace 雜湊後的值去派發&lt;/p>
+&lt;h3 id="45--node-ids-that-do-not-identify-the-host">4.5. Node IDs that Do Not Identify the Host&lt;/h3>
+&lt;p>如果 MAC Address 不能使用，有幾種做法能保證 Node ID 的獨一性&lt;/p>
+&lt;ol>
+&lt;li>去跟 IEEE 聲請獨立區段的位址，在文件編寫時期價格是 US$550&lt;/li>
+&lt;li>使用密碼學強度的隨機碼取最低位 47 bit，最高 bit 設定為 1，主要是避開 IEEE 中 MAC Address 的區段
+&lt;blockquote>
+&lt;p>常見做法是在 buffer 中隨機累積一段資料，接著用 SHA1 或 MD5 取 48 bits，然後把最高 bit 設定為 1&lt;/p>
+&lt;/blockquote>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="6--security-considerations">6. Security Considerations&lt;/h3>
+&lt;p>UUID 並不保證隨機性，所以不會很難猜，所以不能拿來做跟安全性有關的業務&lt;/p>
+&lt;blockquote>
+&lt;p>Do not assume that UUIDs are hard to guess&lt;/p>
+&lt;/blockquote>
+&lt;p>以上大概挑個重點帶過&lt;/p>
+&lt;h2 id="uuidjs-實作拆解">uuid.js 實作拆解&lt;/h2>
+&lt;p>以下將閱讀&lt;a class="link" href="https://github.com/uuidjs/uuid" target="_blank" rel="noopener"
+>uuid.js github repo&lt;/a>的原始碼，在開始看 v1~v5 的實作前，先看一個用於產生隨機數的重要函式 &lt;a class="link" href="https://github.com/uuidjs/uuid/blob/master/src/rng.js" target="_blank" rel="noopener"
+>rng.js&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">import&lt;/span> &lt;span class="nx">crypto&lt;/span> &lt;span class="nx">from&lt;/span> &lt;span class="s1">&amp;#39;crypto&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">const&lt;/span> &lt;span class="nx">rnds8Pool&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="nx">Uint8Array&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">256&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// # of random values to pre-allocate
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kd">let&lt;/span> &lt;span class="nx">poolPtr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">rnds8Pool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">export&lt;/span> &lt;span class="k">default&lt;/span> &lt;span class="kd">function&lt;/span> &lt;span class="nx">rng&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">poolPtr&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="nx">rnds8Pool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">16&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">crypto&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">randomFillSync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rnds8Pool&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">poolPtr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">rnds8Pool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">slice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">poolPtr&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">poolPtr&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">16&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>程式碼很短，主要就是產生一個 rnds8Pool 陣列，隨機塞入數值，最後每次回傳 16 bit，如果這一段 rnds8Pool 都回傳了，就在一次產生新的隨機亂數&lt;/p>
+&lt;p>這可以保證產生 &lt;code>Generates cryptographically strong pseudo-random data.&lt;/code>，來自 Nodejs 官方文件的保證，也是 uuid 不會有高碰撞機率的保證，切記 Math.random 不足夠隨機，拿來使用問題會很多&lt;/p>
+&lt;h3 id="uuid-v1-實作">UUID v1 實作&lt;/h3>
+&lt;p>以下挑重點說，不得不說作者的程式碼以及註解寫得很乾淨，直接標明實作對應的 RFC 段落&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">const&lt;/span> &lt;span class="nx">seedBytes&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">random&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">rng&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="nx">rng&lt;/span>&lt;span class="p">)();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>先產生隨機數備用，在前面文件介紹中，有用到隨機產生的都會從 seedBytes 中提取&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">node&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="nx">node&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">_nodeId&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">|&lt;/span> &lt;span class="mh">0x01&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">4&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這裡可以看到，實作中的 &lt;code>node_id是每次啟動時隨機產生&lt;/code>，這符合文件 4.1.6，沒有採用 MAC Address 自己亂數產生也可以；&lt;br>
+同時這一段我有特別留一個 Issue 詢問作者，為什麼不照文件規範去拿機器的 MAC Address，他回答到&lt;code>基於隱私問題&lt;/code>，而且如果 Node ID 跟 Clock Seq 每次都隨機產生也是符合文件規範的&lt;/p>
+&lt;blockquote>
+&lt;p>I believe that this comes close to the idea of the spec while avoiding the privacy problems that come with trying to derive a stable node ID from hardware.&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">clockseq&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Per 4.2.2, randomize (14 bit) clockseq
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="nx">clockseq&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">_clockseq&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">6&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">|&lt;/span> &lt;span class="nx">seedBytes&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">7&lt;/span>&lt;span class="p">])&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0x3fff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>沒有 clockseq 就亂數產生&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Per 4.2.1.2 Throw error if too many uuids are requested
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">nsecs&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="mi">10000&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">throw&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="nb">Error&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;uuid.v1(): Can&amp;#39;t create more than 10M uuids/sec&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果實作者發現短時間內有太大量的 uuid 產生，需要拋出錯誤或是暫停 uuid 生成避免碰撞&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// `time_low`
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">const&lt;/span> &lt;span class="nx">tl&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nx">msecs&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xfffffff&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">10000&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nx">nsecs&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">%&lt;/span> &lt;span class="mh">0x100000000&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">tl&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">24&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">tl&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">16&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">tl&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">tl&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// `time_mid`
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">const&lt;/span> &lt;span class="nx">tmh&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nx">msecs&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="mh">0x100000000&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">10000&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xfffffff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">tmh&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">tmh&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// `time_high_and_version`
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nx">tmh&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">24&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xf&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">|&lt;/span> &lt;span class="mh">0x10&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// include version
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">tmh&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">16&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>產生 time 相關欄位&lt;/p>
+&lt;p>v4 實作相當簡單，就是保留 version，其餘塞隨機數；
+v3,v5 大同小異，所以作者寫了一個 v35.js ，重點大概就這麼幾行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Compute hash of namespace and value, Per 4.3
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Future: Use spread syntax when supported on all platforms, e.g. `bytes =
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// hashfunc([...namespace, ... value])`
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kd">let&lt;/span> &lt;span class="nx">bytes&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="nx">Uint8Array&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">16&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nx">value&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">bytes&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">namespace&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">bytes&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">value&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">namespace&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">bytes&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">hashfunc&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">bytes&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>把 namespace 跟 value 合起來然後 hash 過，接著就按照文件塞到對應的位置&lt;/p>
+&lt;h2 id="後記作者提交-proposal-給-tc39">後記：作者提交 proposal 給 tc39&lt;/h2>
+&lt;p>作者在 PR 中有說到他提了一個 proposal 給 tc39 &lt;a class="link" href="https://github.com/tc39/proposal-uuid#arent-v1-uuids-better-because-they-are-guaranteed-to-be-unique" target="_blank" rel="noopener"
+>proposal-uuid&lt;/a>，目前還在 stage 0，希望把 uuid 產生變成 js 的規範，主要是有太多錯誤且粗心的實作，例如使用 Math.random 等，這邊引用一篇非常棒的文章指出為什麼 Math.random 不好 &lt;a class="link" href="https://medium.com/@betable/tifu-by-using-math-random-f1c308c4fd9d" target="_blank" rel="noopener"
+>TIFU by using Math.random()&lt;/a>，以下將摘錄重點&lt;/p>
+&lt;h3 id="tifu-by-using-mathrandom-文章重點摘要">TIFU by using Math.random() 文章重點摘要&lt;/h3>
+&lt;blockquote>
+&lt;p>TIFU =&amp;gt; Today I Fucked Up&lt;/p>
+&lt;/blockquote>
+&lt;p>作者公司採用 microservice，但他們希望可以追蹤每個 request 在 service 中交互結果，所以需要有一個全域的 request id，需要一個隨機生成演算法產生足夠隨機的 id&lt;/p>
+&lt;p>所謂的足夠隨機包含兩點&lt;/p>
+&lt;ol>
+&lt;li>足夠大的 identifier space：有足夠多的組合與可能性&lt;/li>
+&lt;li>足夠隨機的 identifier generation：有了足夠多的 identifier space，還需要足夠隨機的生成機制&lt;/li>
+&lt;/ol>
+&lt;p>作者決定用長度 22 的 base 64，也就是 space 有 64^22 這麼大，generation 則是用 decent pseudo-random number generator (PRNG) 常見的演算法，V8 即是採用這一套，如果足夠隨機，那這樣的空間足以&lt;code>預計每秒產生一百萬次也要三百年才會碰撞&lt;/code>，多麼的美好&lt;/p>
+&lt;p>最後作者兜出來的程式碼如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">ALPHABET&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s1">&amp;#39;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">random_base64&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kd">function&lt;/span> &lt;span class="nx">random_base64&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">str&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kd">var&lt;/span> &lt;span class="nx">i&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="nx">length&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">rand&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">Math&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">floor&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">Math&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">random&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nx">ALPHABET&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">str&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="nx">ALPHABET&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">substring&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rand&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">rand&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">str&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>看起來一點問題都沒有，也是大家常見的隨機生成做法&lt;/p>
+&lt;p>但是在不久後同事發現 ID 碰撞了 💥&lt;/p>
+&lt;blockquote>
+&lt;p>“Anyone who considers arithmetical methods of producing random digits is, of course, in a state of sin.” From John von Neumann
+意即要透過數學方式產生真正隨機根本是不可能&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="prng-實作">PRNG 實作&lt;/h4>
+&lt;p>簡單看一下偽隨機數的生成方式之一 PRNG (pseudo random number generator)
+&lt;img src="https://miro.medium.com/max/700/1*_rpSUn6ekuZvXJnT5bWUbw.png"
+loading="lazy"
+>
+來自原文的圖片&lt;/p>
+&lt;p>簡單來說就是會有一個初始的 Seed，接著按照數學公式算出一個對應的位置，所以只有經過幾次輪轉，所以要用 finite state 產生隨機數是不可能的，只要 PRNG 持續產生，那最終輸出會重複出現 &lt;code>Periodic&lt;/code>，作者比遇到， PRNG 就像一本壓縮的密碼本本包含著一串數字，Seed 像是你挑某一頁開始看，接著一路往下翻，到書尾再從書首開始看起，終將輪迴&lt;/p>
+&lt;p>不過只要 Cycle 的長度長到在有限時間內不會發生即可，這也決定 PRNG 演算法品質，稱之為 &lt;code>full-cycle generator&lt;/code>&lt;/p>
+&lt;blockquote>
+&lt;p>If a PRNG’s state has a k-bit representation, the cycle length is less than or equal to 2ᵏ. A PRNG that actually achieves this maximum cycle length is called a full-cycle generator.&lt;/p>
+&lt;/blockquote>
+&lt;p>良好的 PRNG 會盡可能達到 2ᵏ 上限&lt;/p>
+&lt;p>後面有一段再說明 Chrome 當時的 Math.random 演算法錯誤，所以實際上 590 million 就會發生循環，更糟糕的是基於生日悖論，產生僅僅 3 萬次就會有 50% 的碰撞機會 (50% chance of collision after generating just 30,000 identifiers.)&lt;/p>
+&lt;p>最後的結論是如果要&lt;code>採用偽隨機生成數請用 CSPRNG(cryptographically secure PRNG)&lt;/code>，或是採用系統核心基於外部噪音、網路封包等產生的真隨機數 &lt;code>urandom&lt;/code>&lt;/p>
+&lt;h2 id="其他">其他&lt;/h2>
+&lt;p>今天路過看到一篇關於 UUID 的好文 &lt;a class="link" href="https://medium.com/%E9%96%92%E8%AB%87%E8%BB%9F%E9%AB%94%E6%9E%B6%E6%A7%8B/%E9%96%92%E8%AB%87%E8%BB%9F%E9%AB%94%E6%9E%B6%E6%A7%8B-uuid-2748df80aa7e" target="_blank" rel="noopener"
+>閒談軟體架構：UUID&lt;/a>，主要更深入探討如果把 UUID 當作資料庫的 Key 對於效能的影響，主目的是希望能達到 &lt;code>分散式產生遞增的 Key&lt;/code>，UUID v1 算是有符合這個要求，但因為有做過 timestamp 的拆分，導致 Java 實作在比對時會有點問題&lt;br>
+可以自己客製化 UUID 的格式，或乾脆自創，參考其他實作如 Twitter Snowflake(已 deprecated) 或是 &lt;a class="link" href="https://firebase.googleblog.com/2015/02/the-2120-ways-to-ensure-unique_68.html" target="_blank" rel="noopener"
+>Firebase Push ID&lt;/a>，大抵上都脫離不了 &lt;code>timestamp 加上亂數或是加上機器識別碼&lt;/code>的做法&lt;/p>
+&lt;h2 id="結論">結論&lt;/h2>
+&lt;p>ID 是常用的屬性，用來抽象化指向某個物件/事件，選擇正確的方式產生 ID，才不會對於系統產生效能貧頸，透過學習 UUID 的實作過程，看到分散式產生 ID 的方式，尤其是在大數據時代，快速產生獨一(且遞增)的 ID 尤為基礎且重要，而在之中&lt;code>隨機性&lt;/code>在整個過程扮演著很關鍵的角色&lt;/p></description></item><item><title>Sketch Data Structure - Bloom Filter 介紹與實作</title><link>https://yuanchieh.page/posts/2020/2020-11-17-sketch-data-structure-bloom-filter-%E4%BB%8B%E7%B4%B9%E8%88%87%E5%AF%A6%E4%BD%9C/</link><pubDate>Tue, 17 Nov 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-11-17-sketch-data-structure-bloom-filter-%E4%BB%8B%E7%B4%B9%E8%88%87%E5%AF%A6%E4%BD%9C/</guid><description>&lt;p>在系統設計中，我們常常需要檢視某一個值是否出現過，例如遊戲中用戶 ID 是否已經註冊過等等，如果把每個 ID 都存成一張表每次去檢視，會需要很大量的記憶體 ( ID 大小 * ID 數量)，如果是像 Google 這類有上億的用戶，光是帳號重複檢查可能就需要 1,20 GB 的記憶體空間；&lt;/p>
+&lt;p>以下將介紹，Bloom Filter 為什麼可以犧牲一點準確性就能節省大量的空間&lt;/p>
+&lt;h2 id="原理">原理&lt;/h2>
+&lt;p>Bloom Filter 原理其實很簡單，產生一個陣列，用 bit 代表該元素是否出現過，透過 Hash function 將輸入專換成陣列位置，藉此標記與查詢是否元素出現過&lt;/p>
+&lt;p>因為 Hash 會有碰撞問題，所以會有 &lt;code>False Positive 但不會有 False Negative &lt;/code>&lt;/p>
+&lt;blockquote>
+&lt;p>意即 Bloom Filter 回答元素已存在但實際上沒有存在， Bloom Filter 回答不存在則一定不存在&lt;/p>
+&lt;/blockquote>
+&lt;p>原理很好懂，但複雜的是&lt;code>陣列要多大? 要選幾種 Hash&lt;/code> 才能平衡記憶體用量以及避免 False Positive 的錯，這一個部落格用數學證明 &lt;a class="link" href="http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html" target="_blank" rel="noopener"
+>Bloom Filters - the math&lt;/a>&lt;/p>
+&lt;ol>
+&lt;li>假設我們決定用一個長度為 m 的陣列，陣列的元素是一個 bit 表示該鍵值已出現過&lt;/li>
+&lt;li>當今天增加鍵值時，經過 Hash 會隨機分配陣列中的一個位置給該鍵值，換句話說陣列的某個位置被插入的可能性是 &lt;code>1/m&lt;/code>&lt;/li>
+&lt;li>今天假設插入了一個鍵值，那第二個鍵值與第一個鍵值碰撞的機率是 &lt;code>1/m&lt;/code> (好死不死分配到同一個陣列)，也就代表不會碰撞的機率是 &lt;code>1 - 1/m&lt;/code>&lt;/li>
+&lt;li>今天假設插入了兩個鍵值，那第三個鍵值不會碰撞的機率是 &lt;code>(1 - 1/m)^2&lt;/code>，如果插入了 n 個鍵值，那第 n + 1 個不會碰撞的機率是 &lt;code>(1 - 1/m)^n&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>以上是 Hash 數量為 1 的情況，接下來考量獨立 Hash 為 k 的情況&lt;/p>
+&lt;ol>
+&lt;li>因為 Hash 數量為 k ，所以每一輪陣列會有至多 k 個位置被標記成 1，需注意 Hash 之間也可能標記到同一個位置，所以在機率上是獨立事件，所以是某位置在插入後不會被選中的機率是 &lt;code>(1-1/m)^k&lt;/code>，也就是每次 Hash 後的值都沒有選到他&lt;/li>
+&lt;li>所以插入 n 個鍵值後，第 n + 1 個不會產生碰撞的機率是 &lt;code>(1-1/m)^(k*n)&lt;/code>&lt;/li>
+&lt;li>換算一下，會產生 False Positive 的機率是 &lt;code>(1 - (1-1/m)^(k*n))^k&lt;/code>，也就是第 n + 1 個鍵值與任一一次 Hash 後產生碰撞的機率，簡化後可以變成 &lt;code>(1 - e ^ (-k*n/m))^k&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>從這個公式可以看出&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>m 越大，False Positive 的機率就越小&lt;/code>，這也蠻直觀的，因為 Hash 後產生的碰撞機率自然就變小；&lt;br>
+但是 k 的值就比較沒這麼直觀，不是越大越好，也不是越小越好，而是在 m,n 在對應的比例下，會有一個最剛好的值&lt;/p>
+&lt;/blockquote>
+&lt;p>我們可以用 &lt;a class="link" href="https://hur.st/bloomfilter/" target="_blank" rel="noopener"
+>Bloom Filter Calculator&lt;/a> 手動調整參數，去評估預期的 False Positive 機率與所需要耗費的記憶體空間 (m 的大小)&lt;/p>
+&lt;p>基本上，如果 m 是 n 的 10 倍，在選擇 4 個 Hash function 下 False Positive 機率約為 1.2 %，如果選擇 5 個 Hash function 則機率降為 0.9 %&lt;/p>
+&lt;p>一開始在思考時，會想說明明增加 Hash function 的數量應該會增加碰撞機率才對，後來才想到前提是 &lt;code>m &amp;gt;&amp;gt; n&lt;/code> 的時候，有足夠的多餘空間讓多個 Hash function 的整體碰撞機率更小&lt;/p>
+&lt;h3 id="變形---增刪鍵值">變形 - 增刪鍵值&lt;/h3>
+&lt;p>如果今天要刪除鍵值時順便更新 Bloom Filter，就不能用 boolean 儲存，而是要用 unsigned integer，增加時 + 1 移除時 - 1，那 integer 需要 4 bit / 8 bit 還是多少個 bit 才足夠呢 ?!&lt;/p>
+&lt;p>同一篇部落格文中，同樣有數學推導，但因為不太了解就先略過，最後的結論如果 Hash function 足夠隨機的話 4 bit 應該已經足夠，但需要小心如果非常非常不幸 4 個 bit 不夠儲存，會產生 &lt;code>False Negative&lt;/code>，也就是 Bloom Filter 回答不再但實際上還是存在的狀況&lt;/p>
+&lt;h2 id="實作">實作&lt;/h2>
+&lt;p>實作部分，可以拆成兩個步驟&lt;/p>
+&lt;ol>
+&lt;li>如何產生 k 個獨立的 Hash Function&lt;/li>
+&lt;li>實作插入與查詢的 bitwise 操作&lt;/li>
+&lt;/ol>
+&lt;h3 id="如何產生-k-個獨立的-hash-function">如何產生 k 個獨立的 Hash Function&lt;/h3>
+&lt;p>如何產生一個運算快速、足夠隨機且 Universal 的 Hash function 是非常關鍵的一步，影響後續的錯誤率，選擇用 non-cryptographic hash function 即可，強度不高但是性能夠好，差別在於 hash 後被逆推的可能性(沒有強抗碰撞與弱抗碰撞的保證)，可能會遭遇 HashDos，被發現碰撞後就不斷嘗試導致性能變差&lt;/p>
+&lt;p>回歸正題，爬了一些 Bloom Filter 的實作，有發現使用 xxHash、MurMurHash 等已知的 hash function library，這一個實作蠻有趣 &lt;a class="link" href="https://github.com/jasondavies/bloomfilter.js" target="_blank" rel="noopener"
+>bloomfilter.js&lt;/a>，Hash function 是實作 &lt;a class="link" href="http://isthe.com/chongo/tech/comp/fnv/" target="_blank" rel="noopener"
+>Fowler–Noll–Vo(FNV) hash function&lt;/a>，程式碼如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">function&lt;/span> &lt;span class="nx">fnv_1a&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">v&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">seed&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">2166136261&lt;/span> &lt;span class="o">^&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">seed&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kd">var&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">n&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">v&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="nx">n&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">c&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">v&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">charCodeAt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">d&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">c&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff00&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">d&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">fnv_multiply&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">^&lt;/span> &lt;span class="nx">d&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">fnv_multiply&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">^&lt;/span> &lt;span class="nx">c&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xff&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">fnv_mix&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// a * 16777619 mod 2**32
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="kd">function&lt;/span> &lt;span class="nx">fnv_multiply&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">4&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">7&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">24&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// See https://web.archive.org/web/20131019013225/http://home.comcast.net/~bretm/hash/6.html
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="kd">function&lt;/span> &lt;span class="nx">fnv_mix&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">13&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">^=&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">7&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">3&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">^=&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span class="mi">17&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">a&lt;/span> &lt;span class="o">&amp;amp;&lt;/span> &lt;span class="mh">0xffffffff&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在 Stack Exchange 看到有趣的問答 &lt;a class="link" href="https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed" target="_blank" rel="noopener"
+>Which hashing algorithm is best for uniqueness and speed?&lt;/a>，有強者比較多種 Hash Function 的效能以及碰撞機率，FNV-1a 表現還不錯，但作者比較推薦 Murmur2&lt;/p>
+&lt;p>接著，有另一篇論文 &lt;a class="link" href="https://www.eecs.harvard.edu/~michaelm/postscripts/tr-02-05.pdf" target="_blank" rel="noopener"
+>Building a Better Bloom Filter&lt;/a> 證明如果要產生多個 Hash function 應用在 Bloom filter 上，只需要產生兩個 Hash function 再加上係數的組合出其他的 Hash function 即可&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="nx">gi&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">x&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">h1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">x&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">+&lt;/span> &lt;span class="nx">ih2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">x&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nx">mod&lt;/span> &lt;span class="nx">p&lt;/span> &lt;span class="c1">// p 是質數
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>如果原本的鍵值很長，再容忍一定的 False Positive 下使用 Bloom Filter 可以節省非常大量的儲存空間，但需注意 Hash 運算會多一些 CPU 資源&lt;/p></description></item><item><title>Raft 演算法介紹與《In Search of an Understandable Consensus Algorithm》摘要</title><link>https://yuanchieh.page/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/</link><pubDate>Tue, 03 Nov 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/</guid><description>&lt;p>共識演算法主要應用於分散式系統中，一個集群中有多個節點組成，讓每個節點都維護相同的狀態，例如說在多種系統中都需要集群有單一個 Leader 存在，所有節點都必須承認這一個 Leader，否則多個 Leader 可能會導致 Split brain 等資料不一致等問題；&lt;br>
+但如何讓節點狀態一致是一件不簡單的事情，要考慮到節點可能失敗 / 網路封包延遲等等&lt;/p>
+&lt;p>Raft 演算法是由史丹佛大學的教授所提出，他在影片中提到過往的共識演算法 Paxos 過於複雜，世界上真正了解的人沒有幾個，市面上的實作也分歧出非常多的實作版本，理論太過艱深導致實務上有很大的落差&lt;/p>
+&lt;p>所以他在設計 Raft 的一個核心理念是&lt;code>好懂&lt;/code>，他在 Conference 上也僅用約 10 分鐘就大致介紹完 Raft 的原理，整份論文也才 16 頁&lt;/p>
+&lt;p>以下將整理影片介紹與論文摘要，探討 Raft 如何在分散式系統中讓&lt;code>多節點在容忍錯誤下達到強一致性&lt;/code>&lt;/p>
+&lt;h2 id="影片介紹">影片介紹&lt;/h2>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/no5Im1daS-o"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>先從在 Conf 上的介紹影片快速理解，Raft 由三個部分組成&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Leader Election&lt;/code>:&lt;br>
+整個集群中票選出一位 Leader&lt;/li>
+&lt;li>&lt;code>Log Replication&lt;/code>:&lt;br>
+Leader 負責接收 Client 的指令，並把狀態同步到多數節點上&lt;/li>
+&lt;li>&lt;code>Safety&lt;/code>:&lt;br>
+當 Leader 要重新票選時，確保擁有最新資料的節點才能當上 Leader，避免確認過(commited)的資料被取消&lt;/li>
+&lt;/ol>
+&lt;p>以下將摘要論文 &lt;a class="link" href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener"
+>《In Search of an Understandable Consensus Algorithm (Extended Version)》&lt;/a>部分內容&lt;/p>
+&lt;h1 id="論文摘要">論文摘要&lt;/h1>
+&lt;p>Raft 是一種用於管理副本紀錄的共識演算法，效果類似於 Paxos，但結構上完全不同，這也使得 Raft 相較於 Paxos 更容易了解&lt;br>
+為了增加可讀性，Raft 解構出幾個共識演算法中關鍵的元素，像是 Leader Election / Log replication / Safety，並透過減少狀態達到更強的凝聚性 (意指節點可以變化的狀態少，就更容易達到一致)&lt;/p>
+&lt;h2 id="1-introduction">1. Introduction&lt;/h2>
+&lt;p>共識演算法 (Consensus) 提供由機器組成的集合可以運作類似同一體並能夠容忍部分成員出錯，也這是這些特性，共識演算法在建構大型軟體系統是很關鍵的角色&lt;/p>
+&lt;p>Paxos 主宰這一塊近十年，但不幸的是 Paxos 很難懂，同時在實務上需要有很負責的設計才能夠使用，所以不論是學生還是系統工程師都十分困擾&lt;/p>
+&lt;p>所以作者開始想要設計一門足夠好理解、同時對於系統工程師也容易實踐的共識演算法&lt;/p>
+&lt;blockquote>
+&lt;p>our primary goal was &lt;code>understandability&lt;/code>: could we define a consensus algorithm for
+practical systems and describe it in a way that is significantly easier to learn than Paxos&lt;/p>
+&lt;/blockquote>
+&lt;p>透過解構出獨件以及減少機器在不一致狀態的可能性，讓整個演算法更容易理解&lt;/p>
+&lt;p>Raft 有以下幾個特點&lt;/p>
+&lt;ol>
+&lt;li>Strong Leader:&lt;br>
+Log 的寫入必須經由 Leader 再到其他節點上，這樣可以簡化很多不必要的複雜性&lt;/li>
+&lt;li>Leader Election:&lt;br>
+在選舉時，Raft 利用隨機延遲(randomized timers)方式快速且有效解決可能的衝突 (避免大家在同一個時刻想要變成 Leader)&lt;/li>
+&lt;li>身份改變&lt;br>
+在改變節點的設定檔時，可以將前後兩種設定檔以聯集方式合併(joint consensus)，在更改設定同時還能維持服務&lt;/li>
+&lt;/ol>
+&lt;p>作者認為 Raft 是個優異的共識演算法，就讓我們繼續往下看&lt;/p>
+&lt;h2 id="2-replicated-state-machines">2. Replicated state machines&lt;/h2>
+&lt;p>Replicated state machines 是指一群機器的集合，可以運算出相同的狀態，並在少數節點失敗時還能正常運行，主要用來解決分散式系統中各種錯誤容忍性的問題，例如 GFS / HDFS / RAMCloud，在這些系統中有獨立的 Replicated state machine 掌管 Leader Election / 保存 Config，在 Leader crash 情況下還能繼續運作；
+Replicated state machine 的實際案例有 Chubby / ZooKeeper&lt;/p>
+&lt;p>Replicated state machine 通常是由複製 Log 所實踐，如下圖，每個 Server 都有一份 log，依照相同順序紀錄著相同的指令，運算整份 log 就能得到相同的狀態機 (state machine)&lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20201103/stateMachine.png"
+loading="lazy"
+alt="stateMachine"
+>&lt;/p>
+&lt;p>從 client 收到指令後，&lt;code>如何保持順序複製相同的指令到每台機器上，就是共識演算法的任務&lt;/code>，共識演算法具體提供下列保證&lt;/p>
+&lt;ol>
+&lt;li>Safety:&lt;br>
+在非拜占庭情況下，系統即使遭遇網路延遲、網路分隔 (partition)、封包遺失、指令重複發送、發送順序改變等問題，都不影響結果&lt;/li>
+&lt;li>只要多數節點存活就能夠正常運行，例如 5 個節點 3 個還活著就可以，並且失敗的節點可以在後面重新加回集群中&lt;/li>
+&lt;li>不依賴時間當作判斷，在分散式系統中時間是不可信的(除非學 Google 用原子鐘自幹出 &lt;a class="link" href="https://cloud.google.com/spanner/docs/true-time-external-consistency" target="_blank" rel="noopener"
+>TrueTime&lt;/a> )，每個系統都存在著時鐘沒對齊的可能&lt;/li>
+&lt;li>多數節點有回應收到副本就算成功，少數節點晚回覆不會造成性能影響&lt;/li>
+&lt;/ol>
+&lt;h2 id="3-whats-wrong-with-paxos">3. What’s wrong with Paxos?&lt;/h2>
+&lt;p>這一章節主要在描繪 Paxos 的背景與有多難理解的原因，但因為之前沒有學過 Paxos，就先略過這章&lt;/p>
+&lt;h2 id="4-designing-for-understandability">4. Designing for understandability&lt;/h2>
+&lt;p>這一章節主要是作者不斷強調 &lt;code>understandability&lt;/code> 是他們的核心理念，當遇到設計有多種方案選擇時，他們會選擇最好解釋給別人聽的那一個，對於他們來說可讀性是核心理念&lt;/p>
+&lt;p>具體上，透過 &lt;code>decomposition 拆分獨立模組&lt;/code>以及&lt;code>減少不確定性與狀態可能性&lt;/code> 達成目的，但在某一些部分還是有用上隨機性，因為這讓演算法更好理解&lt;/p>
+&lt;h2 id="5-the-raft-consensus-algorithm">5. The Raft consensus algorithm&lt;/h2>
+&lt;p>Raft 在實作上會先選出一名 Leader ，由 Leader 管理 log 的複製到其他節點的狀態機上，透過 Leader 的好處是不需要其他節點同意 Leader 能獨自決定新的 log 要儲放的位置；&lt;br>
+如果 Leader 失敗了可以再選新的 Leader 出來&lt;/p>
+&lt;h3 id="51-raft-basics">5.1 Raft basics&lt;/h3>
+&lt;p>通常 Raft 集群會由五個節點組成，可以容忍兩個節點失敗，而每個節點有三種狀態 &lt;code>leader / follower / candidate&lt;/code>，通常情況下是一個 leader 其他人都是 follower&lt;/p>
+&lt;ol>
+&lt;li>follower: 被動的處理來自 leader 或 candidate 的請求&lt;/li>
+&lt;li>leader: 負責所有 client 的 request，並複製指令到 follower 中&lt;/li>
+&lt;li>candidate: follower 發現沒有 leader，設一個隨機 timeout 切換成 candidate 模式，準備要選新 leader&lt;/li>
+&lt;/ol>
+&lt;p>下圖為狀態機示意圖
+&lt;img src="https://yuanchieh.page/post/img/20201103/state.png"
+loading="lazy"
+alt="state-machine"
+>&lt;/p>
+&lt;p>Raft 將時間切割成 &lt;code>回合 (term)&lt;/code>，每一個回合代表著一次的選舉，也就是 candidate 去競選 leader 的過程，如果成功推選出 leader 後，則每個節點紀錄這一個回合數；如果選舉失敗，則開啟新的回合直到有人成為 leader&lt;/p>
+&lt;p>以下為概念圖
+&lt;img src="https://yuanchieh.page/post/img/20201103/term.png"
+loading="lazy"
+alt="term"
+>&lt;/p>
+&lt;p>回合本身是一個遞增數值，用來表示邏輯上的時間概念，有可能節點觀察到的回合跟其他節點不同，如果回合數小則代表自身的資料過時，他必須更新自己的回合數；&lt;br>
+例如說原本的 leader 可能斷線，其他節點推選出新的 leader 則會進到下一個回合數，&lt;code>原本的 leader 回歸後發現自己的回合數比較小，則會主動變成 follower&lt;/code>；&lt;br>
+如果節點收到請求時，發現回合數比自己小，則代表請求過期，直接拋棄該請求&lt;/p>
+&lt;h3 id="52-leader-election">5.2 Leader election&lt;/h3>
+&lt;p>Raft 透過 &lt;code>heartbeat&lt;/code> 觸發 leader 選舉，當 leader 選上時，會在固定時間內發&lt;code>內容為空的 AppendEntries RPC 當作心跳包&lt;/code>，如果 follower 超過 election timeout 沒有收到心跳包，則進入選舉階段&lt;/p>
+&lt;p>folower 會將現今的回合數加一便轉為 candidate，並請求其他 follower 投票給他 &lt;code>RequestVote RPC&lt;/code>，遇到以下情況 candidate 才會改變狀態&lt;/p>
+&lt;ol>
+&lt;li>贏得選舉&lt;/li>
+&lt;li>其他節點成為 leader&lt;/li>
+&lt;li>超過一定時間都沒選出 leader&lt;/li>
+&lt;/ol>
+&lt;h4 id="贏得選舉">贏得選舉&lt;/h4>
+&lt;p>如果 candidate 拿下過半的票數，則成為新的 leader，每一個 follower &lt;code>在同一個回合數下只會投票給請求先到的 candidate&lt;/code>，這避免無效選舉的發生&lt;br>
+如果 candidate 成為 leader，則開始發送心跳包&lt;/p>
+&lt;h4 id="發現有其他-leader">發現有其他 leader&lt;/h4>
+&lt;p>如果在 candidate 階段收到心跳包(AppendEntries)，則代表有其他 leader 產生，candidate 會去比對回合數至少要大於等於他自身的回合數，如果是則轉成 follower；&lt;br>
+反之則繼續維持 candidate&lt;/p>
+&lt;h4 id="超過一定時間都沒選出-leader">超過一定時間都沒選出 leader&lt;/h4>
+&lt;p>超過一定時間還是沒有選出來的話，timeout 後開始下一輪新的選舉&lt;/p>
+&lt;p>Raft 透過在一定時間內隨機 timeout (150-300ms)，避免所有的 follower 同時進入選舉階段，這樣能加速 leader 的推選，後續會有更近一步的說明&lt;/p>
+&lt;p>在設計過程，作者曾考慮加入 rank ，rank 較高者更有機會成為 leader，但發現這會導致演算法設計更加複雜，且有可用性的問題，例如高順位 candidate 發生狀況，則低順位 candidate 要多一次 timeout 才能當上 leader 等問題&lt;/p>
+&lt;h3 id="53-log-replication">5.3 Log replication&lt;/h3>
+&lt;p>Leader 會透過 AppendEntries RPC 將指令同步到 follower 並回傳執行結果給 client，如果 follower 此時 crash 等，leader 會持續送直到 follower 狀態同步&lt;/p>
+&lt;p>Log 是以 &lt;code>回合數 + 指令&lt;/code> 的方式依序儲存，主要是檢視是否有不一致的狀況產生&lt;/p>
+&lt;p>每個節點都會保存現今最後一個 commited log 的索引 (&lt;code>commitIndex&lt;/code>)，Leader 在同步 log 時，會紀錄 log 要寫入的位置 (commitIndex + 1)，並同時發送給 follower (leaderCommit)，等到多數的 follower 都寫入 log 後才標記成 &lt;code>commited&lt;/code>，Raft 保證 commited log 是已經持久化且最終每個 follower 都會達到一致性&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/log.png"
+loading="lazy"
+alt="log"
+>&lt;/p>
+&lt;p>因此 Raft 保證 Logs 有以下特性&lt;/p>
+&lt;ol>
+&lt;li>如果任意兩個節點的 log 有著相同的 index 與回合數，則他們必定儲存相同的指令&lt;/li>
+&lt;li>如果任意兩個節點的 log 有著相同的 index 與回合數，則該指令先前的 log 紀錄都必定相同&lt;/li>
+&lt;/ol>
+&lt;p>第一點保證節點儲存 log 後就不會再被改變，第二點則確保當 follower 發現自己的 log 跟 leader 不同時，可以依此重新跟 leader 同步紀錄&lt;/p>
+&lt;p>Leader 會針對每一個 follower 維護指針 &lt;code>nextIndex&lt;/code>，用來記錄 follower 目前需要同步的 log 索引，leader 在發送 AppendEntries 指令時，會夾帶最新 committed log 的回合數與 index，讓 follower 可以比對 log 是否同步，如果 follower 在自己的 logs 中沒有找到對應的紀錄，則代表兩者非同步，回傳失敗，接著 &lt;code>Leader 不斷遞減 nextIndex 直到 follower 找到兩者最近一次同步的紀錄&lt;/code>，接著開始一步步同步紀錄&lt;/p>
+&lt;blockquote>
+&lt;p>leader 與 follower 找到最近一次同步紀錄的方式，可以優化成 follower 回傳這一個回合數下他所以紀錄的索引，leader 直接倒回這個回合開始同步；&lt;br>
+但作者認為不一致狀態應該很少發生，優化的效益不大&lt;/p>
+&lt;/blockquote>
+&lt;p>透過這樣的 log 同步設計，Leader 在剛啟動時不用擔心太多同步的問題，利用 AppendEntries 的成功與失敗去調配 follower 儲存的紀錄，leader 也不用去刪除或更新自身的 log，讓整個同步的過程更加的簡單&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/AppendEntries.png"
+loading="lazy"
+alt="AppendEntries"
+>&lt;/p>
+&lt;h3 id="54-safety">5.4 Safety&lt;/h3>
+&lt;p>先前介紹了 leader election 和 relicate log，但僅有這樣的機制是不夠的，試想如果 leader 發生錯誤，今天有一個 follower 僅包含部分的 commited log，選上 leader 後便會複寫原本其他已經 commited 的 log，這樣就不能保證一致性與持久化&lt;/p>
+&lt;p>這一章介紹 Raft 在 leader election 加上限制後，如何達到&lt;code>確保每一台狀態機都以相同順序保存相同的指令&lt;/code>&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/safety.png"
+loading="lazy"
+alt="safety"
+>&lt;/p>
+&lt;p>Raft 會確保任何時候集群都符合上述條件&lt;/p>
+&lt;ol>
+&lt;li>Election Safety: 每一輪選舉至多只選出一位 leader&lt;/li>
+&lt;li>Leader Append-Only: leader 從不刪除或改寫自己的 log，只會一直增加&lt;/li>
+&lt;li>Log Matching: 任兩份 logs 在同一個 term 同一個 index 上，則 log 內容必定相同，且先前的 log 也都相同&lt;/li>
+&lt;li>Leader Completeness: 某個 log 在任一一個 term 中認定 commited，則後續 term 中的 leader 都必須有該份 log&lt;/li>
+&lt;li>State Machine Safety: 如果某個 server 在某 index 上的 log 套用至狀態機，則不會有其他的 server 在同一個 index 上套用不同的 log&lt;/li>
+&lt;/ol>
+&lt;h4 id="541-election-restriction">5.4.1 Election restriction&lt;/h4>
+&lt;p>在 leader-based 的共識演算法中，leader 最終會儲存所有的 commited log，在某些演算法中，leader 在沒有保存所有 commited log 情況下也能夠檔選，並透過額外的機制去回補這些未同步的 log，這增加了蠻多的複雜性&lt;/p>
+&lt;p>Raft 確保 leader 必須是由 &lt;code>擁有大多數節點同意的最新 committed log 的 candidate&lt;/code> 才能當選，確保 leader 一定是擁有最新 log 的節點，只負責增加新的 log，讓資料流只有一個方向，省去其他的麻煩&lt;/p>
+&lt;p>在 RequestVote RPC 中增加了限制，RPC 中夾帶 candidate 最後一個 log 中的回合數與索引數，如果 follower 發現 candidate 的紀錄比自己舊，則回傳失敗&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/RequestVote.png"
+loading="lazy"
+alt="RequestVote"
+>&lt;/p>
+&lt;h4 id="542-committing-entries-from-previous-terms">5.4.2 Committing entries from previous terms&lt;/h4>
+&lt;p>先前提到，Leader 會等多數的節點儲存 log 才標記成 commited， 但如果 leader 將 log 寫到多個 follower 後，還來不及收到 commited 就 crash 了&lt;br>
+此時&lt;code>新的 leader 會持續同步 log，但無法確認先前的 log 是不是被 commit&lt;/code> 了，因為只有先前的 leader 才能確認 log 已經被多數的節點所保存&lt;/p>
+&lt;p>如以下圖示
+&lt;img src="https://yuanchieh.page/post/img/20201103/commit.png"
+loading="lazy"
+alt="commit"
+>&lt;/p>
+&lt;ol>
+&lt;li>S1 一開始是 leader，同步 term2 到 S2 就 crash&lt;/li>
+&lt;li>S5 接著當 leader (S3,S4 可以投給他) 開始了 term 3，此時發生 crash&lt;/li>
+&lt;li>S1 又回來當 leader，將 term2 的 log 同步到 S3 後，此時又 crash&lt;/li>
+&lt;/ol>
+&lt;p>接著拆兩種情況&lt;br>
+d. S1 來不及同步 term4 資料，則 S5 有機會當入 leader，並用 term3 複寫掉其他資料&lt;br>
+e. S1 同步 term4 資料到大多數節點上，則 S5 無法當上 leader&lt;/p>
+&lt;p>&lt;code>在 leader 還沒收到 commited 情況下，即使多數的節點已經同步 log，但新的 leader 有機會複寫&lt;/code>&lt;/p>
+&lt;p>為了減少這樣的情況，Raft 不去計算先前 log 所同步的副本數去判定是否 commited，&lt;code>只有 leader 當下的回合數是透過副本的計算來決定 log 是否被 commited，如果 commit 後，則先前的所有 log 都被視為 commited&lt;/code>，降低計算上的複雜性，並因為之前的 log 特性保證，先前的 log 一定也都被複製到其他副本上&lt;/p>
+&lt;h4 id="543-safety-argument">5.4.3 Safety argument&lt;/h4>
+&lt;p>更進一步解釋 &lt;code>Leader Completeness&lt;/code>，透過反證法，找出集群無法不遵守 Leader Completeness&lt;/p>
+&lt;p>假設 leaderT 代表在 term T 的 leader，leader U 則是 term U，且 U 代表是 T 的下一位，且 leaderT 所認定的 commited log (logT) 在 leader U 不存在 (違反 Leader Completeness)&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/leader-completeness.png"
+loading="lazy"
+alt="leader-completeness"
+>&lt;/p>
+&lt;ol>
+&lt;li>leaderU 在當 follower 時並保存沒有 logT&lt;/li>
+&lt;li>leaderT 將 logT 同步到多數節點上，而 leaderU 在選舉時獲得多數同意，也就是至少有一位投票節點 (voter) 收到 logT 同時又投票給 leaderU&lt;/li>
+&lt;li>voter 必須先保存 logT，才又投票給 leaderU，反過來就不會有衝突 (term U &amp;gt; term T 所以 logT 後到會被丟棄)&lt;/li>
+&lt;li>voter 依然保存 logT，因為 leader 從不改變既定 log，而 follower 也只有與 leader 衝突時才會複寫&lt;/li>
+&lt;/ol>
+&lt;p>製造出場景後，讓我們來看為什麼 Raft 不可能達到這樣的狀況&lt;br>
+5. 依據先前規定， follower 只會投給 log 保留比自己更多的 candidate&lt;br>
+6. 如果 voter 與 leaderU 最新一個 term 都是 T 的話，則 leaderU 的 log 數應該與 voter 相同，也就是 leaderU 至少擁有 voter 所擁有的 log&lt;br>
+7. 反之，如果 leaderU 的最新 log term 大於 voter 的話，為了要符合早於 leaderU 的 leader 所有 commited log 都應該被保留到 leaderU 中，因此根據 &lt;code>Log Matching&lt;/code> 則 leaderU 應該要儲存這些 log&lt;/p>
+&lt;p>在無法達成的情況，證明了 Raft 滿足 Leader Completeness 條件，確保 leader 如果最新的 log term &amp;gt; T，則 leader 必定擁有 term T 所 commited 的一切 log&lt;/p>
+&lt;blockquote>
+&lt;p>Thus, the leaders of all terms greater than T must contain all entries from term T that are committed in term T&lt;/p>
+&lt;/blockquote>
+&lt;p>有了 Leader Completeness 屬性，就能進一步證明 &lt;code>State Machine Safety&lt;/code>，如果某一機器在某一 index 套用指令到狀態機中，則其他機器在相同 index 下並然套用相同的指令，因為能夠被套用的 log 一定是 leader commited 後的 log，且因為 Log
+Completeness，所有更新的 leader 也都保留被 commited 後的 log，因此能&lt;code>確保所有的節點終將以相同的順序套用相同的指令到狀態機上&lt;/code>&lt;/p>
+&lt;h3 id="55-follower-and-candidate-crashes">5.5 Follower and candidate crashes&lt;/h3>
+&lt;p>先前都是討論 leader crashed 後的處置，至於 follower 與 candidate 則單純很多，因為 Raft 的 RPC 指令都是 &lt;code>idempotent&lt;/code>，leader 可以持續的送指令直到成功，follower 跟 candidate 失敗後重啟就重新接收指令就好&lt;/p>
+&lt;h3 id="56-timing-and-availability">5.6 Timing and availability&lt;/h3>
+&lt;p>Raft Safety 建立在不依賴 timing，系統不會因為訊息發送的快慢而得到不預期的結果；&lt;br>
+但整體系統的可用性卻還是跟時間有一些關聯，例如說 server 不能再 election timeout 期間內票選出 leader，而 Raft 在沒有 leader 的情況下就不可用&lt;/p>
+&lt;p>所以整體上要符合以下不等式 Raft 才能運作正常&lt;/p>
+&lt;blockquote>
+&lt;p>broadcastTime ≪ electionTimeout ≪ MTBF&lt;/p>
+&lt;/blockquote>
+&lt;ol>
+&lt;li>&lt;code>broadcastTime&lt;/code> 代表 RPC 完整 request / response 所耗費的時間，須小於 electionTimeout 一個量級，通常在 0.5ms ~ 20ms；&lt;/li>
+&lt;li>&lt;code>electionTimeout&lt;/code> 則是 follower 等待多久後會觸發選舉，這是可以主動去設定的，通常在 100ms ~ 500ms；&lt;/li>
+&lt;li>&lt;code>MTBF&lt;/code> 則代表 server 進入錯誤狀態的區間，通常是數天至數個月&lt;/li>
+&lt;/ol>
+&lt;p>試想如果 broadcastTime &amp;gt; electionTimeout，則每一次選舉在還沒收到投票結果又開始下一輪選舉，則永遠選不完；&lt;br>
+如果 electionTimeout &amp;gt; MTBF，則選舉還沒結束 server 又 crash，那也一樣會有 leader 無法產生的問題&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>後續還有 Cluster membership changes / Log compaction / Client interaction 進階探討，就先暫時略過，僅理解前半部演算法的核心設計&lt;/p>
+&lt;p>分散式系統的迷人之處在於&lt;code>複雜&lt;/code>，需要面對網路延遲 / 時間不一致(time skewed) / 機器失敗等不穩定的因子，「再不穩定的條件下架構出可容錯/高可用/一致性的穩定系統」，看似荒謬卻可以透過演算法的設計達成目的(或是說更貼近)，實在令人讚嘆這些設計演算法的專家們&lt;/p>
+&lt;p>Raft 透過由 Leader 主導 Log 的同步，並加入選舉時的條件限制，確保 commited log 不會被改寫達到 &lt;code>強一致性&lt;/code>；如果 Leade 失敗，也不用擔心 log 發生問題，等下一位 Leader 被推選出來又能夠繼續維持系統運作&lt;/p>
+&lt;p>整份論文讀起來還算蠻好理解的，確實符合作者不斷強調可讀性的重要&lt;/p></description></item></channel></rss>

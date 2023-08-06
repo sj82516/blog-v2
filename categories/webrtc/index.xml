@@ -1,0 +1,1291 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>WebRTC on Yuanchieh</title><link>https://yuanchieh.page/categories/webrtc/</link><description>Recent content in WebRTC on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sun, 30 May 2021 07:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/webrtc/index.xml" rel="self" type="application/rss+xml"/><item><title>深入理解 WebRTC</title><link>https://yuanchieh.page/posts/2021/2021-05-30-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-webrtc/</link><pubDate>Sun, 30 May 2021 07:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-05-30-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-webrtc/</guid><description>&lt;p>四年前曾經對於 WebRTC 提供 P2P 影音串流感到新奇，寫下了 &lt;a class="link" href="http://sj82516-blog.logdown.com/post/1207821" target="_blank" rel="noopener"
+>WebRTC-介紹與實戰&lt;/a>；&lt;br>
+後來在工作中，開始更深入使用 WebRTC，也開始自架 TURN Server，從 Spec 角度認識了&lt;br>
+&lt;a class="link" href="https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/" target="_blank" rel="noopener"
+>SDP Spec 閱讀筆記&lt;/a> &lt;br>
+&lt;a class="link" href="https://yuanchieh.page/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/" target="_blank" rel="noopener"
+>RFC 5389 - STUN 協定介紹&lt;/a>&lt;br>
+&lt;a class="link" href="https://yuanchieh.page/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/" target="_blank" rel="noopener"
+>Coturn Server 架設教學 - on AWS&lt;/a>&lt;/p>
+&lt;p>只是使用上或理解上，始終停留於比較表層的 SDK API 呼叫或是文件閱讀，而沒有真正從大方向理解，決定從 &lt;a class="link" href="https://webrtcforthecurious.com/" target="_blank" rel="noopener"
+>WebRTC For The Curious&lt;/a> 深入理解 WebRTC 的原理與細節&lt;/p>
+&lt;p>本篇文章內容會涵蓋&lt;/p>
+&lt;ol>
+&lt;li>WebRTC 到底是什麼&lt;/li>
+&lt;li>WebRTC 的連線由始而終的流程&lt;/li>
+&lt;/ol>
+&lt;h2 id="什麼是-webrtc">什麼是 WebRTC&lt;/h2>
+&lt;p>以下內容理解自 &lt;a class="link" href="https://webrtcforthecurious.com/" target="_blank" rel="noopener"
+>WebRTC For The Curious&lt;/a>&lt;/p>
+&lt;p>WebRTC 是 Web Real-Time Communication 縮寫，本身是 API 也是 Protocol，主要是可以讓兩個 WebRTC Agent 建立 &lt;code>即時、雙向、安全&lt;/code>的串流，WebRTC API 則是遵守 Protocol 定義所提供的實作，目前多家瀏覽器都有實作 WebRTC API，也有非 Javascript 的 WebRTC API 實作&lt;/p>
+&lt;p>WebRTC protocol 本身只是集合了多個已知、穩定的協定而提供的完整解決方案，主要包含以下步驟&lt;/p>
+&lt;h3 id="一-signaling">一. Signaling&lt;/h3>
+&lt;p>當兩個 Agent 要互相溝通時，他們不知道彼此的位置、彼此支援的影音版本等等，此時會需要 &lt;code>SDP&lt;/code> 描述雙方狀態，並透過管道溝通，SDP 是一個由 Key-Pair 組成的文本協定，只要包含以下幾個項目：&lt;/p>
+&lt;ol>
+&lt;li>IP/Port (Candidate)&lt;/li>
+&lt;li>Agent 預期有幾個 Audio/Video Track&lt;/li>
+&lt;li>Audio/Video codec 支援&lt;/li>
+&lt;li>連線資訊 (如 Frag 等)&lt;/li>
+&lt;li>安全性資訊 (如 Fingerprint 等)&lt;/li>
+&lt;/ol>
+&lt;p>需注意&lt;code>如何交換 SDP&lt;/code> 不再 WebRTC 定義中，可以使用任意協定如 HTTP / Websocket / XMPP 等，只要 Agent 之間能夠交換即可&lt;/p>
+&lt;h3 id="二-connecting">二. Connecting&lt;/h3>
+&lt;p>WebRTC Agent 要準備建立連線時，會透過 &lt;code>ICE (Interactive Connectivity Establishment)&lt;/code>，Agent 本身可能在同個 Local 區網下，也可能在世界的兩端，透過 ICE 找出兩個 Agent 能夠直接連線的方式，這背後隱藏了 NAT Traversal 與 STUN/TURN 細節，會在後續介紹&lt;/p>
+&lt;h3 id="三-security">三. Security&lt;/h3>
+&lt;p>建立雙向連線後，WebRTC 會在增加連線的安全性，透過 DTLS (Datagram Transport Layer Security) UDP over TLS 與 SRTP (Secure Real-time Transport Protocol)&lt;/p>
+&lt;p>DTLS 主要用於 Data Channel，WebRTC 透過 DTLS 交握建立安全連線，其中 TLS 驗證部分略與 HTTPS 過程不同，在 WebRTC 中沒有去向 CA 驗證憑證，而是透過先前 Signaling 交換的 fingerprint 檢查&lt;/p>
+&lt;p>而 Audio/Video 串流則是透過 RTP，為了多疊加一層安全性採用 SRTP 傳輸 RTP 內容，所採用的加密金鑰則是透過 Data Channel 所交換&lt;/p>
+&lt;p>目前就成功建立雙向、安全的連線後，但是影音串流還必須考量到網路狀況，如封包遺失、頻寬限制等問題&lt;/p>
+&lt;h3 id="四-communicating">四. Communicating&lt;/h3>
+&lt;p>採用 SCTP (Stream Control Transmission Protocol) 做傳輸狀況的監控、流量管制，實際上 SCTP 的封包是透過 Data Channel 走 DTLS&lt;/p>
+&lt;p>全部總結，WebRTC 就是由這些協定所集結而成的
+&lt;img src="https://yuanchieh.page/post/img/20210108/webrtc-protocol.png"
+loading="lazy"
+>&lt;/p>
+&lt;h3 id="webrtc-api">WebRTC API&lt;/h3>
+&lt;p>快速過一下 API 設計&lt;/p>
+&lt;h4 id="1-new-peerconnection">1. new PeerConnection&lt;/h4>
+&lt;p>建立 WebRTC Session，也就是上述的所有 Protocol 集合&lt;/p>
+&lt;h4 id="2-addtrack">2. addTrack&lt;/h4>
+&lt;p>建立 RTP Stream，並綁定一個隨機產生的 SSRC，之後在 createOffer 時會帶在 SDP 當中並建立對應的 media session，每當 addTrack 一次都會建立新的 RTP Stream&lt;/p>
+&lt;p>只要 ICE 後成功建立 SRTP 連線，media packets 就會馬上傳送出去&lt;/p>
+&lt;h4 id="3-createdatachannel">3. createDataChannel&lt;/h4>
+&lt;p>如果 SCTP 連線還沒建立則新建立一個，預設只有在某一方要求 data channel 才會建立&lt;/p>
+&lt;p>當 DTLS 成功建立連線後，SCTP packets 就會開始傳送&lt;/p>
+&lt;h4 id="4-createoffer">4. createOffer&lt;/h4>
+&lt;p>建立 local SDP&lt;/p>
+&lt;h4 id="5-setlocaldescription">5. setLocalDescription&lt;/h4>
+&lt;p>先前的 addTrack / createDataChannel 只是暫時性的，只有當呼叫 setLocalDescription 才確定套用修改&lt;/p>
+&lt;p>通常呼叫 setLocalDescription 就會傳送 offer 讓對方 setRemoteDescription&lt;/p>
+&lt;h4 id="6-setremotedescription">6. setRemoteDescription&lt;/h4>
+&lt;p>setRemoteDescription 通知 local agent 對方的 candidate 狀態，如果雙方都 setRemoteDescription就可以開始 connecting&lt;/p>
+&lt;h4 id="7-addicecandidate">7. addIceCandidate&lt;/h4>
+&lt;p>通知 WebRTC Agent 增加 remote ICE candidate&lt;/p>
+&lt;h4 id="8-ontrack">8. ontrack&lt;/h4>
+&lt;p>當 RTP stream 接收到封包時觸發事件，封包應該會吻合 setRemoteDescription 時指定的格式&lt;/p>
+&lt;p>WebRTC 會透過 SSRC 確認對應的 Media Stream&lt;/p>
+&lt;h4 id="9-oniceconnectionstatechange">9. oniceconnectionstatechange&lt;/h4>
+&lt;p>如果 ICE Agent 有異動會觸發事件，像是遇到網路狀況等&lt;/p>
+&lt;h4 id="10-onstatechange">10. onstatechange&lt;/h4>
+&lt;p>ICE Agent / DTLS Agent 狀態異動時會觸發事件&lt;/p>
+&lt;h2 id="一-signaling-1">一. Signaling&lt;/h2>
+&lt;p>WebRTC Agent 一開始建立時並不知道該與誰通訊、也不知道該用什麼格式，所以會需要在初始化時做 Signaling，讓後續的連線有機會發生&lt;br>
+WebRTC 並沒有硬性規定 Signaling 傳輸的機制，常見做法是透過 Websocket&lt;/p>
+&lt;h3 id="什麼是-sdp">什麼是 SDP&lt;/h3>
+&lt;p>WebRTC 仰賴 SDP 交換建立連線所需的資訊，SDP 本身相當好理解，只是要去理解 WebRTC 自定義的參數與代表值&lt;/p>
+&lt;p>SDP 定義在 &lt;a class="link" href="https://tools.ietf.org/html/rfc4566" target="_blank" rel="noopener"
+>RFC4566&lt;/a>，每一行代表一個 key / value 組合，一份 SDP 中可以包含多個 Media Description，而一個 Media Description 通常代表一個 Media Stream&lt;br>
+例如說一個影片有兩個 Video Stream 外加三個 Audio Stream，那就需要五個 Media Description 描述&lt;/p>
+&lt;h4 id="如何解讀-sdp">如何解讀 SDP&lt;/h4>
+&lt;p>SDP 格式為 &lt;code>k=value&lt;/code>，鍵通常是一個英文字母代表，等號後連接值，以下是定義的幾個鍵&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>v&lt;/code>: Version，代表版本&lt;/li>
+&lt;li>&lt;code>o&lt;/code>: Origin，通常代表 id 用以識別&lt;/li>
+&lt;li>&lt;code>s&lt;/code>: Session 名稱&lt;/li>
+&lt;li>&lt;code>t&lt;/code>: Timing，通常是 &lt;code>0 0&lt;/code>&lt;/li>
+&lt;li>&lt;code>m&lt;/code>: Media Description&lt;/li>
+&lt;li>&lt;code>a&lt;/code>: Attribute 最常見的鍵&lt;/li>
+&lt;li>&lt;code>c&lt;/code>: Connection，通常是 &lt;code>IN IP4 0.0.0.0&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;h4 id="media-description">Media Description&lt;/h4>
+&lt;p>一個 Session Description 通常包含多個 Media Description，而 Media Description 則由一連串的 RTP Payload 的格式定義，實際的 codec 會以 &lt;code>rtpmap&lt;/code> 表示
+如以下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">v=0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=audio 4000 RTP/AVP 111
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:111 OPUS/48000/2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=video 4000 RTP/AVP 96
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:96 VP8/90000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=my-sdp-value
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這裡定義兩個 Media Description&lt;br>
+一個是 audio 帶著 fmt 111，並指定 codec 為 OPUS
+另一個是 video 帶著 fmt 96，codec 為 VP8，並帶著第二個屬性值為 my-sdp-value&lt;/p>
+&lt;h3 id="webrtc-如何利用-sdp">WebRTC 如何利用 SDP&lt;/h3>
+&lt;p>接著談到 WebRTC 如何使用 SDP 的格式，WebRTC 採用 Offer / Answer 架構，一方 Agent 先主動提供 Offer，另一方再決定是否接受，並回應 Answer 確定 codec 等&lt;/p>
+&lt;h4 id="transceivers">Transceivers&lt;/h4>
+&lt;p>Transceiver 指定 Media 傳輸的方向，例如說可以指定「我要用這個格式發送」「我要用這個格式接收而且我不想要收到任何資料」等，主要有四個值&lt;/p>
+&lt;ol>
+&lt;li>send&lt;/li>
+&lt;li>recv&lt;/li>
+&lt;li>sendrecv&lt;/li>
+&lt;li>inactive&lt;br>
+每產生一個 Transceiver 就會對應有一個 Media Description，並帶有一個 attribute 描述如 &lt;code>a=sendrecv&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;h4 id="其餘常見屬性">其餘常見屬性&lt;/h4>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;code>group:BUNDLE:&lt;/code>&lt;br>
+有些 WebRTC Agent 會在一個 connection 上傳輸多種類型的 media stream&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>fingerprint:sha-256&lt;/code>:&lt;br>
+DTLS 要用到的憑證 sha 256 值，用來比對憑證的正確性&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>setup&lt;/code>:&lt;br>
+決定 DTLS Agent 在 ICE 連線建立後的行為&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ice-ufrag&lt;/code>:
+ICE Agent 的 user fragment，用來驗證身份&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ice-pwd&lt;/code>:
+同驗證身份使用&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>rtpmap&lt;/code>:
+指名 RTP Payload 的 codec&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>fmtp&lt;/code>:
+Payload 額外屬性質，例如 video encoding 方式等細節&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>candidate&lt;/code>:
+ICE candidate，供後續 ICE Agent 建立連線使用&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ssrc&lt;/code>:
+Media Stream 的 ID&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>範例 SDP 可以在這邊產生 &lt;a class="link" href="https://webrtc.github.io/samples/src/content/peerconnection/munge-sdp/" target="_blank" rel="noopener"
+>WebRTC samples Munge SDP&lt;/a>&lt;/p>
+&lt;h2 id="二-connecting-1">二. Connecting&lt;/h2>
+&lt;p>上一步 Signaling 交換完連線資訊，接著就要建立雙方 P2P 連線，但現實的網路世界在有不同種的 NAT 存在，使得建立連線時會有一些阻礙，為了克服衍生出了 NAT 穿越機制 &lt;a class="link" href="https://datatracker.ietf.org/doc/html/rfc8445" target="_blank" rel="noopener"
+>Interactive Connectivity Establishment (ICE)&lt;/a>&lt;/p>
+&lt;h3 id="nat-種類">NAT 種類&lt;/h3>
+&lt;p>NAT 是在一個區域網路下，由統一的對外路由器共用 public ip，而內部的機器則使用 private ip，如果內部機器需要與外部網路溝通，則透過路由器收發，路由器會記住哪些封包要轉送到對應的內部機器；&lt;br>
+不論是因應 IPv4 位置不夠用，又或是安全性考量，NAT 普遍存在於現今的網路環境下&lt;br>
+&lt;img src="https://webrtcforthecurious.com/docs/images/03-nat-mapping.png"
+loading="lazy"
+>&lt;br>
+*圖片來自 webrtcforthecurious&lt;/p>
+&lt;p>而路由器針對封包的發送會有不同的對應產生，假設 Machine A 向 public Host 1 發送請求，則會在路由器註冊一個 Mapping&lt;/p>
+&lt;h4 id="1-endpoint-independent-mapping">1. Endpoint-Independent Mapping&lt;/h4>
+&lt;p>如果 Machine A 要向 public Host 2 發送請求，則可以復用同一個 Mapping&lt;/p>
+&lt;h4 id="2-address-dependent-mapping">2. Address Dependent Mapping&lt;/h4>
+&lt;p>如果 Machine A 要向 public Host 2 發送請求，則會產生新的 Mapping&lt;/p>
+&lt;h4 id="3-address-and-port-dependent-mapping">3. Address and Port Dependent Mapping&lt;/h4>
+&lt;p>如果 Machine A 要向 public Host 1 但是不同的 port 發送請求，則會產生新的 Mapping&lt;/p>
+&lt;p>針對外部封包的接收會有不同的限制&lt;/p>
+&lt;h4 id="4-endpoint-independent-filtering">4. Endpoint-Independent Filtering&lt;/h4>
+&lt;p>任何 public Host 都可以對同一個 Mapping 送封包給 Machine A&lt;/p>
+&lt;h4 id="5-address-dependent-filtering">5. Address Dependent Filtering&lt;/h4>
+&lt;p>只有 Machine A 先送過 public Host 1，則 public Host 1 才可以透過此 Mapping 送封包給 Machine A&lt;/p>
+&lt;h4 id="6-address-and-port-dependent-filtering">6. Address and Port Dependent Filtering&lt;/h4>
+&lt;p>只有 Machine A 先送過 public Host 1 + port 1，則 public Host 1 + port 1 才可以透過此 Mapping 送封包給 Machine A&lt;/p>
+&lt;blockquote>
+&lt;p>小結，可以看到 NAT 限制由上往下越來越嚴謹，一開始任何 public ip 都可以送，接著限制 ip address，最嚴格是要 ip address + port 都吻合才可以送&lt;/p>
+&lt;/blockquote>
+&lt;p>說完了 NAT 種類，但這些種類會怎麼影響 P2P 連線呢？&lt;/p>
+&lt;h3 id="stun">STUN&lt;/h3>
+&lt;p>如果今天兩個 webrtc client 都在 NAT 之後，那要建立連線就必須先知道 &lt;code>自己的 public IP&lt;/code>，這也是 &lt;a class="link" href="https://datatracker.ietf.org/doc/html/rfc8489" target="_blank" rel="noopener"
+>STUN 協定&lt;/a> 所做的事情，讓 client 可以知道 NAT Mapping 對外的 public IP&lt;/p>
+&lt;p>試想以下情境&lt;/p>
+&lt;ol>
+&lt;li>client A / client B 都在各自的 NAT 之後，他們想要建立 P2P 連線&lt;/li>
+&lt;li>client A / client B 此時不知道自己的 public IP&lt;/li>
+&lt;li>client A / client B 分別向 STUN Server(有固定 public IP) 發出請求，此時 NAT 上會建立 Mapping + client A / client B 取得 public IP 交換&lt;/li>
+&lt;li>如果 NAT 是屬於 &lt;code>Endpoint-Independent Mapping + Endpoint-Independent Filtering&lt;/code>，則 client A / client B 透過 SDP 交換資訊後，就可以建立雙向連線了&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>反思如果 NAT 是 Address Dependent Mapping + Address Dependent Filtering，透過 STUN 之後 client A / B 可以直接連線嗎？&lt;/p>
+&lt;p>答案是不行的喔，因為 client A 建立了與 STUN server 的 NAT Mapping 只能兩者用，client B 想要送封包給 client A 就會被擋下來&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="turn">TURN&lt;/h3>
+&lt;p>遇到 STUN server 無法用，接著就要用 &lt;a class="link" href="https://datatracker.ietf.org/doc/html/rfc8656" target="_blank" rel="noopener"
+>TURN&lt;/a>，TURN server 會居中，所有的封包都透過 TURN server 轉發，但這樣也就不是 P2P 連線了&lt;/p>
+&lt;p>TURN 的運作機制建立於 STUN 之上，擴充 STUN 封包的格式，流程大概是&lt;/p>
+&lt;ol>
+&lt;li>client A 建立 &lt;code>Allocation&lt;/code>，TURN server 會保留一個 port 給 client A，並回傳 &lt;code>Relayed Transport Address&lt;/code>，可以想像成搬進新大樓時一樓信箱有一個格子專屬於你的，所以寄信到這個格子的資料都是要給你的&lt;/li>
+&lt;li>當 WebRTC 在交換 SDP 時將 Relayed Transport Address 給對方&lt;/li>
+&lt;li>為了避免其他人亂寄資料，client 必須在 Relay Server 幫對方增加 &lt;code>Permission&lt;/code>&lt;/li>
+&lt;li>Allocation / Permission 都有時間限制(LIFETIME參數控制)，可以後續 Refresh&lt;/li>
+&lt;/ol>
+&lt;p>另外一種對於 NAT 的分類 (錐形、對稱型) 道理也是類似，Peer A 註冊的 Mapping 要在什麼情況下 Peer B 可以直接拿來用，如果不行 (對稱型) 就要走 TURN Server，可參考 &lt;a class="link" href="https://ithelp.ithome.com.tw/articles/10209590" target="_blank" rel="noopener"
+> 30-28之 WebRTC 連線前傳 - 為什麼 P2P 連線很麻煩 ? ( NAT ) &lt;/a>&lt;/p>
+&lt;h3 id="ice">ICE&lt;/h3>
+&lt;p>結合以上的連線方法，就組合成 ICE protocol，每個 ICE Agent 會分成 Controlling / Controlled，有一方主導連線過程，按照以下步驟，嘗試找出雙方可以互通的連線&lt;/p>
+&lt;h4 id="1candidate-gathering">1.Candidate Gathering&lt;/h4>
+&lt;p>Candidate 是指可能被使用的連線方式，共有幾種&lt;/p>
+&lt;ol>
+&lt;li>host: local interface&lt;/li>
+&lt;li>srflx: Server Reflexive，也就是從 STUN 那拿到的 public ip&lt;/li>
+&lt;li>relay: 透過 TURN server 拿到的 ip&lt;/li>
+&lt;li>prflx: Peer Reflexive，從 peer 那邊拿到自己的 ip，晚點補充&lt;/li>
+&lt;/ol>
+&lt;p>以上資訊收集完後，透過 signaling 方式發送給對方&lt;/p>
+&lt;h4 id="2candidate-selection">2.Candidate Selection&lt;/h4>
+&lt;p>因為雙方都蒐集了各自的 candidate，接著就是 full mesh 組合出 &lt;code>Candidate Pair&lt;/code>，並按照優先順序開始測試連線，可以成功收發訊息則標記為 &lt;code>Valid Candidate&lt;/code>，主導方會挑一個 valid candidate 標記成 &lt;code>Nominated Pair&lt;/code>，接著雙方在測試一次是否能成功收發訊息，完成則標記為 &lt;code>Selected Candidate Pair&lt;/code>，這一個 session 就用一組連線方式&lt;/p>
+&lt;h4 id="3-restart">3. Restart&lt;/h4>
+&lt;p>如果 Selected Candidate Pair 有任何問題，則以上步驟重新來過&lt;/p>
+&lt;blockquote>
+&lt;p>最後補充一下 Peer Reflexive，為什麼會有從對方拿到自己所不知道的 ip 這種狀況，主要會發生在 Host Candidate 與 Server Reflexive Candidate 溝通&lt;/p>
+&lt;p>試想 client A 透過 host candidate 多半拿到是自己的 private ip，此時透過 NAT 向 client B 發送請求，client B 會拿到 NAT 的 public address (也就是 client A 的 Mapping)，此時返回 public address 給 client A，此時就是 prflx
+其實上述的過程類似於 &lt;code>STUN&lt;/code> server 的功用
+因為 ICE protocol 是有經過驗證的，所以 client A 可以放心的拿這組 public ip 當作自己的 ip&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="三-securing">三. Securing&lt;/h2>
+&lt;p>該怎麼確保收到的 sdp 來自預期的 client / 要如何確保收到的 media 是來正確的 client，WebRTC 結合計有的加密方式 DTLS / SRTP，確保機密性/完整性/身份驗證&lt;/p>
+&lt;h3 id="dtls">DTLS&lt;/h3>
+&lt;p>DTLS 是 TLS 的近親，只是 DTLS 的傳輸層是 UDP 而 TLS 是 TCP；
+DTLS 是 Client/Server 架構，某一方會先發起通信，接著雙方會交換憑證，而確保憑證的正確性是比對 SDP 中的憑證 hash 值；&lt;br>
+完成交握後會取得共同對稱密鑰，後續就用此加密
+&lt;img src="https://webrtcforthecurious.com/docs/images/04-handshake.png"
+loading="lazy"
+>
+*圖片來自 webrtcforthecurious&lt;/p>
+&lt;p>流程基本與 HTTPS 很像，只是 client 也要提供憑證給 server，在 https 這一步是可選的但通常忽略&lt;/p>
+&lt;p>ServerHello/ClientHello 各自再產生 random secret，拿到憑證後 client 產生 pre-master 並加密傳送給 server，雙方可以得到相同但其他人不知道的 master key&lt;/p>
+&lt;blockquote>
+&lt;p>過程中突然想到，既然是 client 最後把 pre-master 加密，那為什麼還要 client/secret random number ?
+原因是為了&lt;code>避免回放攻擊&lt;/code>，參考 &lt;a class="link" href="https://security.stackexchange.com/questions/89383/why-does-the-ssl-tls-handshake-have-a-client-and-server-random" target="_blank" rel="noopener"
+>Why does the SSL/TLS handshake have a client and server random?&lt;/a>
+如果少了 Server random number，那駭客即使不知道內文也沒關係，重複回放請求，Server 沒辦法知道這些請求是過時的
+反之如果有 random number，Server 就會發現 master key 不同而中斷請求&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="srtp">SRTP&lt;/h3>
+&lt;p>SRTP 是針對 RTP 設計的加密版本，本身沒有定義產生 key，所以 WebRTC 就拿 DTLS 交握後產生的共同金鑰當作 SRTP 的加密金鑰&lt;/p>
+&lt;p>具體內容就先略過&lt;/p>
+&lt;h2 id="real-time-networking">Real-time Networking&lt;/h2>
+&lt;p>網路狀況會很大幅度影響即時影音服務的品質，品質則是在 Quality &amp;amp; Latency 中做抉擇，評估網路狀況時會看&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Bandwidth&lt;/code>: 通道上最大可傳輸的量&lt;/li>
+&lt;li>&lt;code>Transmission Time and Round Trip Time&lt;/code>：從發送到收到回應的時間&lt;/li>
+&lt;/ol>
+&lt;p>在網路狀況不好的情況下，會遇到幾種負面情況&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Jitter&lt;/code>: RTT 時長時短，導致畫面卡頓&lt;br>
+可以透過 Jitter Buffer 改善問題，收到封包後先 queue 一小段時間，等到可以完整解析 frame 在 render&lt;/li>
+&lt;li>&lt;code>Packet Loss&lt;/code>: 某些封包掉了，導致畫面跳格&lt;br>
+解決 Packet Loss 問題可以透過&lt;/li>
+&lt;/ol>
+&lt;ul>
+&lt;li>收到封包後回傳 ACK&lt;/li>
+&lt;li>收到封包後回傳收到的封包 SACK&lt;/li>
+&lt;li>回傳沒有收到的封包 NACK (遇到跳號時)&lt;/li>
+&lt;/ul>
+&lt;p>今天如果網路狀況不好，則發送方應該要降低影音品質 / 減緩發送速度，避免網路狀況惡化；&lt;br>
+另一方面當網路狀況改善，則發送方也應該要知道，進而提升傳輸的品質與速度&lt;/p>
+&lt;p>那接收方如何回報網路狀況給發送方呢？&lt;/p>
+&lt;h3 id="media">Media&lt;/h3>
+&lt;p>WebRTC 本身不管底層的影音 codec，只要雙方都可以處理就好，透過 RTP 傳輸影音資料 / RTCP 處理網路狀況+控制流量&lt;/p>
+&lt;h4 id="rtcp-如何整理網路狀況">RTCP 如何整理網路狀況&lt;/h4>
+&lt;p>RTCP 透過幾種方式，讓發送方可以得知網路狀況&lt;/p>
+&lt;ol>
+&lt;li>Receiver Reports&lt;br>
+Sender 再發送時打上當時的時間戳記 t1，Receiver 收到後加上自己處理的時間 t2，回傳 Report 給 Sender，最後 Sender 收到的時間為 t3&lt;br>
+則 Sender 可以算出 &lt;code>rtt = t3 - t1 - t2&lt;/code>&lt;/li>
+&lt;li>REMB&lt;br>
+Reciver 根據統計 packet loss，跟 Sender 回報預期的 bitrate&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">if (packetLoss &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="nt">2&lt;/span>&lt;span class="err">%)&lt;/span> &lt;span class="na">video_bitrate&lt;/span> &lt;span class="err">*=&lt;/span> &lt;span class="na">1&lt;/span>&lt;span class="err">.&lt;/span>&lt;span class="na">08&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">if&lt;/span> &lt;span class="err">(&lt;/span>&lt;span class="na">packetLoss&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> 10%) video_bitrate *= (1 - 0.5*lossRate)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但這個方法理論上看起來不錯，實際應用上卻很糟糕，因為 encoder 在動態改變 bitrate 下沒有這麼有效率
+3. TWCC&lt;br>
+追蹤每一個封包的狀況，可以讓 Sender 有更即時、清楚的網路狀況&lt;/p>
+&lt;p>這一段理解不這麼全面，未來有機會補上&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>建立 WebRTC 連線過程，總共分成&lt;/p>
+&lt;ol>
+&lt;li>Signaling： 交換彼此資訊的管道，透過 SDP 描述這些資訊&lt;/li>
+&lt;li>Connecting：為了應付複雜的網路環境(NAT)，透過 ICE 解決連線問題&lt;/li>
+&lt;li>Securing：確保交換的資料是安全的&lt;/li>
+&lt;li>Real-time communication：即時傳送資料&lt;/li>
+&lt;/ol></description></item><item><title>RFC 5389 - STUN 協定介紹</title><link>https://yuanchieh.page/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/</link><pubDate>Tue, 22 Sep 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/</guid><description>&lt;p>STUN 應用於處理 NAT 穿越技術 (如 ICE ) 下的一種工具，本身並非 NAT 穿越的解決方案，主要功能為&lt;code>確認兩個在 NAT 背後節點的 IP / Port&lt;/code>，本篇為 &lt;a class="link" href="https://tools.ietf.org/html/rfc5389" target="_blank" rel="noopener"
+>RFC 5389&lt;/a> 的閱讀心得，分享 STUN 背後的設計原理與結構&lt;/p>
+&lt;p>STUN 之上還有擴增一個 TURN 協定，提供 relay 連線的功能，一般的 TURN Server 會同時提供 STUN 的服務，如果想知道 TRUN Server 架設，可以參考另一篇文章 &lt;a class="link" href="https://yuanchieh.page/post/2020-09-21_aws-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8/" target="_blank" rel="noopener"
+>AWS Coturn server架設教學&lt;/a>&lt;/p>
+&lt;p>如果你有以下疑惑，那這篇文章應該可以幫助到你&lt;/p>
+&lt;ol>
+&lt;li>STUN Server 究竟是如何運作&lt;/li>
+&lt;li>STUN Server 是否有驗證機制&lt;/li>
+&lt;li>想知道 Coturn config 中的參數含義，如 Fingerprint / Realm / Nonce&lt;/li>
+&lt;/ol>
+&lt;h2 id="與舊版-stun-的差異">與舊版 STUN 的差異&lt;/h2>
+&lt;p>先前有一版 STUN 的定義 &lt;a class="link" href="https://tools.ietf.org/html/rfc3489" target="_blank" rel="noopener"
+>RFC-3489&lt;/a>，當時的 STUN 被定義成完整的 NAT 穿越解決方案，但是遭遇了以下問題才改用這一版 5389 取代了舊版&lt;/p>
+&lt;ol>
+&lt;li>無法正確區分 NAT 類型，導致可能連線有問題&lt;br>
+NAT 共有四種類型，其中 symmetric NATs 是每次通訊沒有固定的 Public IP / Port，所以只能透過 TURN 來解決雙節點的連線問題&lt;br>
+但是舊版 STUN 演算法設計無法區分 NAT 類型，所以有可能造成部分的連線異常&lt;/li>
+&lt;li>支援 TCP / DTLS:&lt;br>
+舊版只支援 UDP&lt;/li>
+&lt;li>Security 考量&lt;/li>
+&lt;/ol>
+&lt;p>新版 STUN 不再是完整的 NAT traversal 解決方案，只專注於&lt;code>找出節點外層 NAT 對外的 Public IP/Port&lt;/code>，完整的解決方案如 ICE / SIP Outbound 等等&lt;/p>
+&lt;blockquote>
+&lt;p>也因此 STUN SERVER 預設 port 是 3489 / TLS port 是 5398&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="架構介紹">架構介紹&lt;/h2>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20200922/stun.png"
+loading="lazy"
+>&lt;br>
+可以看到 STUN Client 躲在兩層 NAT 之後，而 STUN Server 就是要通知 STUN Client 最外層 NAT 所對應的 Public IP / Port&lt;/p>
+&lt;p>STUN 採用 client/server 架構，支援兩種溝通方式(transaction)&lt;/p>
+&lt;ol>
+&lt;li>request / response&lt;/li>
+&lt;li>indicate (送出去不等回覆)&lt;/li>
+&lt;/ol>
+&lt;p>每個 transaction 都有 96bit random id&lt;/p>
+&lt;h3 id="傳送機制">傳送機制&lt;/h3>
+&lt;p>每個 Transaction 會定義類型 (Action)，目前 Spec 僅定義 Binding action&lt;/p>
+&lt;p>運作機制如下&lt;/p>
+&lt;ol>
+&lt;li>client 送出 request&lt;/li>
+&lt;li>NAT 會修改 client package 封包的 IP，並自主管理 client private ip port 與 NAT 對應出去的 ip / port&lt;/li>
+&lt;li>一路到 server 手上只會拿到 NAT 的 public ip / port，稱之為 &lt;code>server reflexive transport address (srflx)&lt;/code>，如果有用過 WebRTC 應該有看過 srflx ，這就是代表用戶走 STUN&lt;/li>
+&lt;li>接著 server 把這個 public ip / port 當作內容 &lt;code>XOR-MAPPED-ADDRESS&lt;/code> 傳回去給 client&lt;/li>
+&lt;li>NAT 接著會一路改 ip port，但因為內文不改所以 client 會知道最外層 NAT 的 public ip + port&lt;/li>
+&lt;/ol>
+&lt;h4 id="packet-format">Packet Format&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span>&lt;span class="m">0&lt;/span> 0&lt;span class="p">|&lt;/span> STUN Message Type &lt;span class="p">|&lt;/span> Message Length &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Magic Cookie &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Transaction ID &lt;span class="o">(&lt;/span>&lt;span class="m">96&lt;/span> bits&lt;span class="o">)&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>封包格式介紹&lt;/p>
+&lt;ol>
+&lt;li>最前方兩個 bit 固定為 0 ，主要是用來區分是不是 STUN 的 packet&lt;/li>
+&lt;li>Message Type 包含 Transaction 類型 / response 成功或失敗&lt;/li>
+&lt;li>magic cookie 固定為 0x2112A442&lt;/li>
+&lt;li>Transaction ID 用來區分 STUN transaction&lt;/li>
+&lt;li>STUN message 不可以超過 MTO&lt;/li>
+&lt;li>如果傳輸透過 UDP:&lt;br>
+Client 要自己處理 retransmit，預設 timeout 500ms ~ 3000 ms 間，之後每次 retry Timeout double&lt;/li>
+&lt;li>如果傳輸透過 TCP:&lt;br>
+不要增加而外的 framing / demultiplexing
+已經保障資料可靠性，預設 Timeout 為 39.5s
+Server 應該等 Client 主動斷線，除非遇到 timeout&lt;/li>
+&lt;/ol>
+&lt;h3 id="驗證訊息">驗證訊息&lt;/h3>
+&lt;p>Server 收到訊息後，會先做基本的驗證，如果有開啟 fingerprint extension 則驗證，如果發現有不支援的屬性則回傳錯誤；
+Server 回傳錯誤時，必須&lt;code>指定 error code，並挾帶 error code attribute&lt;/code>，例如說有不支援的屬性則回傳 420 + UNKNOWN-ATTRIBUTES，如果是 401 驗證失敗則必須對應回傳驗證方式，這邊的 error code 參考 HTTP 所以會有種似曾相似的分類；&lt;br>
+如果訊息成功則夾帶 &lt;code>XOR-MAPPED-ADDRESS&lt;/code> 回傳&lt;/p>
+&lt;h3 id="fingerprint">FINGERPRINT&lt;/h3>
+&lt;p>再Multiplexing 下，會有多個不同 protocol 的 packet 傳送到相同位址的，例如說 RTP，加上 &lt;code>fingerprint&lt;/code> 可以方便 STUN Server 區分 STUN message&lt;/p>
+&lt;h3 id="dns">DNS&lt;/h3>
+&lt;p>透過 SRV 紀錄回傳 STUN Server 相關的服務，SRV 格式如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">_service._proto.name. TTL class SRV priority weight port target.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果是以 STUN Server 開放 TCP / UDP ，假設 STUN Server domain name 是 &lt;code>stun.example.com&lt;/code>的話&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">_stun._udp.example.com &lt;span class="m">86400&lt;/span> IN SRV &lt;span class="m">0&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">3489&lt;/span> stun.example.com.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">_stun._tcp.example.com &lt;span class="m">86400&lt;/span> IN SRV &lt;span class="m">0&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">3489&lt;/span> stun.example.com.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>使用 SRV 好處是可以改變預設的 Port；&lt;br>
+如果不用 SRV，也可以用 A / AAAA 紀錄返回 IP List，但 Port 就只能用預設的&lt;/p>
+&lt;h3 id="身份驗證與訊息完整性檢查">身份驗證與訊息完整性檢查&lt;/h3>
+&lt;p>共有兩種身份驗證的方式，&lt;/p>
+&lt;h4 id="短期">短期&lt;/h4>
+&lt;p>Client / Server 會預先共享同一個 secret，後續 Client 產生一個有時間限制的 credential (password)，Server 收到後會用相同的 secret 做驗證；&lt;br>
+確保訊息完整性則透過 &lt;code>MESSAGE-INTEGRITY&lt;/code> 欄位，此欄位產生的方式是把 STUN Message 做 HMAC_SHA1；&lt;/p>
+&lt;p>Server 收到STUN Message 後的驗證流程如下&lt;/p>
+&lt;ol>
+&lt;li>沒有 MESSAGE-INTEGRITY 和 USERNAME 欄位則回傳 401&lt;/li>
+&lt;li>檢查 USERNAME 是否合法&lt;/li>
+&lt;li>用 passwrod 與 username 計算出 message intergrity 的值並比對&lt;/li>
+&lt;li>都通過則產生 response，response 同樣要包含 MESSAGE-INTEGRITY&lt;/li>
+&lt;/ol>
+&lt;p>Client 收到 response 也需要檢查 MESSAGE-INTEGRITY&lt;/p>
+&lt;p>因為 credential 有時間限制，所以不會遇到回放(replay)攻擊&lt;/p>
+&lt;h4 id="長期">長期&lt;/h4>
+&lt;p>Server / Client 固定長期使用&lt;code>相同的 username / password&lt;/code>&lt;/p>
+&lt;p>步驟&lt;/p>
+&lt;ol>
+&lt;li>Client 不帶任何 credential 發起&lt;/li>
+&lt;li>Server reject，並分配 realm (指引 client 選擇 credential) 與 nonce (類似於 cookie，指定 duration / client identity 等) 多一層保護&lt;/li>
+&lt;li>Client retry ，戴上 credential 與 nonce + message-integrity (對整個 request 做 HMAC)&lt;/li>
+&lt;li>Server 檢查 auth 與 integrity&lt;/li>
+&lt;/ol>
+&lt;p>Server 收到訊息時會依序檢查&lt;/p>
+&lt;ol>
+&lt;li>MESSAGE-INTEGRITY: 沒有回傳 401&lt;/li>
+&lt;li>如果沒有 username / password / realm / nonce ，回傳 400&lt;/li>
+&lt;li>Nonce 過期了，438&lt;/li>
+&lt;li>Username 無效，401&lt;/li>
+&lt;li>Message-integrity 錯誤，回傳 401&lt;/li>
+&lt;li>ALTERNATE-SERVER Mechanism
+如果 Server 希望 Redirect Client 去別的 Server，可以回傳 error code 300 並指定 ALTERNATE-SERVER
+Client 收到後，用相同的 transport protocol / credential 對新的 Server 重啟 transaction&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>之所以開頭要產生一次 auth failed 的 request是要了去跟 Server 拿 Nonce，主要是為了避免&lt;code>回放攻擊&lt;/code>；&lt;br>
+回放攻擊主要是 如果有中間人，他拿到 Client request 記錄下來，把同樣的 request 往 Server 送，因為 credential 是長期有效所以中間人也能夠通過驗證，即使是有 TLS 保護 / 中間人不知道 username, password 回放攻擊都有用；&lt;br>
+所以才需要 Nonce 一個由 Server 核發一次性的 Token，包裝在 STUN Message 中，超出時間就會被認定無效，從而避免回放攻擊&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="stun-attributes">STUN Attributes&lt;/h3>
+&lt;p>再 STUN Header 之後，可以接零至多個 attribute，attribute 採用 TLV encode&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="m">7&lt;/span> &lt;span class="m">8&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="m">0&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Type &lt;span class="p">|&lt;/span> Length &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Value &lt;span class="o">(&lt;/span>variable&lt;span class="o">)&lt;/span> ....
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果 response 中有重複的 attribute，只有 &lt;code>第一個&lt;/code> 會被考慮，其餘會被捨棄
+Type 再 0x0000 and 0x7FFF 是必須要被處理的，如果 STUN agent 無法處理則會失敗
+0x8000~0xFFFF 則是 optional
+以下舉幾個常見的 attribute&lt;/p>
+&lt;h4 id="mapped-address">MAPPED-ADDRESS&lt;/h4>
+&lt;p>主要是為了兼容舊版 STUN，顯示 Client 最後一個 Public NAT 的 ip / port&lt;/p>
+&lt;h4 id="xor-mapped-address">XOR-MAPPED-ADDRESS&lt;/h4>
+&lt;p>雷同於上者，但是 ip / port 都是跟 magic-cookie 前 16 bits 做 XOR 儲存 (ipv4 / ipv6 xor 方式不同)，原因是發現有些 NAT 如果看到 payload 是自己的 public IP 會去修改，xor 之後就沒這個問題&lt;/p>
+&lt;blockquote>
+&lt;p>原文解釋
+deployment experience found that some NATs rewrite the 32-bit binary payloads containing the NAT&amp;rsquo;s public IP address, such as STUN&amp;rsquo;s MAPPED-ADDRESS attribute, in the well-meaning but misguided attempt at providing a generic ALG function.&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="username">USERNAME&lt;/h4>
+&lt;p>用來驗證用的，必須是用 utf-8 encode 並小於 513 bets SASLprep&lt;/p>
+&lt;h4 id="message-integrity">MESSAGE-INTEGRITY&lt;/h4>
+&lt;p>對 STUN Message 取 HMAC-SHA1，固定長度為 20 bytes (因為 sha1 )
+HMAC key 會因為 credential 不同而有所不同&lt;/p>
+&lt;ol>
+&lt;li>Long term: &lt;code>key = MD5(username “:” realm “:” SASLprep(password))&lt;/code>&lt;/li>
+&lt;li>Short term: &lt;code>key = SASLprep(password)&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>需注意 hash 包含整個 STUN Message，同時也包含了 Message length，所以在產生 hash 前，MESSAGE-INTEGRITY 也必須先安插進去 STUM Message 中並帶 dummy content，其他在之後的屬性則被排除在外
+驗證時也必須遵守相同的流程&lt;/p>
+&lt;h4 id="fingerprint-1">Fingerprint&lt;/h4>
+&lt;p>對整個 STUN Message (排除自己) 取 CRC-32，接著與 0x5354554e
+做 XOR ( 避免其他 packet 也用 CRC-32
+Fingerprint 必須是最後一個屬性&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">the FINGERPRINT attribute MUST be the last attribute in the message, and thus will appear after MESSAGE-INTEGRITY.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="error-code">Error Code&lt;/h4>
+&lt;p>包含數值的 error code 從 300~699，保持與 SIP / HTTP 相似的羽翼
+再加上 rease: utf-8的文字描述 ，主要是讓用戶可以理解&lt;/p>
+&lt;h4 id="realm">REALM&lt;/h4>
+&lt;p>如果 STUN Server 同時支援多個 domain，透過 REALM 可以區分不同 domain 使用的設定&lt;/p>
+&lt;h4 id="nonce">NONCE&lt;/h4>
+&lt;p>用於每次連線避免 replay 問題的方式，類似於 web 的 cookie&lt;/p>
+&lt;h4 id="unknown-attributes">UNKNOWN-ATTRIBUTES&lt;/h4>
+&lt;p>再 error code 420 時出現&lt;/p>
+&lt;h4 id="software">SOFTWARE&lt;/h4>
+&lt;p>描述軟體的版本 / 製造商等資訊&lt;/p>
+&lt;h4 id="alternate-server">ALTERNATE-SERVER&lt;/h4>
+&lt;p>Server 要求轉換時&lt;/p>
+&lt;h3 id="security">Security&lt;/h3>
+&lt;p>以下條列幾種被攻擊的可能與防範措施&lt;/p>
+&lt;ol>
+&lt;li>Attacker 可能竄改 STUN 訊息:&lt;br>
+但可以用 message integrity 驗證防止&lt;/li>
+&lt;li>Attacker 可以居中回傳 error response&lt;br>
+在某些如驗證失敗的訊息，這個就不好防堵，除非使用 TLS 才能杜絕問題&lt;/li>
+&lt;li>HMAC可能遭受字典攻擊:&lt;br>
+因為 STUN 利用 HMAC，可能遭受字典攻擊，請確保 password 足夠複雜，或是用 TLS 防止問題；不排除 SHA1 之後被攻破，未來可能增加新的欄位與新的 hash 機制&lt;/li>
+&lt;li>DoS 部分: &lt;br>
+STUN server 是 &lt;code>stateless&lt;/code>，所以比較不會被 DoS 打垮；&lt;br>
+Attacker 可能假冒 source IP，讓 STUN server 去攻擊受害者，攻擊不會被跨大，要從 ingress 去過濾 ip；&lt;/li>
+&lt;li>SOFTWARE 揭露版本資訊，可能變成潛藏的落點&lt;br>
+STUN Server 應該要有對應的設定去關閉此選項&lt;/li>
+&lt;li>修改 source ip&lt;br>
+Attack 居中的話，可以攔截client 的 source ip 並修改，server 收到錯的 ip 就會用 XOR-MAPPED-ADDRESS 回傳回，&lt;code>這幾乎不可能阻擋&lt;/code>，因為正常的 NAT 也會去修改 source ip；&lt;br>
+只能在更上層的協議，例如 ICE 去驗證 address 的正確性&lt;/li>
+&lt;/ol></description></item><item><title>Coturn Server 架設教學 - on AWS</title><link>https://yuanchieh.page/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/</link><pubDate>Mon, 21 Sep 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/</guid><description>&lt;p>公司 P2P 通信採用 WebRTC tech stack，近日希望自建 STUN/TURN Server，決定採用 &lt;a class="link" href="https://github.com/coturn/coturn" target="_blank" rel="noopener"
+>Coturn&lt;/a> 這套知名的解決方案，在 AWS 架設過程遇到一些坑，決定分享如何架設，並分享設定檔如何設定與操作&lt;br>
+以下包含&lt;/p>
+&lt;ol>
+&lt;li>Coturn 於 AWS 上的架設與測試&lt;/li>
+&lt;li>介紹設定檔內容&lt;/li>
+&lt;li>上 Production 的考量&lt;/li>
+&lt;li>補充 NAT 與 STUN/TURN 關係&lt;/li>
+&lt;/ol>
+&lt;p>如果想知道更詳細的協定介紹，請參考&lt;/p>
+&lt;ol>
+&lt;li>&lt;a class="link" href="https://yuanchieh.page/post/2020-09-22_rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/" target="_blank" rel="noopener"
+>RFC 5398 - STUN&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;p>如果想要用 Container 架設，可以參考我用 docker-compose 架設的方式 &lt;a class="link" href="https://github.com/sj82516/coturn-with-prometheus-grafana-on-docker" target="_blank" rel="noopener"
+>Running Coturn + Promethes + Grafana in Docker&lt;/a>&lt;/p>
+&lt;h2 id="coturn-於-aws-上的架設">Coturn 於 AWS 上的架設&lt;/h2>
+&lt;p>使用 Ubuntu 18.04 非常簡單，只要以下指令就能啟動 Coturn&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo apt-get -y update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ sudo apt-get -y install coturn
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>強烈建議使用 &lt;code>Ubuntu 18.04&lt;/code> 而不要用 &lt;code>Amazon Linux 2&lt;/code>，Amazon Linux 2 要自己處理各種套件的相依性，架設過程花了半天還沒架起來&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>用 apt-get install 的話，會被限制版本，如果有其他需求，例如支援除了 SQLite 以外的 DB，或是要安裝 Prometheus，建議從 source code build 起，可以參考另一篇文章&lt;/p>
+&lt;/blockquote>
+&lt;p>安裝後會有幾個 command 能夠使用&lt;/p>
+&lt;ol>
+&lt;li>turnserver&lt;br>
+啟動 STUN/TURN server instance&lt;/li>
+&lt;li>turnadmin&lt;br>
+介面管理後台&lt;br>
+其餘都是測試用工具&lt;/li>
+&lt;li>turnutils_peer&lt;br>
+UDP-only echo server，檢測連線使用&lt;/li>
+&lt;li>turnutils_stunclient&lt;br>
+呼叫 STUN server 並取得回應&lt;/li>
+&lt;li>turnutils_uclient&lt;br>
+可以模擬多人連線 TURN server 並取得回應&lt;/li>
+&lt;/ol>
+&lt;p>上一步安裝後預設會自行啟動 Coturn，但為了後續的實驗，先把 turn service 關閉&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo service coturn status
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">// 如果有在運行，先關閉
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ sudo service coturn stop
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>接著啟動 turnserver&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ sudo turnserver
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>稍微看一下 command line 跳出的訊息，大致說明&lt;/p>
+&lt;ol>
+&lt;li>file descriptor 上限，這會影響最大連線數，可以透過 &lt;code>$ sudo ulimit -n {number}&lt;/code>去調整&lt;/li>
+&lt;li>支援的通訊協定，預設 STUN 支援 UDP / TCP / DTLS，但因為目前沒有指定憑證，所以 DTLS 不支援&lt;/li>
+&lt;li>採用的 Database，預設使用 SQLite，主要用來儲存 admin 資訊 / turn 連線資訊等，同時支援 MySQL / Redis / PostgreSQL / MongoDB，可以自由替換；&lt;br>
+根據 Spec &lt;code>STUN/TURN Server 處理連線是 State-less&lt;/code>，意即 Database 不是用來儲存連線資料，所以不用擔心會是 bottleneck (如果 Coturn 遵守 Spec 的話)&lt;/li>
+&lt;/ol>
+&lt;p>看一下有沒有什麼錯誤，cli-password 錯誤可以先忽略&lt;/p>
+&lt;h3 id="啟動-turnserver">啟動 turnserver&lt;/h3>
+&lt;p>要測試之前，我們需要先設定 AWS security group，開放以下的 port&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">3478: UDP+TCP // TURN Server 接收 request 的 port
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">5394: UDP+TCP // TURN Server 接收 TLS request 的 port
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">49152-65536: UDP+TCP // 實際連線的 Socket Port range
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以上三個都能夠調整，但就先採用預設&lt;/p>
+&lt;p>接著啟動 turnserver&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo turnserver -v --lt-cred-mech --user hello:world --realm &amp;lt;your domain name&amp;gt; --external-ip &amp;lt;your instance public-ip&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以上的參數代表&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>-v&lt;/code>: 顯示詳細的 log&lt;/li>
+&lt;li>&lt;code>--lt-cred-mech&lt;/code>: 指定為 long term credential，稍後解釋&lt;/li>
+&lt;li>&lt;code>--user {username}:{password}&lt;/code>: 搭配 long term credential，指定 username / password&lt;/li>
+&lt;li>&lt;code>--realm&lt;/code>: 指定 TURN server 對應的 domain name，提示 client 要採用對應的驗證方式&lt;/li>
+&lt;li>&lt;code>--external-ip&lt;/code>: 指定 external ip，在 Coturn 文件寫到，如果是在 AWS EC2 上架設 external-ip 只要指定 public ic&lt;/li>
+&lt;/ol>
+&lt;p>記得要去將綁定 domain name A record 指向 AWS instance&lt;/p>
+&lt;p>接著，有幾種測試方法&lt;/p>
+&lt;h4 id="1-使用-coturn-自帶的-test-tool">1. 使用 Coturn 自帶的 test tool&lt;/h4>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ turnutils_uclient -T &amp;lt;server ip&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ turnutils_stunclient &amp;lt;server ip&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>第一個會嘗試傳送封包，可以看 packet 的 loss rate 是否為 0 /&lt;br>
+第二個會回傳主機 public ip (如果前面沒有 NAT 的話)，也就是 STUN 最主要的功用&lt;/p>
+&lt;h4 id="2-用瀏覽器開啟-webrtc-samples-trickle-ice">2. 用瀏覽器開啟 WebRTC samples Trickle ICE&lt;/h4>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20200922/trickle-ice.png"
+loading="lazy"
+>&lt;br>
+輸入 server domain 時記得要加 &lt;code>turn:{domain name}&lt;/code>，就可以成功拿到 STUN (srflx) / TURN (relay) 的紀錄&lt;/p>
+&lt;p>測試了一下，Chrome / Firefox 不支援 no auth 設定，Chrome 不支援 ip based 的 server&lt;/p>
+&lt;p>這樣就完成第一步的設定與測試，接著看 Coturn 的完整介紹與設定&lt;/p>
+&lt;h2 id="設定檔">設定檔&lt;/h2>
+&lt;p>設定檔的預設路徑為 &lt;code>/etc/turnserver.conf&lt;/code>，也就是等等會修改的文件，可以放在其他地方用 cmd 指定&lt;br>
+也可以從網路上看到官方的預設設定檔 &lt;a class="link" href="https://raw.githubusercontent.com/coturn/coturn/master/examples/etc/turnserver.conf" target="_blank" rel="noopener"
+># Coturn TURN SERVER configuration file&lt;/a>&lt;/p>
+&lt;h3 id="驗證">驗證&lt;/h3>
+&lt;p>STUN 的費用很便宜，只有簡單的 request / response，但是 TURN 就非常貴，因為要回放(Relay) P2P 的 media stream，所以 Bandwidth 相當驚人，這時候就需要加上帳號密碼的檢查&lt;/p>
+&lt;p>TURN 支援兩種模式，建議是兩者選其中一者&lt;/p>
+&lt;h4 id="long-term-credential">long term credential&lt;/h4>
+&lt;p>長期憑證屬於靜態類型，也就是 Client / Server 共用固定的帳號密碼，例如上述的 hello:world&lt;br>
+在設定檔中&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">lt-cred-mech
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">user&lt;/span>&lt;span class="o">=&lt;/span>hello:world
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">user&lt;/span>&lt;span class="o">=&lt;/span>hello2:world2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">....
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="short-term-credential">short term credential&lt;/h4>
+&lt;p>如果希望發給 Client 短期的憑證，或是希望多一層授權的流程例如從 API Server 給予等等，可以使用短期憑證&lt;/p>
+&lt;p>TURN 實作的方式是 Client / Server 共享一個固定的 secret key，接著使用 &lt;code>HMAC_SHA1 將 username hashed&lt;/code>，username 的前半段是 unix timestamp&lt;br>
+所以 TURN server 收到後，從 username 可以看出過期時間，透過 HMAC_SHA1 可以確保是由合法的 Client 所送出&lt;br>
+設定檔寫法&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">use-auth-secret
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">static-auth-secret&lt;span class="o">={&lt;/span>secret&lt;span class="o">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Nodejs 版本的產生規則如下，參考自 &lt;a class="link" href="https://stackoverflow.com/questions/35766382/coturn-how-to-use-turn-rest-api/35767224#35767224" target="_blank" rel="noopener"
+>CoTURN: How to use TURN REST API?&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">crypto&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">require&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;crypto&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// name 隨便填沒有關係
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kd">function&lt;/span> &lt;span class="nx">getTURNCredentials&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">secret&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">unixTimeStamp&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">parseInt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">Date&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">now&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">1000&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">24&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="mi">3600&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="c1">// this credential would be valid for the next 24 hours
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="nx">username&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="nx">unixTimeStamp&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">name&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;:&amp;#39;&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">password&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">hmac&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">crypto&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">createHmac&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;sha1&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">secret&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">hmac&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">setEncoding&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;base64&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">hmac&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">write&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">username&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">hmac&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">end&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">password&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">hmac&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">read&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">username&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="nx">username&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">password&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="nx">password&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="網路設定">網路設定&lt;/h3>
+&lt;p>網路設定就放在一塊看&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">external-ip&lt;span class="o">=&lt;/span>&amp;lt;public ip&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">fingerprint
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">realm&lt;/span>&lt;span class="o">=&lt;/span>turn.yuanchieh.page
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以上是必須設定的參數&lt;/p>
+&lt;ol>
+&lt;li>external-ip:&lt;br>
+TURN server 的 public ip，看文件完整的設定是 &lt;code>external-ip=&amp;lt;public ip&amp;gt;/&amp;lt;private ip&amp;gt;&lt;/code>，但因為在 AWS 上 EC2 處於 NAT 之後，所以只能放 public ip&lt;/li>
+&lt;li>fingerprint:&lt;br>
+主要是 TURN Server 用來區分 packet，後續的 Spec 會有更詳細介紹&lt;/li>
+&lt;li>realm:&lt;br>
+設定為自己指向 TURN Server 的 domain name，文件表示 TURN Server 可以指定多個 realm，每個 realm 有各自的 user 權限管理，Client 表明所屬的 realm 就能用對應的 user 檢查&lt;/li>
+&lt;/ol>
+&lt;p>其餘還有非常多的設定，例如說&lt;/p>
+&lt;ol>
+&lt;li>是否要開放 UDP / TCP / DTLS / stun-only&lt;/li>
+&lt;li>設定不同的 port / port ranage&lt;/li>
+&lt;li>指定的 DB / Log 等等&lt;/li>
+&lt;li>每次連線 session 的時長 / 每個 user 的連線 quota 等等 &lt;br>
+這些細部的設定可以在慢慢看或是保留預設即可&lt;/li>
+&lt;/ol>
+&lt;p>以下是我測試過成功的設定檔&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">external-ip&lt;span class="o">=&lt;/span>52.72.33.185
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">verbose
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">fingerprint
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">use-auth-secret
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">static-auth-secret&lt;span class="o">=&lt;/span>north
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">realm&lt;/span>&lt;span class="o">=&lt;/span>turn.yuanchieh.page
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>啟動 turnserver 時透過 &lt;code>-c&lt;/code> 指定 turnserver.conf 的位置，完成後建議在使用測試工具測試過&lt;/p>
+&lt;h2 id="sample-code">Sample Code&lt;/h2>
+&lt;p>為了更方便測試 TURN Server，自己寫了一個 Sample Code &lt;a class="link" href="https://github.com/sj82516/webrtc-turn-server-test" target="_blank" rel="noopener"
+>Connection through self-hosted TURN server&lt;/a>，或是直接看 Demo Page &lt;a class="link" href="https://webrtc-turn-server-test.vercel.app/" target="_blank" rel="noopener"
+>https://webrtc-turn-server-test.vercel.app/&lt;/a>，輸入對應的帳號密碼，會主動生成對應的 iceServers&lt;/p>
+&lt;h2 id="go-to-production">Go To Production&lt;/h2>
+&lt;p>準備上正式環境時，還有監控以及可用性的調整&lt;/p>
+&lt;h3 id="監控">監控&lt;/h3>
+&lt;p>2020/12/04更新：目前 4.5.2 可以支援 &lt;code>prometheus&lt;/code> 囉，可是只有支援 Debian，其他平台尚未支援，另外要注意直接用 &lt;code>apt-get install coturn 版本目前是不支援 prometheus，需要自己手動編譯喔&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">Version 4.5.2 &lt;span class="s1">&amp;#39;dan Eider&amp;#39;&lt;/span>:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> - fix null pointer dereference in &lt;span class="k">case&lt;/span> of out of memory. &lt;span class="o">(&lt;/span>thanks to Thomas Moeller &lt;span class="k">for&lt;/span> the report&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> - merge PR &lt;span class="c1">#517 (by wolmi)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> * add prometheus metrics
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>Warning: 撰文時開啟 prometheus 會有記憶體問題，建議先不要使用喔，詳見 github issue &lt;a class="link" href="https://github.com/coturn/coturn/issues/666" target="_blank" rel="noopener"
+>https://github.com/coturn/coturn/issues/666&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;del>看到文件的範例以及設定檔支援 &lt;code>prometheus&lt;/code> 這套開源的監控工具，但可惜實測下來暫時無法使用(4.5.1.2)，雖然說有相關的 branch 已經 merged 但是 Issue 還是開著 &lt;a class="link" href="https://github.com/coturn/coturn/issues/474" target="_blank" rel="noopener"
+>support export metrics to prometheus #474&lt;/a>&lt;/del>&lt;/p>
+&lt;h3 id="可用性">可用性&lt;/h3>
+&lt;p>如果只有單台 TURN server 掛掉導致服務中斷就很慘了，官方有幾個可用性/Load Balance 作法&lt;/p>
+&lt;ol>
+&lt;li>TCP Level LB Proxy:&lt;br>
+需注意如果有使用 TURN 功能，必須確保同一個 Client 持續連到同一台 TURN Server，否則普通的 TCP LB 即可&lt;/li>
+&lt;li>DNS:&lt;br>
+透過 DNS Round-Robin 紀錄，讓 Client 連到對應的 TURN Server&lt;/li>
+&lt;li>內建的 ALTERNATE-SERVER:&lt;br>
+需要在所有的 TURN Server 之前建一台 LB，這台 LB 按照流量回給 Client ALTERNATE-SERVER 的錯誤，Client 就會按照指定的 Server 去走，達到 LB 的效果&lt;/li>
+&lt;/ol>
+&lt;p>看來看去，採用 DNS 比較方便，AWS Route53 支援定期檢查 Server 狀態，只會回傳健康的 Server，同時能採用 Latency based 或是 Region based 的 DNS 紀錄，讓全球部署更加方便&lt;/p>
+&lt;h2 id="nat-介紹與-stunturn-使用">NAT 介紹與 STUN/TURN 使用&lt;/h2>
+&lt;p>先前有提到因為 NAT 關係，所以要建立 P2P 連線會需要 STUN Server 的幫助，但有一種 NAT 是必須透過 TURN Server，以下解釋這部分的狀況&lt;/p>
+&lt;p>&lt;a class="link" href="https://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2" target="_blank" rel="noopener"
+>Wiki NAT 網路位址轉換&lt;/a>&lt;br>
+&lt;a class="link" href="https://blog.csdn.net/eydwyz/article/details/87364157" target="_blank" rel="noopener"
+>NAT的四种类型&lt;/a>&lt;/p>
+&lt;p>簡單整理上面文中的重點&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">ClientA &lt;span class="o">(&lt;/span>192.168.9.1:3000&lt;span class="o">)&lt;/span> ---&amp;gt; NAT &lt;span class="o">(&lt;/span>8.8.8.8:800&lt;span class="o">)&lt;/span> ---&amp;gt; Server1 &lt;span class="o">(&lt;/span>1.1.1.1:1000&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>ClientA 預先與 Server1 取得連線，此時假設 Server2 (2.2.2.2) 想要從 (8.8.8.8:800) 送資料給 ClientB&lt;/p>
+&lt;ol>
+&lt;li>完全圓錐型NAT &lt;br>
+允許&lt;/li>
+&lt;li>受限圓錐型NAT &lt;br>
+必須 ClientA 也送過請求給 Server2 (2.2.2.2)才可以&lt;/li>
+&lt;li>埠受限圓錐型NAT &lt;br>
+必須 ClientA 也送過請求給 Server2 (2.2.2.2:1000)才可以，相較於上者 Port 必須固定&lt;/li>
+&lt;li>對稱NAT&lt;br>
+不允許&lt;/li>
+&lt;/ol>
+&lt;p>所以在 WebRTC 下，如果 Client 在完全圓錐型NAT，任一方發請連線都可以；&lt;br>
+如果是在二、三種，則 Client 必須雙方同時發送請求，才符合 NAT 轉發條件；&lt;br>
+第四種則不允許直接的 P2P&lt;/p></description></item><item><title>SDP Spec 閱讀筆記</title><link>https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</link><pubDate>Wed, 02 Oct 2019 00:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</guid><description>&lt;h1 id="介紹">介紹&lt;/h1>
+&lt;p>SDP 是一種標準化的資訊傳達方式，用來表達多媒體的內容、傳輸的位址及其他傳遞所需的 metadata，主要應用場景於多媒體傳輸的前置溝通，例如說視訊會議、VoIP(Voice over IP) 通話、影音串流等會話(Session)
+在規範中並沒有定義 SDP 該怎麼被傳輸，可以自由選用 HTTP / XMPP / RTSP / Email 等傳輸協定等&lt;/p>
+&lt;p># 名詞定義&lt;/p>
+&lt;ol>
+&lt;li>Conference:
+兩個以上的用戶正在相互通信的集合&lt;/li>
+&lt;li>Session:
+有一個發送者，一個接收者，兩者間建立一條多媒體串流的通道，資料由發送者寄發到接收者&lt;/li>
+&lt;li>Session Description：
+讓其他人可以成功加入 Conference 的資訊&lt;/li>
+&lt;/ol>
+&lt;h1 id="要求與建議">要求與建議&lt;/h1>
+&lt;p>SDP 主要功用為傳遞多媒體會話中多媒體串流的資訊，溝通會話的存在 / 及讓其他非參與者知道如何加入此會話(主要用於廣播 multicast)，內容大概分成幾個&lt;/p>
+&lt;ol>
+&lt;li>名稱跟目的&lt;/li>
+&lt;li>會話有效的時間&lt;/li>
+&lt;li>會話中涵蓋的多媒體&lt;/li>
+&lt;li>要如何接收串流的資訊 (如 位址、Port、格式等)&lt;/li>
+&lt;li>會話需要的帶寬資訊&lt;/li>
+&lt;li>個人的聯絡資料&lt;/li>
+&lt;/ol>
+&lt;h2 id="媒體與傳輸資訊">媒體與傳輸資訊&lt;/h2>
+&lt;p>這部分包含了&lt;/p>
+&lt;ol>
+&lt;li>媒體形式 (影片、聲音等)&lt;/li>
+&lt;li>傳輸協定 (RTP/UDP/IP等)&lt;/li>
+&lt;li>媒體格式 (H. 264/MPEG等)&lt;/li>
+&lt;/ol>
+&lt;p>另外還會包含位址與埠口的資訊，SDP 傳輸形式包含單播(unicast)跟多播(multicast)，多播則包含多播的群組位址，單播則是單一台的位址&lt;/p>
+&lt;h2 id="時間資訊">時間資訊&lt;/h2>
+&lt;ol>
+&lt;li>任意數量的開始與結束時間組合&lt;/li>
+&lt;li>週期性表示 (如每週三早上十點一小時)
+時間表示是全球統一格式，不包含時區或是日光節約時間&lt;/li>
+&lt;/ol>
+&lt;h2 id="私人會話">私人會話&lt;/h2>
+&lt;p>SDP 本身不涉及 public 或 private session，如果需要加密或是限定，則在傳輸時自行決定&lt;/p>
+&lt;h2 id="其他">其他&lt;/h2>
+&lt;p>SDP 本身就應該夾帶足夠的資訊讓參與者知道是否該加入 session，但如果有其他額外資訊要夾帶，可以放在另外的 URI 中；&lt;/p>
+&lt;h1 id="sdp-spec">SDP Spec&lt;/h1>
+&lt;p>文字編碼上，SDP 採用 ISO 10646 字符集並用 UTF-8 編碼方式，但是在屬性/欄位上採用 UTF-8 的子集合 US-ASCII，只有在文字欄位可以使用完整的 ISO 10646 字符集&lt;/p>
+&lt;p>SDP 是由這樣格式的文字組成&lt;/p>
+&lt;blockquote>
+&lt;p>&amp;lt;type&amp;gt;=&amp;lt;value&amp;gt;&lt;/p>
+&lt;/blockquote>
+&lt;p>type 必須是單一個大小寫區分的字元；
+value 則是相對應有結構的文字，多個值可以用空白分隔；
+切記在 = 兩側不可以有空白&lt;/p>
+&lt;p>SDP 中包含了 session-level 區段與多個 media-level 區段，session-level 區段以 &lt;code>v=&lt;/code> 開始，其屬性套用在所有的 media 區段上，但如果 media 區段有相同屬性則會被覆蓋；
+而 media-level 則是 &lt;code>m=&lt;/code>開始直到下一個 media level 區段開始&lt;/p>
+&lt;p>在 SDP 定義的順序很重要，主要是幫助更快的錯誤偵測與容易實作 parser&lt;/p>
+&lt;p>有些欄位是必填有些是選擇性，但重點是一定要按照順序，選擇性欄位以 * 註記，屬性欄位大致介紹含義，不會完整介紹&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">Session description
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> v= (protocol version)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> o= (originator and session identifier)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> s= (session name)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> i=* (session information)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> u=* (URI of description)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> e=* (email address)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> p=* (phone number)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> c=* (connection information -- not required if included in
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> all media)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> b=* (zero or more bandwidth information lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> One or more time descriptions (&amp;#34;t=&amp;#34; and &amp;#34;r=&amp;#34; lines; see below)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> z=* (time zone adjustments)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> k=* (encryption key)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=* (zero or more session attribute lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Zero or more media descriptions
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Time description
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> t= (time the session is active)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> r=* (zero or more repeat times)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Media description, if present
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> m= (media name and transport address)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> i=* (media title)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> c=* (connection information -- optional if included at
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> session level)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> b=* (zero or more bandwidth information lines)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> k=* (encryption key)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=* (zero or more media attribute lines
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>a= 屬性機制主要是擴展 SDP，由各個使用 SDP 的協定去使用
+有些屬性有制式的含義，有些則基於應用程式的解讀，例如&lt;/p>
+&lt;p>有些定義在 Session-level 的屬性如 連線相關 c= 或是屬性相關 a= 會套用在 Session 底下所以的 Media，除非被特別指定覆寫&lt;/p>
+&lt;p>如以下範例，所有的 media 都會被冠上 recvonly 的屬性&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">v= 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">o=jdoe 2890844526 2890842807 IN IP4 10.47.16.5
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">s=SDP Seminar
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">i=A Seminar on the session description protocol
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">u=http://www.example.com/seminars/sdp.pdf
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">e=j.doe@example.com (Jane Doe)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.17.12/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">t=2873397496 2873404696
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=recvonly
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=audio 49170 RTP/AVP 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=video 51372 RTP/AVP 99
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:99 h263-1998/900000
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>文字欄位如 session 名稱和資訊等可以是包含任意位元組的字串除了以下 0x00 Nul 、 0x0a (new line) 、 0x0d (carriage return) ；
+字串以 CRLF(0x0d0a) 當作斷行，但 parser 也應該將 newline 視為斷行的標誌；
+如果沒有 a=charset 屬性指定字符集，則預設為 ISO-10646 字符集搭配 UTF-8 編碼方式&lt;/p>
+&lt;p>如果是包含 domain name，則必須確保符合 ASCII Compatible Encoding (ACE)，也就是要經過編碼跳脫字元，因為有些 SDP 相關協定定義早於國際化 domain name，所以不能直接用 UTF-8 表示&lt;/p>
+&lt;p>欄位介紹&lt;/p>
+&lt;h3 id="協定版本-v">協定版本 (v=)&lt;/h3>
+&lt;p>沒有其他版本號，就是 v=0&lt;/p>
+&lt;h3 id="來源-o">來源 (o=)&lt;/h3>
+&lt;p>描述Session 的發起者資料&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">o=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">username&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">sess-id&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">sess-version&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">nettype&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">addrtype&lt;/span>&lt;span class="p">&amp;gt;&amp;lt;&lt;/span>&lt;span class="nt">unicast-address&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>sess-id：數字組成的字串，由&lt;username> &lt;sess-id> &lt;sess-version> &lt;nettype> 四者組成的字串必須是全域唯一的 (globally unique)，sess-id 的產生可自行定義，但建議採用 NTP 格式的 timestamp 保證唯一性&lt;/li>
+&lt;li>sess-version：此 Session 描述的版號，在改變 SDP 內容時確保版號是遞增的，同樣建議用 NTP 格式 timestamp&lt;/li>
+&lt;li>nettype：採用網路類型&lt;/li>
+&lt;li>addrtype：指定 address 的類型，例如 IP4 / IP6 等&lt;/li>
+&lt;li>unicast-address：
+創建 session 機器的位址，可以是 domain name 或是 IP 表示法，不可使用 local ip 因為不確定對方是否在 local 範圍內&lt;/li>
+&lt;/ol>
+&lt;p>如果有隱私問題， username / unicast-address 可以被混淆，只要不影響全域唯一性&lt;/p>
+&lt;h3 id="session-名稱-s">Session 名稱 (s=)&lt;/h3>
+&lt;p>文字欄位，表示 Session 名稱，每份 Session description 中只能有一個，不能為空值且必須採用 ISO-10646 字元 (除非有另外指定字符集)，如果沒有要特別指定 Session 名稱，可以用空白代替如 (s= )&lt;/p>
+&lt;h3 id="session-資訊-i">Session 資訊 (i=)&lt;/h3>
+&lt;p>文字欄位，每份 session description 中每個 session 最多只能有一個，每個 media 最多也只能宣告一個；
+這資訊主要是寫給人類閱讀的，用來表示 session 或是 media stream 的用處&lt;/p>
+&lt;h3 id="uri-u">URI (u=)&lt;/h3>
+&lt;p>選擇性欄位，用來表示關於Session額外資訊的位址連結，最多只能有一個，必須放置在 media 欄位之前&lt;/p>
+&lt;h3 id="email-及電話號碼-e--p">Email 及電話號碼 (e= , p=)&lt;/h3>
+&lt;p>聯絡人的 email 跟電話號碼&lt;/p>
+&lt;h3 id="連線資訊-c">連線資訊 (“c=“)&lt;/h3>
+&lt;p>&lt;code>c=&amp;lt;nettype&amp;gt; &amp;lt;addrtype&amp;gt; &amp;lt;connection-address&amp;gt;&lt;/code>
+一份 session description 必須包含一個或是 media description 至少一個&lt;/p>
+&lt;ol>
+&lt;li>nettype：
+採用網路類型，IN 表示 internet，但未來可能有其他的支援&lt;/li>
+&lt;li>addrtype：
+位址類型，可以是非 IP 家族的&lt;/li>
+&lt;li>connection address：
+依據位址類型，顯示不同的格式&lt;/li>
+&lt;/ol>
+&lt;p>如果是應用在多播的場景下，IPv4 需要在網址後加上 TTL，而 IPv6 沒有 TTL 的概念
+在階層式的編碼下，資料串流可能被依照不同頻寬拆分成不同的來源，可以在位址加上來源數量，IP 位置會以連續的方式呈現
+例如說&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127/3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">這等同於在 media description 中如此表示
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.2/127
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.3/127
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="頻寬-b">頻寬 (b=)&lt;/h3>
+&lt;p>顯示預計使用的頻寬，根據不同的 bwtype 有不同含意
+&lt;code>b=&amp;lt;bwtype&amp;gt;:&amp;lt;bandwidth&amp;gt;&lt;/code>&lt;/p>
+&lt;ol>
+&lt;li>CT：conference total
+全部 Conference 帶寬上限，可能一個 Conference 包含多個 session，則建議所有 session 使用的帶寬加總合&lt;/li>
+&lt;li>AS：application specifivc&lt;/li>
+&lt;/ol>
+&lt;h3 id="timing-t">Timing (t=)&lt;/h3>
+&lt;p>&lt;code>t=&amp;lt;start-time&amp;gt; &amp;lt;stop-time&amp;gt;&lt;/code>
+表示 Session 的開始結束時間
+如果沒有指定 stop-time，則 Session 為 unbounded，表示在 start-time 之後 Session 一直保持活躍
+如果連 start-time 也沒指定，則表示 Session 是永久存在&lt;/p>
+&lt;p>建議不要採用 unbounded Session，因為 client 不知道 Session 何時結束，也不知道如何排程&lt;/p>
+&lt;h3 id="重複次數-r">重複次數 (r=)&lt;/h3>
+&lt;p>&lt;code>r=&amp;lt;repeat interval&amp;gt; &amp;lt;active duration&amp;gt; &amp;lt;offsets from start-time&amp;gt;&lt;/code>
+這會搭配 t 做使用，例如說一個節目是每次播放一小時，於週一 10am 開播，接著每週二 11am 每週播放持續三個月，則表示法為&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">t=3034423619 3042462419
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">r=604800 3600 0 90000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">// 或這樣表示
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">r=7d 1h 0 25h
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>3034423619 是開始時間，也就是某週一 10am
+3042462419 是結束時間，也就是開播三個月後的週二 11am&lt;/p>
+&lt;p>7d 是播放間隔，所以是 7天的秒數
+1h 是播放的時長
+0 25h 是距離 start time 的時間間隔，也就是(週二 11am - 週一 10am)&lt;/p>
+&lt;p>如果是以月或年重複的播放，則不能使用 r 表示，需要改用多個的 t 表示播放時間&lt;/p>
+&lt;h3 id="時區-z">時區 (z=)&lt;/h3>
+&lt;p>這欄位會影響 t 跟 r
+&lt;code>z=&amp;lt;adjustment time&amp;gt; &amp;lt;offset&amp;gt; &amp;lt;adjustment time&amp;gt; &amp;lt;offset&amp;gt; ....&lt;/code>
+如果是一個重複播放的 Session，可能會遇到日光節約日，所以要主動減去一小時，又因為不同的國家與地區對於日光節約日的計算不同，所以保留表示的彈性，如
+&lt;code>z=2882844526 -1h 2898848070 0&lt;/code>
+在重複播放時間是 2882844526 要減去一小時，但是在 2898848070 就恢復正常&lt;/p>
+&lt;h3 id="加密金鑰-k">加密金鑰 (k=)&lt;/h3>
+&lt;p>如果 SDP 是在已安全以及可被信任的方式傳遞下，可以考慮傳遞加密的金鑰(加密 media stream 而非 session description 本身)，這個欄位不傳達加密的演算法、金鑰類型等，這些全留給採用 SDP的協定去規範&lt;/p>
+&lt;p>目前支援以下幾種定義&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>k=clear:&amp;lt;encryption key&amp;gt;&lt;/code>：key 沒有改變過&lt;/li>
+&lt;li>&lt;code>k=base64:&amp;lt;encoded encryption key&amp;gt;&lt;/code>：用 base64 將 key 編碼&lt;/li>
+&lt;li>&lt;code>k=uri:&amp;lt;URI to obtain key&amp;gt;&lt;/code>：指名去 URI 拿 key，通常 URI 會走安全通道，例如 HTTPS 等&lt;/li>
+&lt;li>&lt;code>k=prompt&lt;/code>：雖然 Session 有加密但是 session description 沒有提供 key，用戶要額外去索取&lt;/li>
+&lt;/ol>
+&lt;p>再次強調 SDP 本身要是在安全的情況下才能加 k 欄位&lt;/p>
+&lt;h3 id="屬性-a">屬性 (a=)&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl"> a=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">attribute&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> a=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">attribute&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>:&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">value&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>屬性值主要用來擴展 SDP，可以用在 session level 補充對 conference 的資訊，也可放在 media level 傳遞 media stream 的資訊，在 SDP 會有若干的屬性值宣告&lt;/p>
+&lt;p>屬性值有兩種宣告方式&lt;/p>
+&lt;ol>
+&lt;li>Flag概念 (a=&lt;flag>)，例如 a=recvonly&lt;/li>
+&lt;li>鍵值 (a=&lt;attribute>:&lt;value>)，如 a=orient:landscape&lt;/li>
+&lt;/ol>
+&lt;p>至於如何處理與定義屬性值，有些屬性有定義的含義，其餘則應用程式可以彈性處理&lt;/p>
+&lt;h3 id="media-description-m">media description (m=)&lt;/h3>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl"> m=&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">media&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">port&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">proto&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">&amp;lt;&lt;/span>&lt;span class="nt">fmt&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> ...
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>一份 session description 中可能含有多個 media description，每一份 media description 從 &lt;code>m=&lt;/code> 開始直到下一個 &lt;code>m=&lt;/code>或是 session description 結束&lt;/p>
+&lt;ol>
+&lt;li>media
+類別，可以是 audio / video / text 等&lt;/li>
+&lt;li>port
+串流從哪個 port 發送，這會根據 connection infomation (c=) 而決定，對於某些傳輸協定，如 rtp 會使用兩個 port (RTP+RTCP)，所以宣告時會是 &lt;code>m=video 49170/2 RTP/AVP 31&lt;/code>，表示 RTP 使用 49170 / RTCP 使用 49171；
+如果 c 指定多個 IP 位置，則 port 成一對一映射關係，如&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">c=IN IP4 224.2.1.1/127/2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=video 49170/2 RTP/AVP 31
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;pre>&lt;code>則因為 RTP 一次使用兩個 port，這表示 224.2.1.1 使用 49170、49171，224.2.1.2 使用 49172、49173
+&lt;/code>&lt;/pre>
+&lt;ol start="3">
+&lt;li>proto
+指定傳輸協定，常用的有 udp 、 RTP/AVP、RTP/SAVP 等&lt;/li>
+&lt;li>fmt
+媒體格式，會跟著 &lt;proto> 的定義，如果 &lt;proto> 是 udp 則 &lt;fmt> 需要指定 audio / video / text / application / message 一者&lt;/li>
+&lt;/ol>
+&lt;h1 id="sdp-attributes">SDP Attributes&lt;/h1>
+&lt;ol>
+&lt;li>a=cat:&lt;category>
+用逗點分隔，用來過濾 category&lt;/li>
+&lt;li>a=keywds:&lt;keywords>
+類似於 cat 屬性，透過關鍵字篩選想要的 session&lt;/li>
+&lt;li>a=tool:&lt;name and version of tool>
+表示用來創建 session 工具的名稱與版號&lt;/li>
+&lt;li>a=ptime:&lt;packet time>
+用 ms 表示一個封包中媒體的總時長&lt;/li>
+&lt;li>a=maxptime:&lt;maximum packet time>
+用 ms 表示一個封包中媒體的總時長上限&lt;/li>
+&lt;li>a=rtpmap:&lt;payload type> &lt;encoding name>/&lt;clock rate> [/&lt;encoding parameters>]
+搭配 media type(m=)宣告，補充RTP所採用的編碼方式，雖然 RTP 檔案本身就會包含 payload 格式，但是常見做法是透過參數設定動態改變
+例如說 &lt;code>u-law PCM coded single-channel audio sampled at 8 kHz&lt;/code>，他的 encode 方式固定只有一種，所以不需要另外宣告rtpmap&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">m=audio 49232 RTP/AVP 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">```bash
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 但如果是 &lt;span class="sb">`16-bit linear encoded stereo audio sampled at 16 kHz`&lt;/span>，希望用 RTP/AVP payload 格式 98 的話，就必須另外宣告解碼方式
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>m=audio 49232 RTP/AVP 98
+a=rtpmap:98 L16/16000/2&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> rtpmap 可以針對 payload 格式做映射，如
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">```md
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">m=audio 49230 RTP/AVP 96 97 98
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:96 L8/8000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:97 L16/8000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a=rtpmap:98 L16/11025/2
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;pre>&lt;code>參數對應的參數可以參考 [RTP Profile for Audio and Video Conferences with Minimal Control](https://tools.ietf.org/html/rfc3551)
+&lt;/code>&lt;/pre>
+&lt;ol start="7">
+&lt;li>a=recvonly
+表明單純接收&lt;/li>
+&lt;li>a=sendrecv
+可以接收與發送，此為預設值&lt;/li>
+&lt;li>a=sendonly
+單純發送&lt;/li>
+&lt;li>a=inactive
+不接收也不發送媒體，基於 RTP 系統的即使是 inactive 也要持續發送 RTCP&lt;/li>
+&lt;li>a=orient:&lt;orientation>
+用於白板或是介紹的工具，可以指定 portrait / landscape / seascape(上下顛倒的 landscape)&lt;/li>
+&lt;li>a=framerate:&lt;frame rate>
+video frame rate 最大值，只有 medial level 的 video 類型需要&lt;/li>
+&lt;li>a=sdplang:&lt;language tag>
+SDP 資訊採用的語言，如果有多種語言建議每種語言都拆成獨立的 session description&lt;/li>
+&lt;li>a=fmtp:&lt;format> &lt;format specific parameters>
+用來傳達某些特定格式，且這些特定格式不需要是 SDP 所能理解的&lt;/li>
+&lt;/ol>
+&lt;h2 id="安全考量">安全考量&lt;/h2>
+&lt;p>SDP 常用於 offer/answer 模型的 SIP 中，用來溝通單播的會話機制，當採用這樣的模式時，要記得考量協定本身的安全性&lt;/p>
+&lt;p>SDP 只是用來描述多媒體會話的內容，接收方要注意 session description 是否通過可信任的管道與來自可信任的來源，否則網路傳輸過程可能遭遇攻擊，必須要自己承擔安全上的風險&lt;/p>
+&lt;p>常用的傳輸方式是 SAP，SAP 本身提供加密與驗證機制；
+不過有些情況下無法採用，例如接收者事前不知道發送者的時候，此時就要特別小心 parse，並注意權限的管控(僅開放有限的軟體可以操作)&lt;/p></description></item></channel></rss>

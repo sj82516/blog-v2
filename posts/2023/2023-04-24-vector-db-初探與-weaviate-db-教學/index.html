@@ -1,0 +1,353 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="兩週前看到 Fireship 介紹 Vector DB，用來儲存與高效查詢向量 vector，搭配 AI embedded 可以做出許多 AI empower 的功能，包含文字、圖片、影片等多媒體的相似查詢"><meta name=keywords content="Database"><title>Vector DB 初探與 Weaviate DB 教學</title><link rel=canonical href=https://yuanchieh.page/posts/2023/2023-04-24-vector-db-%E5%88%9D%E6%8E%A2%E8%88%87-weaviate-db-%E6%95%99%E5%AD%B8/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Vector DB 初探與 Weaviate DB 教學"><meta property="og:description" content="兩週前看到 Fireship 介紹 Vector DB，用來儲存與高效查詢向量 vector，搭配 AI embedded 可以做出許多 AI empower 的功能，包含文字、圖片、影片等多媒體的相似查詢"><meta property="og:url" content="https://yuanchieh.page/posts/2023/2023-04-24-vector-db-%E5%88%9D%E6%8E%A2%E8%88%87-weaviate-db-%E6%95%99%E5%AD%B8/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2023-04-24T00:21:40+00:00"><meta property="article:modified_time" content="2023-04-24T00:21:40+00:00"><meta name=twitter:title content="Vector DB 初探與 Weaviate DB 教學"><meta name=twitter:description content="兩週前看到 Fireship 介紹 Vector DB，用來儲存與高效查詢向量 vector，搭配 AI embedded 可以做出許多 AI empower 的功能，包含文字、圖片、影片等多媒體的相似查詢"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#weaviate-db-基本介紹>Weaviate DB 基本介紹</a><ol><li><a href=#儲存概念>儲存概念</a></li><li><a href=#物理儲存以-shard-為單位>物理儲存以 Shard 為單位</a></li></ol></li><li><a href=#demo---打造簡易的文字查詢>Demo - 打造簡易的文字查詢</a><ol><li><a href=#透過-docker-compose-啟動>透過 docker-compose 啟動</a></li><li><a href=#建立-class-與匯入資料>建立 Class 與匯入資料</a></li><li><a href=#搜尋與篩選>搜尋與篩選</a></li></ol></li><li><a href=#ann-演算法hnsw-介紹>ANN 演算法：HNSW 介紹</a><ol><li><a href=#如何決定-point-要插入哪一層>如何決定 point 要插入哪一層</a></li></ol></li><li><a href=#結語>結語</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/db/>DB</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2023/2023-04-24-vector-db-%E5%88%9D%E6%8E%A2%E8%88%87-weaviate-db-%E6%95%99%E5%AD%B8/>Vector DB 初探與 Weaviate DB 教學</a></h2><h3 class=article-subtitle>兩週前看到 Fireship 介紹 Vector DB，用來儲存與高效查詢向量 vector，搭配 AI embedded 可以做出許多 AI empower 的功能，包含文字、圖片、影片等多媒體的相似查詢</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Apr 24, 2023</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><div class=video-wrapper><iframe loading=lazy src=https://www.youtube.com/embed/klTvEwg3oJ4 allowfullscreen title="YouTube Video"></iframe></div><p>當我們希望打造一個基於語意相似的文字搜尋時，一般的作法是將文字透過 AI model 轉成 embeddeding vector，透過計算 vector distance (cosine distancing) 找出距離最相近的文字 kNN (k nearest neighbors)，例如 <a class=link href=https://github.com/openai/openai-cookbook/blob/main/examples/Semantic_text_search_using_embeddings.ipynb target=_blank rel=noopener>OpenAI 的 demo code：Semantic_text_search_using_embeddings</a></p><p>當資料量小的時候，這樣做不會有什麼問題，但仔細看目前的比對方式是把輸入跟資料集的資料每一筆 vector 都做 distance 計算，所以複雜度會是 <code>O(N)，N 是資料集數量</code>，如果資料量一大，這勢必會是造成瓶頸</p><p>Vector DB 就是要解決這樣的問題，主要透過</p><ul><li>改用 ANN (approximate nearest neighbors) 取代 kNN，用相似度查詢換取執行速度</li><li>提供 database 功能，包含持久化保存、水平擴展 (sharding)、高可用性、API 封裝等功能</li></ul><p><img src=/post/2023/img/0424/vector_db.png loading=lazy></p><p>目前搜尋市面上有幾個常見的選擇</p><ul><li><a class=link href=https://www.pinecone.io/ target=_blank rel=noopener>Pinecone</a>：閉源專案，就先略過不用</li><li><a class=link href=https://milvus.io/ target=_blank rel=noopener>Milvus</a>：純 vector DB，看起來在基礎建設 (scaling、availability) 等做得比較完整</li><li><a class=link href=https://github.com/weaviate/weaviate target=_blank rel=noopener>Weaviate</a>：有 module 可以支援 AI model 整合，也支援純 vector DB 使用</li><li><a class=link href=https://docs.trychroma.com/ target=_blank rel=noopener>Chroma</a>：Fireship demo 用</li></ul><p>這次 Demo 選擇用 Weaviate，主要是有支援 module 直接整合 AI model，這樣我就不用另外想 embedding vector 該如何產生</p><p><img src=/post/2023/img/0424/weaviate-module-diagram.svg loading=lazy></p><h2 id=weaviate-db-基本介紹>Weaviate DB 基本介紹</h2><p>Weaviate DB 有以下幾個特色</p><ul><li>便利性：<br>module 支援常見的 AI model，包含 transformer、openai 等，透過參數可以直接調整，但有些 AI model 部分需要自己架設 server，Weaviate DB 核心並不包含 AI model，只是會直接透過 interface 調用
+<img src=https://weaviate.io/assets/images/weaviate-module-apis-3a56351def9cd3a66f6cd0186875d2c4.svg loading=lazy></li><li>搜尋與過濾：<br>除了 vector 搜尋外，在文字上會結合 inverted index 增加搜尋的精準度與效率，並提供 <code>filter 可以透過屬性篩選</code></li><li>API 接口支援 REST 與 GraphQL</li><li>擴充性：<br>會提供 Sharding 與 High Availability (後者還在開發中)</li></ul><h3 id=儲存概念>儲存概念</h3><p>以 <code>Class</code> 為管理單位，可以理解成 table 或 collection 的概念，每個 class 有自己 vectorize 的機制、sharding 設定等，例如</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;class&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>                        <span class=c1>// The name of the class in string format
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nt>&#34;description&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>                  <span class=c1>// A description for your reference
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nt>&#34;vectorIndexType&#34;</span><span class=p>:</span> <span class=s2>&#34;hnsw&#34;</span><span class=p>,</span>                <span class=c1>// Defaults to hnsw, can be omitted in schema definition since this is the only available type for now
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nt>&#34;vectorIndexConfig&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=err>...</span>                                     <span class=c1>// Vector index type specific settings, including distance metric
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;vectorizer&#34;</span><span class=p>:</span> <span class=s2>&#34;text2vec-contextionary&#34;</span><span class=p>,</span>   <span class=c1>// Vectorizer to use for data objects added to this class
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nt>&#34;moduleConfig&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;text2vec-contextionary&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;vectorizeClassName&#34;</span><span class=p>:</span> <span class=kc>true</span>            <span class=c1>// Include the class name in vector calculation (default true)
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;properties&#34;</span><span class=p>:</span> <span class=p>[</span>                           <span class=c1>// An array of the properties you are adding, same as a Property Object
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;name&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>                     <span class=c1>// The name of the property
+</span></span></span><span class=line><span class=cl><span class=c1></span>      <span class=nt>&#34;description&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>              <span class=c1>// A description for your reference
+</span></span></span><span class=line><span class=cl><span class=c1></span>      <span class=nt>&#34;dataType&#34;</span><span class=p>:</span> <span class=p>[</span>                         <span class=c1>// The data type of the object as described above. When creating cross-references, a property can have multiple data types, hence the array syntax.
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=s2>&#34;string&#34;</span>
+</span></span><span class=line><span class=cl>      <span class=p>],</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;moduleConfig&#34;</span><span class=p>:</span> <span class=p>{</span>                     <span class=c1>// Module-specific settings
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nt>&#34;text2vec-contextionary&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=nt>&#34;skip&#34;</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>                     <span class=c1>// If true, the whole property will NOT be included in vectorization. Default is false, meaning that the object will be NOT be skipped.
+</span></span></span><span class=line><span class=cl><span class=c1></span>          <span class=nt>&#34;vectorizePropertyName&#34;</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>    <span class=c1>// Whether the name of the property is used in the calculation for the vector position of data objects. Default false.
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>      <span class=p>},</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;indexInverted&#34;</span><span class=p>:</span> <span class=kc>true</span>                 <span class=c1>// Optional, default is true. By default each property is fully indexed both for full-text, as well as vector search. You can ignore properties in searches by explicitly setting index to false.
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>],</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;invertedIndexConfig&#34;</span><span class=p>:</span> <span class=p>{</span> 
+</span></span><span class=line><span class=cl>    <span class=err>...</span> 
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;shardingConfig&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=err>...</span>                                     <span class=c1>// Optional, controls behavior of class in a multi-node setting, see section below
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>每個 Class 內包含多個 Object 以 json 格式儲存，Object 內的屬性 (Property) 支援<a class=link href=https://weaviate.io/developers/weaviate/config-refs/datatypes target=_blank rel=noopener>多種格式</a>，額外有提供地理位置、日期、電話號碼(有點不解?!)，其中地理位置在查詢上還支援方圓內的篩選</p><p>Class schema 是靜態的，如果要增減欄位需要透過 API 修改，而不像某些 NoSQL 是動態寫入的</p><h3 id=物理儲存以-shard-為單位>物理儲存以 Shard 為單位</h3><p>一個 Class 在物理儲存上有多個 <a class=link href=https://weaviate.io/developers/weaviate/concepts/storage target=_blank rel=noopener>Shard</a>，每個 Shard 會包含 vector index / object store / inverted index，其中 vecotr index 目前是用 HNSW，其餘兩個是用 LSMTree 儲存</p><h2 id=demo---打造簡易的文字查詢>Demo - 打造簡易的文字查詢</h2><p>程式碼在 <a class=link href=https://github.com/sj82516/weaviate-db-demo target=_blank rel=noopener>sj82516/weaviate-db-demo</a>，在本地端啟動 Weaviate DB 並做簡易的文字查詢</p><h3 id=透過-docker-compose-啟動>透過 docker-compose 啟動</h3><p>這邊我們只做文字搜尋的部分，選用 transformer 當作 AI model，可以查看<a class=link href=https://weaviate.io/developers/weaviate/modules target=_blank rel=noopener>不同的 modules</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yml data-lang=yml><span class=line><span class=cl><span class=nt>version</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;3.4&#39;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>services</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>weaviate</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>semitechnologies/weaviate:1.18.3</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span>- <span class=s2>&#34;8080:8080&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>environment</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>QUERY_DEFAULTS_LIMIT</span><span class=p>:</span><span class=w> </span><span class=m>20</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;true&#39;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>PERSISTENCE_DATA_PATH</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;./data&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>DEFAULT_VECTORIZER_MODULE</span><span class=p>:</span><span class=w> </span><span class=l>text2vec-transformers</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>ENABLE_MODULES</span><span class=p>:</span><span class=w> </span><span class=l>text2vec-transformers</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>TRANSFORMERS_INFERENCE_API</span><span class=p>:</span><span class=w> </span><span class=l>http://t2v-transformers:8080</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>CLUSTER_HOSTNAME</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;node1&#39;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>t2v-transformers</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>environment</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>ENABLE_CUDA</span><span class=p>:</span><span class=w> </span><span class=m>0</span><span class=w> </span><span class=c># set to 1 to enable</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=c># NVIDIA_VISIBLE_DEVICES: all # enable if running with CUDA</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=建立-class-與匯入資料>建立 Class 與匯入資料</h3><p>Class schema 可以主動宣告，或是讓 Weaviate DB 自動幫忙建立 (有點像 Elasticsearch)，這邊建立了一個 Class 並指定 module 用 text-transformer</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nx>client</span><span class=p>.</span><span class=nf>Schema</span><span class=p>().</span><span class=nf>ClassCreator</span><span class=p>().</span><span class=nf>WithClass</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>models</span><span class=p>.</span><span class=nx>Class</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>Class</span><span class=p>:</span>       <span class=nx>className</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nx>Description</span><span class=p>:</span> <span class=s>&#34;all books I have&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nx>Vectorizer</span><span class=p>:</span>  <span class=s>&#34;text2vec-transformers&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nx>ModuleConfig</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>    <span class=s>&#34;text2vec-transformers&#34;</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{},</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=nx>Properties</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>models</span><span class=p>.</span><span class=nx>Property</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nx>Name</span><span class=p>:</span>     <span class=s>&#34;title&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nx>DataType</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span><span class=s>&#34;text&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><p>匯入資料可以批次匯入</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nx>objects</span> <span class=o>:=</span> <span class=p>[]</span><span class=o>*</span><span class=nx>models</span><span class=p>.</span><span class=nx>Object</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Class</span><span class=p>:</span> <span class=nx>className</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Properties</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;title&#34;</span><span class=p>:</span> <span class=s>&#34;Hello World Blue&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;type&#34;</span><span class=p>:</span>  <span class=s>&#34;program&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Class</span><span class=p>:</span> <span class=nx>className</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Properties</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;title&#34;</span><span class=p>:</span> <span class=s>&#34;Hello World Red&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;type&#34;</span><span class=p>:</span>  <span class=s>&#34;program&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Class</span><span class=p>:</span> <span class=nx>className</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Properties</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;title&#34;</span><span class=p>:</span> <span class=s>&#34;Hello World Yellow&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;type&#34;</span><span class=p>:</span>  <span class=s>&#34;science&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>client</span><span class=p>.</span><span class=nf>Batch</span><span class=p>().</span><span class=nf>ObjectsBatcher</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithObjects</span><span class=p>(</span><span class=nx>objects</span><span class=o>...</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithConsistencyLevel</span><span class=p>(</span><span class=nx>replication</span><span class=p>.</span><span class=nx>ConsistencyLevel</span><span class=p>.</span><span class=nx>ALL</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>Do</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>Background</span><span class=p>())</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=搜尋與篩選>搜尋與篩選</h3><p>完整查詢有三個部分 搜尋 + 篩選 + 欄位過濾</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=c1>// 文字搜尋
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>nearText</span> <span class=o>:=</span> <span class=nx>client</span><span class=p>.</span><span class=nf>GraphQL</span><span class=p>().</span><span class=nf>NearTextArgBuilder</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// 搜尋的關鍵字
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nf>WithConcepts</span><span class=p>(</span><span class=nx>concepts</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// 讓向量往某個方向靠近
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nf>WithMoveTo</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>graphql</span><span class=p>.</span><span class=nx>MoveParameters</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Force</span><span class=p>:</span> <span class=mf>0.5</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Concepts</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=s>&#34;Yellow&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 篩選機制
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>where</span> <span class=o>:=</span> <span class=nx>filters</span><span class=p>.</span><span class=nf>Where</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithPath</span><span class=p>([]</span><span class=kt>string</span><span class=p>{</span><span class=s>&#34;type&#34;</span><span class=p>}).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithOperator</span><span class=p>(</span><span class=nx>filters</span><span class=p>.</span><span class=nx>Equal</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithValueText</span><span class=p>(</span><span class=s>&#34;program&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 選擇欄位回傳
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>fields</span> <span class=o>:=</span> <span class=p>[]</span><span class=nx>graphql</span><span class=p>.</span><span class=nx>Field</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=p>{</span><span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;title&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// 額外的欄位，算是 metadata
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=p>{</span><span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;_additional&#34;</span><span class=p>,</span> <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=nx>graphql</span><span class=p>.</span><span class=nx>Field</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span><span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;id&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span><span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;distance&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>}},</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// GraphQL Request
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>result</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>client</span><span class=p>.</span><span class=nf>GraphQL</span><span class=p>().</span><span class=nf>Get</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithClassName</span><span class=p>(</span><span class=nx>className</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithNearText</span><span class=p>(</span><span class=nx>nearText</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithWhere</span><span class=p>(</span><span class=nx>where</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithFields</span><span class=p>(</span><span class=nx>fields</span><span class=o>...</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>Do</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>Background</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=nx>result</span><span class=p>.</span><span class=nx>Errors</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>result</span><span class=p>.</span><span class=nx>Errors</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nx>Message</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>r</span> <span class=o>:=</span> <span class=nx>result</span><span class=p>.</span><span class=nx>Data</span><span class=p>[</span><span class=s>&#34;Get&#34;</span><span class=p>].(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{})[</span><span class=nx>className</span><span class=p>].([]</span><span class=kd>interface</span><span class=p>{})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>jsonbody</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// do error check
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>books</span> <span class=o>:=</span> <span class=p>[]</span><span class=nx>Book</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Unmarshal</span><span class=p>(</span><span class=nx>jsonbody</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>books</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// do error check
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>book</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>books</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>book</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在 searching 搜尋中，如果是 text Weaviate DB 會用 inverted index 與 vector 搜尋 <code>WithNearText</code>，找出的結果會給出對應的 distance</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nx>nearText</span> <span class=o>:=</span> <span class=nx>client</span><span class=p>.</span><span class=nf>GraphQL</span><span class=p>().</span><span class=nf>NearTextArgBuilder</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithConcepts</span><span class=p>(</span><span class=nx>concepts</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithMoveTo</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>graphql</span><span class=p>.</span><span class=nx>MoveParameters</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nx>Force</span><span class=p>:</span> <span class=mf>0.5</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nx>Concepts</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=s>&#34;Yellow&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>concepts 搜尋的文字陣列</li><li>WithMoveTo 額外指定搜尋要特別接近哪些關鍵字<br>參數可參考 <a class=link href=https://weaviate.io/developers/weaviate/api/graphql/vector-search-parameters target=_blank rel=noopener>Vector search parameters</a></li></ul><p>也可以針對屬性做篩選，例如我只要 object 中 type = program 的資料</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nx>where</span> <span class=o>:=</span> <span class=nx>filters</span><span class=p>.</span><span class=nf>Where</span><span class=p>().</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithPath</span><span class=p>([]</span><span class=kt>string</span><span class=p>{</span><span class=s>&#34;type&#34;</span><span class=p>}).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithOperator</span><span class=p>(</span><span class=nx>filters</span><span class=p>.</span><span class=nx>Equal</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>  <span class=nf>WithValueText</span><span class=p>(</span><span class=s>&#34;program&#34;</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>搜尋的結果大概是 (Yellow 被篩選掉)</p><blockquote><p>{Hello World Blue {b9f93a34-6cbd-45b3-afc3-f82e9d1d0da8 0.54240143}}<br>{Hello World Red {6575290e-53cc-4ab9-8d39-330e5a47b0d1 0.55338395}}</p></blockquote><h2 id=ann-演算法hnsw-介紹>ANN 演算法：HNSW 介紹</h2><p><img src=https://d33wubrfki0l68.cloudfront.net/00e2d0033d5802e0016a442757bb9ee603e02d2b/caebb/images/hnsw-2.jpg loading=lazy>
+HNSW (Hierarchical Navigable Small World) 是一種 ANN 演算法，主要是借鏡 借鏡 probability skip list，透過分層查詢，先從最上層最稀疏的 layer 開始找最相近的鄰居，接著往下一層找該鄰居的最相近鄰居，一直到最底層 (layer 0)</p><blockquote><p>查詢複雜度降至 log (N)</p></blockquote><p>這部分有兩個參數可以注意</p><ul><li>efConstruction: 決定每次查詢回傳的鄰居數量，數量越多查詢越精準，但是效率越差</li><li>maxConnections: 決定每個 point 可以連接的 edge 數量，同樣是數量越多越精準</li></ul><h3 id=如何決定-point-要插入哪一層>如何決定 point 要插入哪一層</h3><p>這部分便是透過機率所決定，越上層機率越低
+<img src=https://d33wubrfki0l68.cloudfront.net/a93d856af84ab39170d4a056a5a05ff63bf23552/8e259/images/hnsw-8.jpg loading=lazy></p><h2 id=結語>結語</h2><p>快速瞭解了一下 Vector DB，未來如果有需要做向量查詢使用上應該會蠻方便的，之後有機會在評估一下 <a class=link href=https://milvus.io/docs/overview.md target=_blank rel=noopener>Milvus</a>，看起來基礎建設比 Weaviate DB 更完善、Github 上熱度也更高、也支援更多的 ANN 演算法</p><p>另外 Elasticsearch 在 8.0 也有支援 vector search，如果以經有在用 ES 也可以直接當作 Vector DB 使用</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2023/2023-03-17-elasticsearch-%E6%93%8D%E4%BD%9C-golang-opensearch-sdk-%E4%BD%BF%E7%94%A8%E7%AD%86%E8%A8%98/><div class=article-details><h2 class=article-title>Elasticsearch 操作： Golang Opensearch SDK 使用筆記</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

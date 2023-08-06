@@ -1,0 +1,347 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="在學習 Clean Architecture 時最困擾的問題莫過於 transaction 到底該算是商務邏輯由 usecase 控制還是要下放到 repository 包含一些商務判斷內不外洩 ?! 以下用電子商務的場景，透過實作驗證不同的解決方式"><meta name=keywords content="Clean Architecture"><title>在 Clean Architecture 下 transaction 該如何實作的問題發想 (Golang 與 Ruby 實作)</title><link rel=canonical href=https://yuanchieh.page/posts/2023/2023-04-21-%E5%9C%A8-clean-architecture-%E4%B8%8B-transaction-%E8%A9%B2%E5%A6%82%E4%BD%95%E5%AF%A6%E4%BD%9C%E7%9A%84%E5%95%8F%E9%A1%8C%E7%99%BC%E6%83%B3-golang-%E8%88%87-ruby-%E5%AF%A6%E4%BD%9C/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="在 Clean Architecture 下 transaction 該如何實作的問題發想 (Golang 與 Ruby 實作)"><meta property="og:description" content="在學習 Clean Architecture 時最困擾的問題莫過於 transaction 到底該算是商務邏輯由 usecase 控制還是要下放到 repository 包含一些商務判斷內不外洩 ?! 以下用電子商務的場景，透過實作驗證不同的解決方式"><meta property="og:url" content="https://yuanchieh.page/posts/2023/2023-04-21-%E5%9C%A8-clean-architecture-%E4%B8%8B-transaction-%E8%A9%B2%E5%A6%82%E4%BD%95%E5%AF%A6%E4%BD%9C%E7%9A%84%E5%95%8F%E9%A1%8C%E7%99%BC%E6%83%B3-golang-%E8%88%87-ruby-%E5%AF%A6%E4%BD%9C/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2023-04-21T02:21:40+00:00"><meta property="article:modified_time" content="2023-04-21T02:21:40+00:00"><meta name=twitter:title content="在 Clean Architecture 下 transaction 該如何實作的問題發想 (Golang 與 Ruby 實作)"><meta name=twitter:description content="在學習 Clean Architecture 時最困擾的問題莫過於 transaction 到底該算是商務邏輯由 usecase 控制還是要下放到 repository 包含一些商務判斷內不外洩 ?! 以下用電子商務的場景，透過實作驗證不同的解決方式"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#外部的幾種做法>外部的幾種做法</a><ol><li><a href=#1-由-usecase-控制因為-usecase-才知道所有的-context>1. 由 UseCase 控制，因為 Usecase 才知道所有的 Context</a></li><li><a href=#2-應該放到-repository-中有其他的需求用-callback-function-補充>2. 應該放到 repository 中，有其他的需求用 callback function 補充</a></li></ol></li><li><a href=#重新思考>重新思考</a></li><li><a href=#實作比較>實作比較</a><ol><li><a href=#方法一use-case-控制-transaction-與-lock>方法一：use case 控制 transaction 與 lock</a></li><li><a href=#方法二由-repository-控制-transaction>方法二：由 repository 控制 transaction</a></li><li><a href=#比較兩者差異>比較兩者差異</a></li></ol></li><li><a href=#結論>結論</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/program/>Program</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2023/2023-04-21-%E5%9C%A8-clean-architecture-%E4%B8%8B-transaction-%E8%A9%B2%E5%A6%82%E4%BD%95%E5%AF%A6%E4%BD%9C%E7%9A%84%E5%95%8F%E9%A1%8C%E7%99%BC%E6%83%B3-golang-%E8%88%87-ruby-%E5%AF%A6%E4%BD%9C/>在 Clean Architecture 下 transaction 該如何實作的問題發想 (Golang 與 Ruby 實作)</a></h2><h3 class=article-subtitle>在學習 Clean Architecture 時最困擾的問題莫過於 transaction 到底該算是商務邏輯由 usecase 控制還是要下放到 repository 包含一些商務判斷內不外洩 ?! 以下用電子商務的場景，透過實作驗證不同的解決方式</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Apr 21, 2023</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><p>在套用 Clean Architecture (後續簡稱 CA)過程，最常討論的問題莫過於「Transaction 如果跨多個 repository，該怎麼處理？如果 Transaction 由 Use Case 控制會不會違反 CA 原則？如果放到 Repository 那有一些判斷的邏輯是不是也混雜進去？」<br>這個問題確實有點棘手，網路上也常看到各種不同的作法，決定今天重新整理一下，檢視不同的作法與考量，並透過實際的案例去驗證不同作法的優劣，使用動態語言 Ruby / 靜態語言 Golang 確保實作是真實可行</p><p>目前想到的驗證場景為</p><blockquote><p>「用戶」帳號有點數，透過點數購買「商品」並成立對應的「訂單」
+商品必須有足夠數量、用戶點數必須有足夠的點數才可以成立訂單
+以上行為必須包含在一個 transaction 中</p></blockquote><h2 id=外部的幾種做法>外部的幾種做法</h2><h3 id=1-由-usecase-控制因為-usecase-才知道所有的-context>1. 由 UseCase 控制，因為 Usecase 才知道所有的 Context</h3><p>這部分說法是從《Clean Architecture 實作篇》第 84 頁所截取的內容，作者提到只有 Usecase 有足夠的上下文去判斷這幾個 repository 操作是否該放到同一個 transaction，<a class=link href="https://github.com/thombergs/buckpal/blob/master/src/main/java/io/reflectoring/buckpal/account/application/service/SendMoneyService.java?fbclid=IwAR03bRjdRX_AWnkJ8mGrfp61AFOdnw_Pr8gqLmx6YAqjIDWQknN0yQh0NUg" target=_blank rel=noopener>範例 code</a> 如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-java data-lang=java><span class=line><span class=cl><span class=nd>@UseCase</span>
+</span></span><span class=line><span class=cl><span class=nd>@Transactional</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=kd>class</span> <span class=nc>SendMoneyService</span> <span class=kd>implements</span> <span class=n>SendMoneyUseCase</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>	<span class=nd>@Override</span>
+</span></span><span class=line><span class=cl>	<span class=kd>public</span> <span class=kt>boolean</span> <span class=nf>sendMoney</span><span class=o>(</span><span class=n>SendMoneyCommand</span> <span class=n>command</span><span class=o>)</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>		<span class=o>....</span>
+</span></span><span class=line><span class=cl>		<span class=n>AccountId</span> <span class=n>sourceAccountId</span> <span class=o>=</span> <span class=n>sourceAccount</span><span class=o>.</span><span class=na>getId</span><span class=o>()</span>
+</span></span><span class=line><span class=cl>				<span class=o>.</span><span class=na>orElseThrow</span><span class=o>(()</span> <span class=o>-&gt;</span> <span class=k>new</span> <span class=n>IllegalStateException</span><span class=o>(</span><span class=s>&#34;expected source account ID not to be empty&#34;</span><span class=o>));</span>
+</span></span><span class=line><span class=cl>		<span class=n>AccountId</span> <span class=n>targetAccountId</span> <span class=o>=</span> <span class=n>targetAccount</span><span class=o>.</span><span class=na>getId</span><span class=o>()</span>
+</span></span><span class=line><span class=cl>				<span class=o>.</span><span class=na>orElseThrow</span><span class=o>(()</span> <span class=o>-&gt;</span> <span class=k>new</span> <span class=n>IllegalStateException</span><span class=o>(</span><span class=s>&#34;expected target account ID not to be empty&#34;</span><span class=o>));</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=n>accountLock</span><span class=o>.</span><span class=na>lockAccount</span><span class=o>(</span><span class=n>sourceAccountId</span><span class=o>);</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=o>(!</span><span class=n>sourceAccount</span><span class=o>.</span><span class=na>withdraw</span><span class=o>(</span><span class=n>command</span><span class=o>.</span><span class=na>getMoney</span><span class=o>(),</span> <span class=n>targetAccountId</span><span class=o>))</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>			<span class=n>accountLock</span><span class=o>.</span><span class=na>releaseAccount</span><span class=o>(</span><span class=n>sourceAccountId</span><span class=o>);</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=kc>false</span><span class=o>;</span>
+</span></span><span class=line><span class=cl>		<span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=n>accountLock</span><span class=o>.</span><span class=na>lockAccount</span><span class=o>(</span><span class=n>targetAccountId</span><span class=o>);</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=o>(!</span><span class=n>targetAccount</span><span class=o>.</span><span class=na>deposit</span><span class=o>(</span><span class=n>command</span><span class=o>.</span><span class=na>getMoney</span><span class=o>(),</span> <span class=n>sourceAccountId</span><span class=o>))</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>			<span class=n>accountLock</span><span class=o>.</span><span class=na>releaseAccount</span><span class=o>(</span><span class=n>sourceAccountId</span><span class=o>);</span>
+</span></span><span class=line><span class=cl>			<span class=n>accountLock</span><span class=o>.</span><span class=na>releaseAccount</span><span class=o>(</span><span class=n>targetAccountId</span><span class=o>);</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=kc>false</span><span class=o>;</span>
+</span></span><span class=line><span class=cl>		<span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=o>.....</span>
+</span></span><span class=line><span class=cl>	<span class=o>}</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>作者直接使用 framework 提供的 annotation @Transaction 把所有的操作都放到同一個 Transaction 中</p><h3 id=2-應該放到-repository-中有其他的需求用-callback-function-補充>2. 應該放到 repository 中，有其他的需求用 callback function 補充</h3><p>這是我在 Coscup 聽到的 <a class=link href=https://github.com/chatbotgang/go-clean-arch target=_blank rel=noopener>golang 版本 CA 實作</a>，作者一開始想要的解法是usecase 控制 lock，repository 控制 transaction</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>s</span> <span class=o>*</span><span class=nx>BarterService</span><span class=p>)</span> <span class=nf>ExchangeGoods</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>param</span> <span class=nx>ExchangeGoodsParam</span><span class=p>)</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// 1. Claim an event to exchange goods X and Y 
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nx>s</span><span class=p>.</span><span class=nx>lockServer</span><span class=p>.</span><span class=nf>claim</span><span class=p>(</span><span class=nx>X</span><span class=p>,</span> <span class=nx>Y</span><span class=p>,</span> <span class=nx>ttl</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=c1>// 2. Check ownership of request good
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=c1>// 3. Check the target good exist or not
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=c1>// 4. Exchange ownership of two goods
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=c1>// .......
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>  <span class=c1>// 5. Disclaim the event
+</span></span></span><span class=line><span class=cl><span class=c1></span>  <span class=nx>s</span><span class=p>.</span><span class=nx>lockServer</span><span class=p>.</span><span class=nf>disclaim</span><span class=p>(</span><span class=nx>X</span><span class=p>,</span> <span class=nx>Y</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>PostgresRepository</span><span class=p>)</span> <span class=nf>CheckOwnerIDsAndUpdateGoods</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span>  <span class=nx>param</span> <span class=nx>CheckOwnerIDsAndUpdateGoodsParam</span><span class=p>)</span> <span class=p>(</span><span class=nx>updatedGoods</span> <span class=p>[]</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=nx>err</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>tx</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>beginTx</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=k>defer</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>err</span> <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>finishTx</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=nx>tx</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}()</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 1. Get goods again
+</span></span></span><span class=line><span class=cl><span class=c1></span>       <span class=k>if</span>  <span class=nx>_</span><span class=p>,</span> <span class=nx>err</span>  <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>getGoodByIDandOwnerID</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>tx</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G1</span><span class=p>.</span><span class=nx>ID</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G1</span><span class=p>.</span><span class=nx>OnwerID</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span> <span class=c1>// ...}
+</span></span></span><span class=line><span class=cl><span class=c1></span>       <span class=k>if</span>  <span class=nx>_</span><span class=p>,</span> <span class=nx>err</span>  <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>getGoodByIDandOwnerID</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>tx</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G2</span><span class=p>.</span><span class=nx>ID</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G2</span><span class=p>.</span><span class=nx>OnwerID</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span> <span class=c1>// ...}
+</span></span></span><span class=line><span class=cl><span class=c1></span>       
+</span></span><span class=line><span class=cl>        <span class=c1>// 2. Update Goods
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=k>for</span> <span class=nx>i</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>goods</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>updatedGood</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>updateGood</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>tx</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>updateGoods</span><span class=p>[</span><span class=nx>i</span><span class=p>])</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=nx>updatedGoods</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>updatedGoods</span><span class=p>,</span> <span class=o>*</span><span class=nx>updatedGood</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>updatedGoods</span><span class=p>,</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>但在這個 issue 中有人補充不同的作法 <a class=link href=https://github.com/chatbotgang/go-clean-arch/issues/13 target=_blank rel=noopener>Is there a race condition bug?</a>，另一個人提到 <code>lock 比較不像商務邏輯，比較像實作的細節，所以他會想要放到 repository 中</code>，而商務邏輯就用 callback function 方式傳入</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>s</span> <span class=o>*</span><span class=nx>BarterService</span><span class=p>)</span> <span class=nf>ExchangeGoods</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>param</span> <span class=nx>ExchangeGoodsParam</span><span class=p>)</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>g1</span><span class=p>,</span> <span class=nx>g2</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>s</span><span class=p>.</span><span class=nx>goodRepo</span><span class=p>.</span><span class=nf>UpdateTwoGoods</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G1</span><span class=p>,</span> <span class=nx>param</span><span class=p>.</span><span class=nx>G2</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>g1</span><span class=p>,</span> <span class=nx>g2</span> <span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>)</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 1. Check ownership of request good
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// ......
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 2. Check the target good exist or not
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// ......
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 3. Exchange ownership of two goods
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// ......
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>return</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl>    <span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>PostgresRepository</span><span class=p>)</span> <span class=nf>UpdateTwoGoods</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>id</span><span class=p>,</span> <span class=nx>id2</span> <span class=kt>string</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>updateFn</span> <span class=kd>func</span><span class=p>(</span><span class=o>*</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=o>*</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>)</span> <span class=p>(</span><span class=o>*</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=o>*</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span><span class=p>),</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>(</span><span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=nx>barter</span><span class=p>.</span><span class=nx>Good</span><span class=p>,</span> <span class=nx>err</span> <span class=nx>common</span><span class=p>.</span><span class=nx>Error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>tx</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>beginTx</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>defer</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>err</span> <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>finishTx</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=nx>tx</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 1. Fetch required data
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>if</span> <span class=nx>g1</span><span class=p>,</span> <span class=nx>err</span>  <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>getGoodByID</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>tx</span><span class=p>,</span> <span class=nx>id</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span> <span class=c1>// ... }
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>if</span> <span class=nx>g2</span><span class=p>,</span> <span class=nx>err</span>  <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>getGoodByID</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>tx</span><span class=p>,</span> <span class=nx>id2</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span> <span class=c1>// ... }
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 2. Apply business logic (usecase)
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>if</span> <span class=nx>g1</span><span class=p>,</span> <span class=nx>g2</span><span class=p>,</span> <span class=nx>err</span> <span class=p>=</span> <span class=nf>updateFn</span><span class=p>(</span><span class=nx>g1</span><span class=p>,</span> <span class=nx>g2</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span> <span class=c1>// ... }
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>g1</span><span class=p>,</span> <span class=nx>g2</span><span class=p>,</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=重新思考>重新思考</h2><p>重新抽象化一下遇到的困境</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>usecase
+</span></span><span class=line><span class=cl>   1. 從 repo 讀取，同時要 lock
+</span></span><span class=line><span class=cl>   2. 針對讀取的數值判斷
+</span></span><span class=line><span class=cl>   3. 根據判斷，將結果寫回 repo
+</span></span><span class=line><span class=cl>   4. 以上三步要在同一個 transaction
+</span></span></code></pre></td></tr></table></div></div><p>重新審思 CA 的條件，有幾點規則我們應該要遵守</p><ol><li>repository 應該只包含儲存層的操作，不應該有商務邏輯</li><li>usecase 不應該知道太多 repository 細節，或換個角度，當抽換 repository 時應該要很容易，不改變 usecase 的實作</li></ol><p>根據以上的條件，來測試兩種方式</p><ol><li>usecase 控制 lock 與 transaction</li><li>repository 用 callback function 注入商務邏輯
+兩者實作起來的感覺</li></ol><h2 id=實作比較>實作比較</h2><p>參考程式碼 <a class=link href=https://github.com/sj82516/clean-architecture-transaction-issue target=_blank rel=noopener>clean-architecture-transaction-issue</a></p><h3 id=方法一use-case-控制-transaction-與-lock>方法一：use case 控制 transaction 與 lock</h3><p>首先在 <a class=link href=https://github.com/sj82516/clean-architecture-transaction-issue/blob/1e5f66cf6df40b38a3df7c510d58e845a58493be/usecase/purchase_product.rb#L11 target=_blank rel=noopener>usecase 中控制</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>def</span> <span class=nf>run</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>product_id</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>user_repository</span><span class=o>.</span><span class=n>transaction</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>  <span class=n>user</span> <span class=o>=</span> <span class=n>user_repository</span><span class=o>.</span><span class=n>find_by_id_with_lock</span><span class=p>(</span><span class=n>user_id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>product</span> <span class=o>=</span> <span class=n>product_repository</span><span class=o>.</span><span class=n>find_by_id_with_lock</span><span class=p>(</span><span class=n>product_id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>total</span> <span class=o>=</span> <span class=n>product</span><span class=o>.</span><span class=n>price</span> <span class=o>*</span> <span class=n>count</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=k>unless</span> <span class=n>user</span><span class=o>.</span><span class=n>can_purchase?</span><span class=p>(</span><span class=n>total</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=k>unless</span> <span class=n>product</span><span class=o>.</span><span class=n>can_purchase?</span><span class=p>(</span><span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=c1># to test race condition</span>
+</span></span><span class=line><span class=cl>  <span class=nb>sleep</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>user</span><span class=o>.</span><span class=n>points</span> <span class=o>-=</span> <span class=n>total</span>
+</span></span><span class=line><span class=cl>  <span class=n>product</span><span class=o>.</span><span class=n>stock</span> <span class=o>-=</span> <span class=n>count</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>order</span> <span class=o>=</span> <span class=no>Order</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>user</span><span class=p>,</span> <span class=n>product</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>user_repository</span><span class=o>.</span><span class=n>save</span><span class=p>(</span><span class=n>user</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>product_repository</span><span class=o>.</span><span class=n>save</span><span class=p>(</span><span class=n>product</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>order_repository</span><span class=o>.</span><span class=n>create</span><span class=p>(</span><span class=n>order</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>user_repository</span><span class=o>.</span><span class=n>commit</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>這邊暴露了蠻多關於 DB 的細節，包含 transaction / lock / commit，但所有的商業邏輯也都在 usecase 中；<br>但整體傷害應該不算到太嚴重，主要是也沒有直接跟 DB 耦合，如果抽換成其他 NoSQL 頂多 transaction / commit method 留空，不會直接違反 CA 依賴方向的原則</p><h3 id=方法二由-repository-控制-transaction>方法二：由 repository 控制 transaction</h3><p><a class=link href=https://github.com/sj82516/clean-architecture-transaction-issue/blob/1e5f66cf6df40b38a3df7c510d58e845a58493be/usecase/purchase_product.rb#L32 target=_blank rel=noopener>由 repository 控制 transaction</a>，商務邏輯用 block 方式傳入，其餘的邏輯都在 repository 中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=c1># usecase</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>run_in_repo</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>product_id</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>aggregate_root_repository</span><span class=o>.</span><span class=n>purchase_product</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>product_id</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span> <span class=k>do</span> <span class=o>|</span><span class=n>user</span><span class=p>,</span> <span class=n>product</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>    <span class=n>total</span> <span class=o>=</span> <span class=n>product</span><span class=o>.</span><span class=n>price</span> <span class=o>*</span> <span class=n>count</span>
+</span></span><span class=line><span class=cl>    <span class=k>next</span> <span class=kp>false</span> <span class=k>unless</span> <span class=n>user</span><span class=o>.</span><span class=n>can_purchase?</span><span class=p>(</span><span class=n>total</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>next</span> <span class=kp>false</span> <span class=k>unless</span> <span class=n>product</span><span class=o>.</span><span class=n>can_purchase?</span><span class=p>(</span><span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=kp>true</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># repository</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>AggregateRootRepository</span> <span class=o>&lt;</span> <span class=no>Repository</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>purchase_product</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>product_id</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>transaction</span>
+</span></span><span class=line><span class=cl>    <span class=n>result</span> <span class=o>=</span> <span class=n>client</span><span class=o>.</span><span class=n>prepare</span><span class=p>(</span><span class=s2>&#34;SELECT * FROM users WHERE id = ? FOR UPDATE&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                 <span class=o>.</span><span class=n>execute</span><span class=p>(</span><span class=n>user_id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                 <span class=o>.</span><span class=n>first</span>
+</span></span><span class=line><span class=cl>    <span class=n>user</span> <span class=o>=</span> <span class=no>User</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>result</span><span class=o>[</span><span class=s1>&#39;id&#39;</span><span class=o>]</span><span class=p>,</span> <span class=n>result</span><span class=o>[</span><span class=s1>&#39;points&#39;</span><span class=o>]</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>result</span> <span class=o>=</span> <span class=n>client</span><span class=o>.</span><span class=n>prepare</span><span class=p>(</span><span class=s2>&#34;SELECT * FROM products WHERE id = ? FOR UPDATE&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                    <span class=o>.</span><span class=n>execute</span><span class=p>(</span><span class=n>product_id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                    <span class=o>.</span><span class=n>first</span>
+</span></span><span class=line><span class=cl>    <span class=n>product</span> <span class=o>=</span> <span class=no>Product</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>result</span><span class=o>[</span><span class=s1>&#39;id&#39;</span><span class=o>]</span><span class=p>,</span> <span class=n>result</span><span class=o>[</span><span class=s1>&#39;price&#39;</span><span class=o>]</span><span class=p>,</span> <span class=n>result</span><span class=o>[</span><span class=s1>&#39;stock&#39;</span><span class=o>]</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>is_pass</span> <span class=o>=</span> <span class=k>yield</span><span class=p>(</span><span class=n>user</span><span class=p>,</span> <span class=n>product</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=k>unless</span> <span class=n>is_pass</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>client</span><span class=o>.</span><span class=n>prepare</span><span class=p>(</span><span class=s2>&#34;INSERT INTO orders (user_id, product_id, count) VALUES (?, ?, ?)&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=o>.</span><span class=n>execute</span><span class=p>(</span><span class=n>user</span><span class=o>.</span><span class=n>id</span><span class=p>,</span> <span class=n>product</span><span class=o>.</span><span class=n>id</span><span class=p>,</span> <span class=n>count</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>total</span> <span class=o>=</span> <span class=n>product</span><span class=o>.</span><span class=n>price</span> <span class=o>*</span> <span class=n>count</span>
+</span></span><span class=line><span class=cl>    <span class=n>client</span><span class=o>.</span><span class=n>prepare</span><span class=p>(</span><span class=s2>&#34;UPDATE users SET points = ? WHERE id = ?&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=o>.</span><span class=n>execute</span><span class=p>(</span><span class=n>user</span><span class=o>.</span><span class=n>points</span> <span class=o>-</span> <span class=n>total</span><span class=p>,</span> <span class=n>user</span><span class=o>.</span><span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>client</span><span class=o>.</span><span class=n>prepare</span><span class=p>(</span><span class=s2>&#34;UPDATE products SET stock = ? WHERE id = ?&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=o>.</span><span class=n>execute</span><span class=p>(</span><span class=n>product</span><span class=o>.</span><span class=n>stock</span> <span class=o>-</span> <span class=n>count</span><span class=p>,</span> <span class=n>product</span><span class=o>.</span><span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>commit</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>這邊的商務邏輯只有判斷是否可以購買，其餘的 DB 操作封裝在 repository 中，這邊取名叫做 Aggregate Root 是想呼應 DDD 裡面的想法「由 Aggregate Root 操作保證底下多個 Aggregate 的一致性」，靈感是來自之前上 Teddy 的課程與 <a class=link href=https://www.facebook.com/groups/teddy.tw/permalink/5329440543789659/ target=_blank rel=noopener>FB 討論</a></p><h3 id=比較兩者差異>比較兩者差異</h3><ol><li><strong>usecase 乾淨程度(方法二勝)：</strong><br>蠻明顯作法很乾淨，把所有的 DB lock / transaction 都封裝得一乾二凈，而商務邏輯還是保留在 usecase 中呼叫</li><li><strong>擴充性(方法一勝)：</strong><br>如果未來商務邏輯變得更複雜，有可能 DB 查完資料要增加新的比對，例如「高級會員有更多的折價」、「特殊商品買 10 送 1」等等，方法二需要不斷的增加 function 傳入，而方法一因為都是在 usecase 操作，所以直接增加就好，相對好擴充</li><li><strong>可測試性(方法一勝)：</strong>
+我覺得兩個作法最大的差異是<code>可測試性</code>，測試可以用 integration test 連 DB 一起測 / 或是 unit test 把其他相依的物件 mock 掉；
+integration 測試部分兩者沒太多差異 (參考 <a class=link href=https://github.com/sj82516/clean-architecture-transaction-issue/blob/master/main_spec.rb target=_blank rel=noopener>main_spec.rb</a>)；<br>但是 unit test 就有很大的差異 (參考 <a class=link href=https://github.com/sj82516/clean-architecture-transaction-issue/blob/master/usecase_spec.rb target=_blank rel=noopener>usecase.rb</a>)，因為方法一的 repository 方法都是 public 讓 usecase 呼叫，所以很好 mock，但方法二目前我想不到比較好的方法測試，因為 callback function (block) 是在 repo 中呼叫，那我直接 mock 掉不就什麼都測不了了 ?!!</li></ol><h2 id=結論>結論</h2><p>即使 usecase 會比較混亂一些，我還是選擇方法一</p><p>(golang 版本待補)</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2022/2022-11-26-%E9%96%8B%E7%99%BC%E7%B0%A1%E6%98%93%E7%9A%84-protobuf-plugin/><div class=article-details><h2 class=article-title>開發簡易的 Protobuf plugin</h2></div></a></article><article><a href=/posts/2022/2022-09-11-%E6%B7%BA%E8%AB%87-clean-architecture-%E5%AF%A6%E4%BD%9C-port-mapping-%E6%96%B9%E5%BC%8F/><div class=article-details><h2 class=article-title>淺談 Clean Architecture 實作 - Port Mapping 方式</h2></div></a></article><article><a href=/posts/2022/2022-08-27-%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88%E8%AC%B9%E6%85%8E%E4%BD%BF%E7%94%A8-mixin-%E6%B7%BA%E8%AB%87-ror-module-%E4%BD%BF%E7%94%A8%E7%9A%84%E9%99%B7%E9%98%B1/><div class=article-details><h2 class=article-title>【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

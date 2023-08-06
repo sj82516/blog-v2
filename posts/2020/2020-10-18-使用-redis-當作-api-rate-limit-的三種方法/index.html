@@ -1,0 +1,216 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="API Service 在操作某些行為時需要耗費資源，如果 Client 不如預期的大量呼叫，會造成服務受到嚴重的影響，所以需要針對用戶做 API 呼叫次數的限制；Redis 作為中心化的高效能記憶體資料庫，很適合拿來當作 Rate Limit 的儲存方案，以下分享三種常見的做法 static time window / sliding time window 與 token bucket"><meta name=keywords content="Redis,Rate-Limit"><title>使用 Redis 當作 API Rate limit 的三種方法</title><link rel=canonical href=https://yuanchieh.page/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="使用 Redis 當作 API Rate limit 的三種方法"><meta property="og:description" content="API Service 在操作某些行為時需要耗費資源，如果 Client 不如預期的大量呼叫，會造成服務受到嚴重的影響，所以需要針對用戶做 API 呼叫次數的限制；Redis 作為中心化的高效能記憶體資料庫，很適合拿來當作 Rate Limit 的儲存方案，以下分享三種常見的做法 static time window / sliding time window 與 token bucket"><meta property="og:url" content="https://yuanchieh.page/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2020-10-18T08:21:40+00:00"><meta property="article:modified_time" content="2020-10-18T08:21:40+00:00"><meta name=twitter:title content="使用 Redis 當作 API Rate limit 的三種方法"><meta name=twitter:description content="API Service 在操作某些行為時需要耗費資源，如果 Client 不如預期的大量呼叫，會造成服務受到嚴重的影響，所以需要針對用戶做 API 呼叫次數的限制；Redis 作為中心化的高效能記憶體資料庫，很適合拿來當作 Rate Limit 的儲存方案，以下分享三種常見的做法 static time window / sliding time window 與 token bucket"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#rate-limit-全觀>Rate Limit 全觀</a><ol><li><a href=#who>Who</a></li><li><a href=#how>How</a></li><li><a href=#static-time-window---固定時間區段>static time window - 固定時間區段</a></li><li><a href=#token-bucket>token bucket</a></li><li><a href=#sliding-time-window---滑動時間區段>sliding time window - 滑動時間區段</a></li></ol></li><li><a href=#結論>結論</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B/>系統架構</a>
+<a href=/categories/%E8%B3%87%E6%96%99%E5%BA%AB/>資料庫</a>
+<a href=/categories/%E6%87%89%E7%94%A8%E9%96%8B%E7%99%BC/>應用開發</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/>使用 Redis 當作 API Rate limit 的三種方法</a></h2><h3 class=article-subtitle>API Service 在操作某些行為時需要耗費資源，如果 Client 不如預期的大量呼叫，會造成服務受到嚴重的影響，所以需要針對用戶做 API 呼叫次數的限制；Redis 作為中心化的高效能記憶體資料庫，很適合拿來當作 Rate Limit 的儲存方案，以下分享三種常見的做法 static time window / sliding time window 與 token bucket</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Oct 18, 2020</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><p>最近公司 API 服務被 Client 不預期的高頻存取，造成後端 DB 很大的負擔，開始評估各種 API Rate Limit 的方案，其中一個最常見的作法就是靠 Redis，但具體的方案其實有蠻多種，參考以下影片整理三種作法</p><div class=video-wrapper><iframe loading=lazy src=https://www.youtube.com/embed/HnSb8DFU5UA allowfullscreen title="YouTube Video"></iframe></div><p>順便推薦一下 RedisLabs 所推出的 GUI 管理工具 <code>RedisInsights</code>，可以快速分析 Redis 中 Key Space 的使用 / Profiling 一段時間內哪些 Key 被大量存取等等，基本的 Redis CLI 操作就更不用提了，對比之前用的 <code>medis</code> 功能強化不少，尤其是<code>管理/監控這一塊的功能</code><br>目前是免費的，支援 Cluster Mode，連接 AWS ElasticCache 也沒問題，十分推薦</p><h2 id=rate-limit-全觀>Rate Limit 全觀</h2><p>要設計 Rate Limit 機制時需要考量幾個面向</p><h3 id=who>Who</h3><p>該如何識別要限制的對象？<br>最直覺是透過 IP，但是使用 IP 最大的風險是 如果是大客戶，他一個人的流量遠超過其他小客戶，對公司的價值顯然也是遠遠重要，如果用 IP 很容易有誤殺的情況，把有價值的用戶阻擋在外</p><p>其他的作法可以用 JWT Token / API Key 等個別用戶識別的方式，需要針對自家的業務場景去判斷</p><h3 id=how>How</h3><p>該使用怎樣的方式計算限制的方式？<br>通常是在某個時間區段內，限制只能存取多少次的計算模式，有三種方式可以參考</p><h3 id=static-time-window---固定時間區段>static time window - 固定時間區段</h3><p>例如說每一分鐘為一個單位，這一分鐘內只能存取五次<br>這樣的方式十分簡單，但可能會有短時間內超量的問題，例如說 0:59 存取 4 次，接著 1:01 存取4 次，分開在兩個時間區段都是合法，但是才隔兩秒就存取 8 次，這可能不會是希望的結果</p><p>實作方式，以目前每週 160 k 下載的 <code>express-rate-limit</code> 中 redis 版本 <a class=link href=https://www.npmjs.com/package/rate-limit-redis target=_blank rel=noopener>rate-limit-redis</a> 是以下做法</p><ol><li>先計算出該時間段的鍵值，例如 01:00 ~ 01:59 的鍵值都是 <code>01</code></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>var</span> <span class=nx>expiryMs</span> <span class=o>=</span> <span class=nb>Math</span><span class=p>.</span><span class=nx>round</span><span class=p>(</span><span class=mi>1000</span> <span class=o>*</span> <span class=nx>options</span><span class=p>.</span><span class=nx>expiry</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=2><li>增加 key 並更新 ttl 時間，incr 會回傳當下增加後的值，藉此判斷是否超過限制</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=nx>options</span><span class=p>.</span><span class=nx>client</span><span class=p>.</span><span class=nx>multi</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=nx>incr</span><span class=p>(</span><span class=nx>rdskey</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=nx>pttl</span><span class=p>(</span><span class=nx>rdskey</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=nx>exec</span><span class=p>()</span>
+</span></span></code></pre></td></tr></table></div></div><p>因為有 ttl，所以不用擔心 key 的刪除，這個方法簡單直覺儲存成本也很低</p><p>為了嚴格限制<code>任意時間區段內的最大存取數量</code>，參考以下文章提及兩種做法 <a class=link href=https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/ target=_blank rel=noopener>Better Rate Limiting With Redis Sorted Sets</a></p><h3 id=token-bucket>token bucket</h3><p>每一個用戶都有一個對應的 bucket，只有 token 足夠時可以進行操作，每隔一段時間會回補 token 數量，好處是可以制定多種操作的 token 需要數量，像是更繁雜的操作需要消耗更多的 token ，更有彈性應對不同的限制方案</p><p>資料結構使用 Redis 的 <code>Hash</code>，演算法大致如下</p><ol><li>用戶要操作的時候，如果此時沒有紀錄，先插入一筆 Hash <code>user: 當下 的 timestamp => token 初始化數量</code></li><li>後續操作時，取出上一次操作的 timestamp，接著回補這一段時間需要補充的 Token 數量</li><li>接著扣除操作所需的 Token 數，查看是否有符合限制</li></ol><p>需注意這種做法會有 <code>Race Condition</code> 問題，如果一個用戶同時有兩個操作，在第三步驟檢查時，會誤以為自己都有足夠的 token，除非使用 <code>Lua script</code>，Redis 才會將<code>多個操作視為 atomic 避免 Race Condition</code></p><p><a class=link href=https://github.com/BitMEX/node-redis-token-bucket-ratelimiter target=_blank rel=noopener>node-redis-token-bucket-ratelimiter</a> 便是採用 Lua script 作法，讓我們來欣賞一下</p><ol><li>取得參數，並指定 <code>redis.replicate_commands()</code>，這是在調用 <code>$ redis eval</code> 時要產生隨機 IO 時需要提前執行的指令 <a class=link href=https://redis.io/commands/eval target=_blank rel=noopener>Redis - EVAL script numkeys key</a>，這一篇有易懂的解釋 <a class=link href=http://mysql.taobao.org/monthly/2019/01/06/ target=_blank rel=noopener>Redis · 引擎特性 · Lua脚本新姿势</a>，基本上就是為了符合 Redis 在持久化以及副本資料時的功能，在 5.0 以後是默認選項；<br>接著就是分別計算上一次更新時間 <code>initialUpdateMS</code> / 殘留的 token 數 <code>prevTokens</code></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-lua data-lang=lua><span class=line><span class=cl><span class=c1>-- valueKey timestampKey | limit intervalMS nowMS [amount]</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>valueKey</span>     <span class=o>=</span> <span class=n>KEYS</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=c1>-- &#34;limit:1:V&#34;</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>timestampKey</span> <span class=o>=</span> <span class=n>KEYS</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span> <span class=c1>-- &#34;limit:1:T&#34;</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>limit</span>      <span class=o>=</span> <span class=n>tonumber</span><span class=p>(</span><span class=n>ARGV</span><span class=p>[</span><span class=mi>1</span><span class=p>])</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>intervalMS</span> <span class=o>=</span> <span class=n>tonumber</span><span class=p>(</span><span class=n>ARGV</span><span class=p>[</span><span class=mi>2</span><span class=p>])</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>amount</span>     <span class=o>=</span> <span class=n>math.max</span><span class=p>(</span><span class=n>tonumber</span><span class=p>(</span><span class=n>ARGV</span><span class=p>[</span><span class=mi>3</span><span class=p>]),</span> <span class=mi>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>force</span>      <span class=o>=</span> <span class=n>ARGV</span><span class=p>[</span><span class=mi>4</span><span class=p>]</span> <span class=o>==</span> <span class=s2>&#34;true&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>lastUpdateMS</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>prevTokens</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>-- Use effects replication, not script replication;; this allows us to call &#39;TIME&#39; which is non-deterministic</span>
+</span></span><span class=line><span class=cl><span class=n>redis.replicate_commands</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>time</span> <span class=o>=</span> <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;TIME&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>nowMS</span> <span class=o>=</span> <span class=n>math.floor</span><span class=p>((</span><span class=n>time</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>*</span> <span class=mi>1000</span><span class=p>)</span> <span class=o>+</span> <span class=p>(</span><span class=n>time</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span> <span class=o>/</span> <span class=mi>1000</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>initialTokens</span> <span class=o>=</span> <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;GET&#39;</span><span class=p>,</span><span class=n>valueKey</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>initialUpdateMS</span> <span class=o>=</span> <span class=kc>false</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kr>if</span> <span class=n>initialTokens</span> <span class=o>==</span> <span class=kc>false</span> <span class=kr>then</span>
+</span></span><span class=line><span class=cl>   <span class=c1>-- If we found no record, we temporarily rewind the clock to refill</span>
+</span></span><span class=line><span class=cl>   <span class=c1>-- via addTokens below</span>
+</span></span><span class=line><span class=cl>   <span class=n>prevTokens</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>   <span class=n>lastUpdateMS</span> <span class=o>=</span> <span class=n>nowMS</span> <span class=o>-</span> <span class=n>intervalMS</span>
+</span></span><span class=line><span class=cl><span class=kr>else</span>
+</span></span><span class=line><span class=cl>   <span class=n>prevTokens</span> <span class=o>=</span> <span class=n>initialTokens</span>
+</span></span><span class=line><span class=cl>   <span class=n>initialUpdateMS</span> <span class=o>=</span> <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;GET&#39;</span><span class=p>,</span><span class=n>timestampKey</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>   <span class=kr>if</span><span class=p>(</span><span class=n>initialUpdateMS</span> <span class=o>==</span> <span class=kc>false</span><span class=p>)</span> <span class=kr>then</span> <span class=c1>-- this is a corruption</span>
+</span></span><span class=line><span class=cl>      <span class=c1>-- 如果資料有問題，需要回推 lastUpdateMS 時間，也就是用現在時間回推殘存 Token 數量的回補時間</span>
+</span></span><span class=line><span class=cl>      <span class=n>lastUpdateMS</span> <span class=o>=</span> <span class=n>nowMS</span> <span class=o>-</span> <span class=p>((</span><span class=n>prevTokens</span> <span class=o>/</span> <span class=n>limit</span><span class=p>)</span> <span class=o>*</span> <span class=n>intervalMS</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=kr>else</span>
+</span></span><span class=line><span class=cl>      <span class=n>lastUpdateMS</span> <span class=o>=</span> <span class=n>initialUpdateMS</span>
+</span></span><span class=line><span class=cl>   <span class=kr>end</span>
+</span></span><span class=line><span class=cl><span class=kr>end</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=2><li>接著計算上一次到現在需要回補的 Token <code>addTokens</code> / 這一次運算配額夠不夠 <code>netTokens</code> / 如果下一次要嘗試需要等多久的時間 <code>retryDelta</code></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-lua data-lang=lua><span class=line><span class=cl><span class=kd>local</span> <span class=n>addTokens</span> <span class=o>=</span> <span class=n>math.max</span><span class=p>(((</span><span class=n>nowMS</span> <span class=o>-</span> <span class=n>lastUpdateMS</span><span class=p>)</span> <span class=o>/</span> <span class=n>intervalMS</span><span class=p>)</span> <span class=o>*</span> <span class=n>limit</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>-- calculated token balance coming into this transaction</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>grossTokens</span> <span class=o>=</span> <span class=n>math.min</span><span class=p>(</span><span class=n>prevTokens</span> <span class=o>+</span> <span class=n>addTokens</span><span class=p>,</span> <span class=n>limit</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>-- token balance after trying this transaction</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>netTokens</span> <span class=o>=</span> <span class=n>grossTokens</span> <span class=o>-</span> <span class=n>amount</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>-- time to fill enough to retry this amount</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>retryDelta</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>rejected</span> <span class=o>=</span> <span class=kc>false</span>
+</span></span><span class=line><span class=cl><span class=kd>local</span> <span class=n>forced</span> <span class=o>=</span> <span class=kc>false</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kr>if</span> <span class=n>netTokens</span> <span class=o>&lt;</span> <span class=mi>0</span> <span class=kr>then</span> <span class=c1>-- we used more than we have</span>
+</span></span><span class=line><span class=cl>   <span class=kr>if</span> <span class=n>force</span> <span class=kr>then</span>
+</span></span><span class=line><span class=cl>      <span class=n>forced</span> <span class=o>=</span> <span class=kc>true</span>
+</span></span><span class=line><span class=cl>      <span class=n>netTokens</span> <span class=o>=</span> <span class=mi>0</span> <span class=c1>-- drain the swamp</span>
+</span></span><span class=line><span class=cl>   <span class=kr>else</span>
+</span></span><span class=line><span class=cl>      <span class=n>rejected</span> <span class=o>=</span> <span class=kc>true</span>
+</span></span><span class=line><span class=cl>      <span class=n>netTokens</span> <span class=o>=</span> <span class=n>grossTokens</span> <span class=c1>-- rejection doesn&#39;t eat tokens</span>
+</span></span><span class=line><span class=cl>   <span class=kr>end</span>
+</span></span><span class=line><span class=cl>   <span class=c1>-- == percentage of `intervalMS` required before you have `amount` tokens</span>
+</span></span><span class=line><span class=cl>   <span class=n>retryDelta</span> <span class=o>=</span> <span class=n>math.ceil</span><span class=p>(((</span><span class=n>amount</span> <span class=o>-</span> <span class=n>netTokens</span><span class=p>)</span> <span class=o>/</span> <span class=n>limit</span><span class=p>)</span> <span class=o>*</span> <span class=n>intervalMS</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kr>else</span> <span class=c1>-- polite transaction</span>
+</span></span><span class=line><span class=cl>   <span class=c1>-- nextNet == pretend we did this again...</span>
+</span></span><span class=line><span class=cl>   <span class=kd>local</span> <span class=n>nextNet</span> <span class=o>=</span> <span class=n>netTokens</span> <span class=o>-</span> <span class=n>amount</span>
+</span></span><span class=line><span class=cl>   <span class=kr>if</span> <span class=n>nextNet</span> <span class=o>&lt;</span> <span class=mi>0</span> <span class=kr>then</span> <span class=c1>-- ...we would need to wait to repeat</span>
+</span></span><span class=line><span class=cl>      <span class=c1>-- == percentage of `invervalMS` required before you would have `amount` tokens again</span>
+</span></span><span class=line><span class=cl>      <span class=n>retryDelta</span> <span class=o>=</span> <span class=n>math.ceil</span><span class=p>((</span><span class=n>math.abs</span><span class=p>(</span><span class=n>nextNet</span><span class=p>)</span> <span class=o>/</span> <span class=n>limit</span><span class=p>)</span> <span class=o>*</span> <span class=n>intervalMS</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=kr>end</span>
+</span></span><span class=line><span class=cl><span class=kr>end</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=3><li>如果成功操作 ( rejected == false )，則延長 key 的過期時間</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-lua data-lang=lua><span class=line><span class=cl><span class=kr>if</span> <span class=n>rejected</span> <span class=o>==</span> <span class=kc>false</span> <span class=kr>then</span>
+</span></span><span class=line><span class=cl>   <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;PSETEX&#39;</span><span class=p>,</span><span class=n>valueKey</span><span class=p>,</span><span class=n>intervalMS</span><span class=p>,</span><span class=n>netTokens</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=kr>if</span> <span class=n>addTokens</span> <span class=o>&gt;</span> <span class=mi>0</span> <span class=ow>or</span> <span class=n>initialUpdateMS</span> <span class=o>==</span> <span class=kc>false</span> <span class=kr>then</span>
+</span></span><span class=line><span class=cl>      <span class=c1>-- we filled some tokens, so update our timestamp</span>
+</span></span><span class=line><span class=cl>      <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;PSETEX&#39;</span><span class=p>,</span><span class=n>timestampKey</span><span class=p>,</span><span class=n>intervalMS</span><span class=p>,</span><span class=n>nowMS</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=kr>else</span>
+</span></span><span class=line><span class=cl>      <span class=c1>-- we didn&#39;t fill any tokens, so just renew the timestamp so it survives with the value</span>
+</span></span><span class=line><span class=cl>      <span class=n>redis.call</span><span class=p>(</span><span class=s1>&#39;PEXPIRE&#39;</span><span class=p>,</span><span class=n>timestampKey</span><span class=p>,</span><span class=n>intervalMS</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=kr>end</span>
+</span></span><span class=line><span class=cl><span class=kr>end</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=sliding-time-window---滑動時間區段>sliding time window - 滑動時間區段</h3><p>最後一個是使用 sorted set，可以使用 <code>$ redis.multi</code> 將多個 sorted set 的指令串再一起 Atomic 執行所以能夠避免 Race Condition 狀況<br>具體想法是</p><ol><li>用一個 sorted set 儲存所有的 timestamp</li><li>request 進來後，先用 <code>ZREMRANGEBYSCORE</code> 捨棄 time window 以外的 key</li><li>取得 sorted set 剩餘的所有元素 <code>ZRANGE(0, -1)</code></li><li>加上這一次的操作 <code>ZADD</code>，並延長 sorted set 的 ttl</li><li>接著算整個 sorted set 的元素量，就知道存取幾次了</li></ol><p>需要特別注意，這邊如果第五步判斷失敗也會被計算在 limit 當中，因為第四步已經先加上去了，如果<code>在第三步先判斷數量夠不夠再去更新 sorted set，中間的時間差就有可能發生 Race Condition</code>，所以要嚴格限制必須要這麼做，除非又要包成 lua script</p><p>這會導致一個風險，如果 Client 真的失控一直打，那他會無止盡的失敗，因為每一次的失敗操作都會被加入 sorted set 當中，但其實都沒有真的執行到</p><p>模組請參考 <a class=link href=https://github.com/peterkhayes/rolling-rate-limiter target=_blank rel=noopener>rolling-rate-limiter</a>，程式碼在這</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kr>const</span> <span class=nx>batch</span> <span class=o>=</span> <span class=k>this</span><span class=p>.</span><span class=nx>client</span><span class=p>.</span><span class=nx>multi</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=nx>batch</span><span class=p>.</span><span class=nx>zremrangebyscore</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=nx>clearBefore</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=nx>addNewTimestamp</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>batch</span><span class=p>.</span><span class=nx>zadd</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=nb>String</span><span class=p>(</span><span class=nx>now</span><span class=p>),</span> <span class=nx>uuid</span><span class=p>());</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=nx>batch</span><span class=p>.</span><span class=nx>zrange</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=o>-</span><span class=mi>1</span><span class=p>,</span> <span class=s1>&#39;WITHSCORES&#39;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>batch</span><span class=p>.</span><span class=nx>expire</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=k>this</span><span class=p>.</span><span class=nx>ttl</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>return</span> <span class=k>new</span> <span class=nb>Promise</span><span class=p>((</span><span class=nx>resolve</span><span class=p>,</span> <span class=nx>reject</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>batch</span><span class=p>.</span><span class=nx>exec</span><span class=p>((</span><span class=nx>err</span><span class=p>,</span> <span class=nx>result</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=nx>err</span><span class=p>)</span> <span class=k>return</span> <span class=nx>reject</span><span class=p>(</span><span class=nx>err</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 加完後才來計算是不是扣打足夠
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=kr>const</span> <span class=nx>zRangeOutput</span> <span class=o>=</span> <span class=p>(</span><span class=nx>addNewTimestamp</span> <span class=o>?</span> <span class=nx>result</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span> <span class=o>:</span> <span class=nx>result</span><span class=p>[</span><span class=mi>1</span><span class=p>])</span> <span class=nx>as</span> <span class=nb>Array</span><span class=o>&lt;</span><span class=nx>unknown</span><span class=o>&gt;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>zRangeResult</span> <span class=o>=</span> <span class=k>this</span><span class=p>.</span><span class=nx>getZRangeResult</span><span class=p>(</span><span class=nx>zRangeOutput</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>timestamps</span> <span class=o>=</span> <span class=k>this</span><span class=p>.</span><span class=nx>extractTimestampsFromZRangeResult</span><span class=p>(</span><span class=nx>zRangeResult</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=nx>resolve</span><span class=p>(</span><span class=nx>timestamps</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>});</span>
+</span></span><span class=line><span class=cl><span class=p>});</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=結論>結論</h2><p>Rate Limit 看似簡單，但也有不少的眉角要去考量，之前一直都沒有客製 Redis 中 lua script 的部分，也是蠻有趣的</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/><div class=article-details><h2 class=article-title>Raft 演算法介紹與《In Search of an Understandable Consensus Algorithm》摘要</h2></div></a></article><article><a href=/posts/2020/2020-10-28-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8B-efficient-reconciliation-and-flow-control-for-anti-entropy-protocols%E8%AB%96%E6%96%87%E6%91%98%E8%A6%81/><div class=article-details><h2 class=article-title>Gossip Protocol 介紹 (下) - 《Efficient Reconciliation and Flow Control for Anti-Entropy Protocols》論文摘要</h2></div></a></article><article><a href=/posts/2020/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8A-%E5%BE%9E-cassandra-%E5%85%A7%E9%83%A8%E5%AF%A6%E4%BD%9C%E8%AA%8D%E8%AD%98-gossip-protocol-%E7%9A%84%E4%BD%BF%E7%94%A8/><div class=article-details><h2 class=article-title>Gossip Protocol 介紹 (上) - 從 Cassandra 內部實作認識 Gossip Protocol 的使用</h2></div></a></article><article><a href=/posts/2023/2023-05-05-mongodb-clustered-collection-%E8%88%87-benchmark-%E5%AF%A6%E9%A9%97/><div class=article-details><h2 class=article-title>MongoDB Clustered Collection 與 Benchmark 實驗</h2></div></a></article><article><a href=/posts/2022/2022-04-25-mysqllock-%E8%88%87-index-%E9%97%9C%E4%BF%82%E5%92%8C-deadlock-%E5%88%86%E6%9E%90/><div class=article-details><h2 class=article-title>【MySQL】Lock 與 Index 關係和 Deadlock 分析</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

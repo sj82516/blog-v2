@@ -1,0 +1,276 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Nodejs底層是事件驅動，透過 Event Loop處理非同步(non-blocking)操作，讓費時的I/O操作可以交由libuv去呼叫系統事件驅動的 system api或是用 multi thread方式處理，而Main thread則持續處理request或其他運算。"><title>為什麼要理解 Nodejs Event Loop：Dataloader 源碼解讀與分析如何解決 Graphql N+1問題</title><link rel=canonical href=https://yuanchieh.page/posts/2018/2018-07-16-%E7%82%BA%E4%BB%80%E9%BA%BC%E8%A6%81%E7%90%86%E8%A7%A3-nodejs-event-loopdataloader-%E6%BA%90%E7%A2%BC%E8%A7%A3%E8%AE%80%E8%88%87%E5%88%86%E6%9E%90%E5%A6%82%E4%BD%95%E8%A7%A3%E6%B1%BA-graphql-n-1%E5%95%8F%E9%A1%8C/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="為什麼要理解 Nodejs Event Loop：Dataloader 源碼解讀與分析如何解決 Graphql N+1問題"><meta property="og:description" content="Nodejs底層是事件驅動，透過 Event Loop處理非同步(non-blocking)操作，讓費時的I/O操作可以交由libuv去呼叫系統事件驅動的 system api或是用 multi thread方式處理，而Main thread則持續處理request或其他運算。"><meta property="og:url" content="https://yuanchieh.page/posts/2018/2018-07-16-%E7%82%BA%E4%BB%80%E9%BA%BC%E8%A6%81%E7%90%86%E8%A7%A3-nodejs-event-loopdataloader-%E6%BA%90%E7%A2%BC%E8%A7%A3%E8%AE%80%E8%88%87%E5%88%86%E6%9E%90%E5%A6%82%E4%BD%95%E8%A7%A3%E6%B1%BA-graphql-n-1%E5%95%8F%E9%A1%8C/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2018-07-16T12:35:50+00:00"><meta property="article:modified_time" content="2018-07-16T12:35:50+00:00"><meta name=twitter:title content="為什麼要理解 Nodejs Event Loop：Dataloader 源碼解讀與分析如何解決 Graphql N+1問題"><meta name=twitter:description content="Nodejs底層是事件驅動，透過 Event Loop處理非同步(non-blocking)操作，讓費時的I/O操作可以交由libuv去呼叫系統事件驅動的 system api或是用 multi thread方式處理，而Main thread則持續處理request或其他運算。"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#dataloader的用途>dataloader的用途</a><ol><li><a href=#graphql-n1問題>Graphql N+1問題</a></li><li><a href=#dataloader-介紹>dataloader 介紹</a><ol><li><a href=#enqueuepostpromisejob>enqueuePostPromiseJob</a></li></ol></li><li><a href=#dispatchqueuebatch>dispatchQueueBatch</a><ol><li><a href=#dataloader簡單範例>dataloader簡單範例</a></li></ol></li></ol></li><li><a href=#結語>結語</a><ol><li><a href=#備註>備註</a><ol><li><a href=#確保在所有的-promisejobs之後執行>確保在所有的 PromiseJobs之後執行</a></li></ol></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/javascript/>Javascript</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2018/2018-07-16-%E7%82%BA%E4%BB%80%E9%BA%BC%E8%A6%81%E7%90%86%E8%A7%A3-nodejs-event-loopdataloader-%E6%BA%90%E7%A2%BC%E8%A7%A3%E8%AE%80%E8%88%87%E5%88%86%E6%9E%90%E5%A6%82%E4%BD%95%E8%A7%A3%E6%B1%BA-graphql-n-1%E5%95%8F%E9%A1%8C/>為什麼要理解 Nodejs Event Loop：Dataloader 源碼解讀與分析如何解決 Graphql N+1問題</a></h2><h3 class=article-subtitle>Nodejs底層是事件驅動，透過 Event Loop處理非同步(non-blocking)操作，讓費時的I/O操作可以交由libuv去呼叫系統事件驅動的 system api或是用 multi thread方式處理，而Main thread則持續處理request或其他運算。</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Jul 16, 2018</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><p>Nodejs底層是事件驅動，透過 Event Loop處理非同步(non-blocking)操作，讓費時的I/O操作可以交由libuv去呼叫系統事件驅動的 system api或是用 multi thread方式處理，而Main thread則持續處理request或其他運算。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>// copy from nodejs 官網   ┌───────────────────────────┐┌─&gt;│           timers          ││  └─────────────┬─────────────┘│  ┌─────────────┴─────────────┐│  │     pending callbacks     ││  └─────────────┬─────────────┘│  ┌─────────────┴─────────────┐│  │       idle, prepare       │   (internal use)│  └─────────────┬─────────────┘      ┌───────────────┐│  ┌─────────────┴─────────────┐      │   incoming:   ││  │           poll            │<span class=err>&lt;</span>─────┤  connections, ││  └─────────────┬─────────────┘      │   data, etc.  ││  ┌─────────────┴─────────────┐      └───────────────┘│  │           check           ││  └─────────────┬─────────────┘│  ┌─────────────┴─────────────┐└──┤      close callbacks      │   └───────────────────────────┘
+</span></span></code></pre></td></tr></table></div></div><p>簡而言之，Event Loop有許多不同的階段(phase)，每個phase 是個陣列，當完成非同步操作後，會對應將 callback task push到 phase中；<br>Nodejs會不斷的輪詢 Event Loop並<code>同步執行callback task</code>，直到 Event Loop上都沒有 task且 Main thread也都執行完成，就會退出。</p><p>Nodejs一些非同步操作對應的 phase如下<br>1.<code>setTimeout</code> 屬於 timers <br>2. <code>pending callbacks</code>主要處理系統錯誤 callback<br>3. poll 階段則是向系統取得 IO事件<br>4.<code>setImmediate</code> 屬於 check<br>5.<code>關閉事件如 socket.on(‘close’, …)</code> 則屬於 close</p><p><code>process.nextTick</code> 是在每個phase結束前執行， <code>Promise</code> 屬於 microtask，同樣執行於每個phase結束之前，且在 process.nextTick之前；<br>所以要小心，不能要遞迴呼叫process.nextTick，會導致整個Event Loop卡住，因為每個process.nextTick都會在phase結束前執行。</p><p>以上大致介紹，實際運作複雜許多，附註參考資料：<br>1. <a class=link href=https://www.eebreakdown.com/2016/09/nodejs-eventemitter.html target=_blank rel=noopener>https://www.eebreakdown.com/2016/09/nodejs-eventemitter.html</a><br>2. <a class=link href=https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/ target=_blank rel=noopener>https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/</a><br>3. <a class=link href=https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/ target=_blank rel=noopener>https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/</a><br>4. 在瀏覽器中狀況跟Nodejs執行環境不太相同 <a class=link href=https://github.com/kaola-fed/blog/issues/234#code-analysis-b-a target=_blank rel=noopener>https://github.com/kaola-fed/blog/issues/234#code-analysis-b-a</a></p><p>但我看這個有什麼用? 只要我知道怎麼寫非同步程式碼，了解底層 Event Loop執行順序有什麼意義嗎?</p><p>雖然說學習不該帶有太強烈的功利性，追根究底本身就是個樂趣，但這個問題著實困擾我頗久，在這兩天看到了 <code>dataloader</code> 驚為天人的 Library，以下正文開始。</p><h2 id=dataloader的用途>dataloader的用途</h2><p>dataloader主要用於解決Graphql的N+1問題，稍微簡單介紹一下<br>Graphql是 FB提出的技術，用來當作新一代的前後端API交互介面，主要是將搜尋的能力交還給前端控制，後端就被動配合；<br>改善以往 RESTful API在 GET上麻煩的地方，以下為示範</p><p>假設有 User / Post / Comment，<br>User 1 &lt;-> m Post，User可以創建多個Post<br>User 1 &lt;-> n Comment m &lt;-> 1 Post，User可以在Post下發布 Comment</p><p>假設今天我們要顯示某用戶的所有貼文，以REST來講可能是<br>/user/:userId/post<br>如果要某用戶下所有貼文帶評論<br>/user/:userId/post/comment<br>如果是某用戶某貼文的所有評論<br>/user/:userId/post/:postId/comment<br>&mldr;&mldr;</p><p>所以在查詢上，前端多一個需求後端就要多一隻API，有點麻煩<br>如果要省著用同一個API外加query來判斷，就變成資料層或邏輯層一樣要處理</p><p>-&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-<br>而Graphql 則漂亮很多，前端定義好需要的資料格式，後端就會對照回傳(套件輔助)</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-graphql data-lang=graphql><span class=line><span class=cl><span class=p>{</span><span class=w>    
+</span></span></span><span class=line><span class=cl><span class=w>   </span><span class=py>User</span><span class=w> </span><span class=p>{</span><span class=w>   
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=py>name</span><span class=p>,</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=py>id</span><span class=p>,</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=py>Post</span><span class=w> </span><span class=p>{</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>         </span><span class=py>title</span><span class=p>,</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>         </span><span class=py>Comment</span><span class=w> </span><span class=p>{</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>             </span><span class=py>content</span><span class=p>,</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w>             </span><span class=py>User</span><span class=w> </span><span class=kd>......</span><span class=err>.</span><span class=w>  
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>不論是要取得 User，User -> Post， User -> Post -> Comment無限遞迴，都是非常簡單的一件事</p><p>後端則是對應好資料擷取，Graphql在後端會過濾把前端需要的欄位回傳，大幅降低網路 payload，非常的簡潔有力。</p><p>如果是有大量查詢的應用程式，或是有跨裝置應用，可以考慮導入 Graphql，現在來說方案都已經非常成熟了。</p><h3 id=graphql-n1問題>Graphql N+1問題</h3><p>但是在讀取巢狀資料的過程中，Graphql會發生N+1問題，例如取得所有用戶下的所有文章<code>{User{Post}}</code> ，這時候因為架構設計的關係，Graphql會先讀取所有的User，接著再針對個別User去讀取Post；<br>所以資料庫讀取會變成 1 次讀取全部 User + N次個別User讀取Post，例如</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>SELECT \* FROM User; --&gt; 回傳了 [1,2,3,4]  
+</span></span><span class=line><span class=cl>SELECT \* FROM Post WHERE user_id = 1;  
+</span></span><span class=line><span class=cl>SELECT \* FROM Post WHERE user_id = 2;  
+</span></span><span class=line><span class=cl>....
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>\---&gt; 較為理想情況  
+</span></span><span class=line><span class=cl>SELECT \* FROM User; --&gt; 回傳了 [1,2,3,4]  
+</span></span><span class=line><span class=cl>SELECT \* FROM Post WHERE user_id in (1,2,3,4);
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>\---&gt; 最理想  
+</span></span><span class=line><span class=cl>SELECT \* FROM User LEFT JOIN Post on Post.userId = User.id;
+</span></span></code></pre></td></tr></table></div></div><p>而dataloader提供的解法相當美妙，在應用層稍作改變，不影響原本graphql / 不干涉資料庫操作，將 N+1進化成第二優化的查詢條件。</p><h3 id=dataloader-介紹>dataloader 介紹</h3><p>dataloader作者</p><p><a class=link href=https://github.com/facebook/dataloader target=_blank rel=noopener>dataloader</a> 主要做兩件事 <code>batch</code> & <code>cache</code> ，因為在處理 http request上，為了上資料不過期，大多不會用上 cache，所以這裡僅介紹 batch。<br>dataloader提供的解法是將異步操作合併，並在Event Loop的一個phase結束後用 process.nextTick 執行。</p><p>先看dataloader說明範例</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>var</span> <span class=nx>DataLoader</span> <span class=o>=</span> <span class=nx>require</span><span class=p>(</span><span class=s1>&#39;dataloader&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=nx>userLoader</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>DataLoader</span><span class=p>(</span><span class=nx>keys</span> <span class=p>=&gt;</span> <span class=nx>myBatchGetUsers</span><span class=p>(</span><span class=nx>keys</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>/*  
+</span></span></span><span class=line><span class=cl><span class=cm>myBatchGetUsers是自訂的函式，接收被dataloader batch起來的keys，回傳等同keys長度的Promise  
+</span></span></span><span class=line><span class=cl><span class=cm>*/</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>userLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=nx>then</span><span class=p>(</span><span class=nx>user</span> <span class=p>=&gt;</span> <span class=nx>userLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=nx>user</span><span class=p>.</span><span class=nx>invitedByID</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=nx>then</span><span class=p>(</span><span class=nx>invitedBy</span> <span class=p>=&gt;</span> <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=sb>`User 1 was invited by </span><span class=si>${</span><span class=nx>invitedBy</span><span class=si>}</span><span class=sb>`</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Elsewhere in your application  
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl><span class=nx>userLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=nx>then</span><span class=p>(</span><span class=nx>user</span> <span class=p>=&gt;</span> <span class=nx>userLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=nx>user</span><span class=p>.</span><span class=nx>lastInvitedID</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=nx>then</span><span class=p>(</span><span class=nx>lastInvited</span> <span class=p>=&gt;</span> <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=sb>`
+</span></span></span><span class=line><span class=cl><span class=sb>            User 2 last invited $ {
+</span></span></span><span class=line><span class=cl><span class=sb>                lastInvited
+</span></span></span><span class=line><span class=cl><span class=sb>            }
+</span></span></span><span class=line><span class=cl><span class=sb>            `</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>/*
+</span></span></span><span class=line><span class=cl><span class=cm>userLoader.load(1) 代表要載入，這會被 dataloader batch起來，最後再keys =&gt; myBatchGetUsers(keys)一併處理  
+</span></span></span><span class=line><span class=cl><span class=cm>*/</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 接著來看程式碼，總共324行，大概有100行是註解… 非常精簡巧妙的設計
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl><span class=nx>load</span><span class=p>(</span><span class=nx>key</span><span class=o>:</span> <span class=nx>K</span><span class=p>)</span><span class=o>:</span> <span class=nb>Promise</span> <span class=o>&lt;</span> <span class=nx>V</span> <span class=o>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>var</span> <span class=nx>promise</span> <span class=o>=</span> <span class=k>new</span> <span class=nb>Promise</span><span class=p>((</span><span class=nx>resolve</span><span class=p>,</span> <span class=nx>reject</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Enqueue this Promise to be dispatched.  
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>this</span><span class=p>.</span><span class=nx>_queue</span><span class=p>.</span><span class=nx>push</span><span class=p>({</span>
+</span></span><span class=line><span class=cl>            <span class=nx>key</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nx>resolve</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nx>reject</span>
+</span></span><span class=line><span class=cl>        <span class=p>});</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 在queue 重新填裝時觸發  
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=k>this</span><span class=p>.</span><span class=nx>_queue</span><span class=p>.</span><span class=nx>length</span> <span class=o>===</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=nx>shouldBatch</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// If batching, schedule a task to dispatch the queue.  
+</span></span></span><span class=line><span class=cl><span class=c1></span>                <span class=nx>enqueuePostPromiseJob</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=nx>dispatchQueue</span><span class=p>(</span><span class=k>this</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// Otherwise dispatch the (queue of one) immediately.  
+</span></span></span><span class=line><span class=cl><span class=c1></span>                <span class=nx>dispatchQueue</span><span class=p>(</span><span class=k>this</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>});</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>promise</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>load()執行後是回傳一個Promise，注意關鍵的一行 <code>this._queue.push({...})</code> ，這個回傳的Promise resolve方法是被push到 _queue上，而_queue是 dataloader一開始創建時建立的空陣列。</p><h4 id=enqueuepostpromisejob>enqueuePostPromiseJob</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>var</span> <span class=nx>enqueuePostPromiseJob</span> <span class=o>=</span>  
+</span></span><span class=line><span class=cl>    <span class=k>typeof</span> <span class=nx>process</span> <span class=o>===</span> <span class=s1>&#39;object&#39;</span> <span class=o>&amp;&amp;</span> <span class=k>typeof</span> <span class=nx>process</span><span class=p>.</span><span class=nx>nextTick</span> <span class=o>===</span> <span class=s1>&#39;function&#39;</span> <span class=o>?</span>  
+</span></span><span class=line><span class=cl>    <span class=kd>function</span><span class=p>(</span><span class=nx>fn</span><span class=p>)</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=nx>resolvedPromise</span><span class=p>)</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>            <span class=nx>resolvedPromise</span> <span class=o>=</span> <span class=nb>Promise</span><span class=p>.</span><span class=nx>resolve</span><span class=p>();</span>  
+</span></span><span class=line><span class=cl>        <span class=p>}</span>  
+</span></span><span class=line><span class=cl>        <span class=nx>resolvedPromise</span><span class=p>.</span><span class=nx>then</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=nx>process</span><span class=p>.</span><span class=nx>nextTick</span><span class=p>(</span><span class=nx>fn</span><span class=p>));</span>  
+</span></span><span class=line><span class=cl>    <span class=p>}</span> <span class=o>:</span>  
+</span></span><span class=line><span class=cl>    <span class=nx>setImmediate</span> <span class=o>||</span> <span class=nx>setTimeout</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Private: cached resolved Promise instance  
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>var</span> <span class=nx>resolvedPromise</span><span class=p>;</span>
+</span></span></code></pre></td></tr></table></div></div><p>resolvedPromise就是用來暫存的 Promise.resolve()，用來執行<code>resolvedPromise.then(() => process.nextTick(fn))</code> ，fn 是剛才的 <code>() => dispatchQueue(this)</code> ；<br>如果環境有 process.nextTick則用，不然用 setImmediate / setTimeout 也可以!</p><p>這裡作者打上了25行的註解，大意是說：<br>ECMAScript 運用 Job / Job Queue描述當下執行結束後的工作順序安排；<br>(對照Nodejs也就是Event Loop的實作)，Nodejs用 process.nextTick實作 Job的概念，當呼叫了 Promise.then 則會在 global Jobsqueue中加入 PromiseJobs這樣的一個 Job。</p><p>dataloader會打包同一個執行的幀(frame) 中的操作，包含在處理PromiseJobs queues 之間的 load也會被一併打包。<br>這也是為什麼要用<code>resolvedPromise.then(() => process.nextTick(fn))</code> ，確保在所有的 PromiseJobs之後執行 (*備註一)；</p><p>這一段主要是因應cache處理，如果有開啟cache，執行過後一次dataloader會以 Promise.resolve儲存結果，也就是後續不管調用幾次都是立刻回覆結果；<br>所以下列結果 1 / 5 /6 會被batch在同一個phase執行，而4會到下一個loop去</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=nx>testLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>1</span><span class=p>).</span><span class=nx>then</span><span class=p>(</span><span class=nx>t</span> <span class=p>=&gt;</span> <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s2>&#34;1 got &#34;</span><span class=p>,</span> <span class=nx>t</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=nb>Promise</span><span class=p>.</span><span class=nx>resolve</span><span class=p>().</span><span class=nx>then</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>testLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}).</span><span class=nx>then</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>testLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>6</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>setTimeout</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>testLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=mi>4</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><p>而瀏覽器沒有向Nodejs中提供 microtask(process.nextTick)，只能用 macrotask(setImmediate / setTimeout)取代，但會有性能上的影響。</p><h3 id=dispatchqueuebatch>dispatchQueueBatch</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>var</span> <span class=nx>keys</span> <span class=o>=</span> <span class=nx>queue</span><span class=p>.</span><span class=nx>map</span><span class=p>(({</span> <span class=nx>key</span> <span class=p>})</span> <span class=p>=&gt;</span> <span class=nx>key</span><span class=p>);</span>  
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=nx>batchPromise</span> <span class=o>=</span> <span class=nx>batchLoadFn</span><span class=p>(</span><span class=nx>keys</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nx>batchPromise</span><span class=p>.</span><span class=nx>then</span><span class=p>(</span><span class=nx>values</span> <span class=p>=&gt;</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>    <span class=nx>queue</span><span class=p>.</span><span class=nx>forEach</span><span class=p>(({</span>  
+</span></span><span class=line><span class=cl>        <span class=nx>resolve</span><span class=p>,</span>  
+</span></span><span class=line><span class=cl>        <span class=nx>reject</span>  
+</span></span><span class=line><span class=cl>    <span class=p>},</span> <span class=nx>index</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>        <span class=kd>var</span> <span class=nx>value</span> <span class=o>=</span> <span class=nx>values</span><span class=p>[</span><span class=nx>index</span><span class=p>];</span>  
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=nx>value</span> <span class=k>instanceof</span> <span class=nb>Error</span><span class=p>)</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>            <span class=nx>reject</span><span class=p>(</span><span class=nx>value</span><span class=p>);</span>  
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>            <span class=nx>resolve</span><span class=p>(</span><span class=nx>value</span><span class=p>);</span>  
+</span></span><span class=line><span class=cl>        <span class=p>}</span>  
+</span></span><span class=line><span class=cl>    <span class=p>});</span>  
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>dispatchQueue</code> 多做一些判斷，最後呼叫dispatchQueueBatch；<br>在此處取出所有佔存在queue上的keys，並呼叫batchLoadFn，也就是在 new <code>Dataloader((keys)=>{…})</code> 所定義的，執行後就對應queue上的 resolve，也就是把值回傳給 <code>userLoader.load(k).then(value => ….)</code> 做後續的處理。</p><p>總結一下，要使用時先建立 dataloader，並決定對應的 batch loader該如何處理，通常就是放資料庫 batch處理 <code>new Dataloader((keys) => customBatchLoader(keys))</code> ；<br>接著定義操作， <code>loader.load(key).then(value => {})</code> ；<br>dataloader內部透過 <code>enqueuePostPromiseJob</code> 機制，將一個執行幀內定義的操作都匯集起來，並在 Event Loop phase最後執行；<br>最後內部呼叫 <code>dispatchQueueBatch</code> ，也就是實際調用 <code>customBatchLoader</code> 的地方，最後 resolve 當初宣告的 <code>loader.load()</code> 。</p><h4 id=dataloader簡單範例>dataloader簡單範例</h4><p>打印結果，注意 setTimeout會在下一個loop執行，而Promise.resolve()則在同一個 phase被處理掉。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>batched by dataloader: [ 1, 2, 3, 5 ]  
+</span></span><span class=line><span class=cl>content: [ 1, 2, 3, 5 ]  
+</span></span><span class=line><span class=cl>1 got 2  
+</span></span><span class=line><span class=cl>[2,3] got [ 3, 4 ]  
+</span></span><span class=line><span class=cl>batched by dataloader: [ 4 ]  
+</span></span><span class=line><span class=cl>content: [ 4 ]
+</span></span></code></pre></td></tr></table></div></div><p>對應我們要解決的N+1問題，因為Graphql怎麼處理底層呼叫算是個黑盒子，以下是大概示意</p><p>1. 原本Graphql的 N + 1問題</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>let</span> <span class=nx>userList</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>db</span><span class=p>.</span><span class=nx>getUsers</span><span class=p>()</span>  
+</span></span><span class=line><span class=cl><span class=kd>let</span> <span class=nx>post1</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>db</span><span class=p>.</span><span class=nx>getPostByUserId</span><span class=p>(</span><span class=nx>userList</span><span class=p>[</span><span class=mi>0</span><span class=p>].</span><span class=nx>id</span><span class=p>)</span>  
+</span></span><span class=line><span class=cl><span class=kd>let</span> <span class=nx>post2</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>db</span><span class=p>.</span><span class=nx>getPostByUserId</span><span class=p>(</span><span class=nx>userList</span><span class=p>[</span><span class=mi>1</span><span class=p>].</span><span class=nx>id</span><span class=p>)</span> 
+</span></span></code></pre></td></tr></table></div></div><p>&mldr;&mldr;</p><p>2. 如果用dataloader轉換</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kd>let</span> <span class=nx>userList</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>db</span><span class=p>.</span><span class=nx>getUsers</span><span class=p>()</span> 
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// post請求集中成  
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>let</span> <span class=nx>postLoader</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Dataloader</span><span class=p>((</span><span class=nx>keys</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>  
+</span></span><span class=line><span class=cl>    <span class=kd>let</span> <span class=nx>res</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>db</span><span class=p>.</span><span class=nx>getPostListByUserId</span><span class=p>(</span><span class=nx>keys</span><span class=p>)</span>   
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nb>Promise</span><span class=p>.</span><span class=nx>all</span><span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>map</span><span class=p>(</span><span class=nx>r</span> <span class=p>=&gt;</span> <span class=nb>Promise</span><span class=p>.</span><span class=nx>resolve</span><span class=p>(</span><span class=nx>r</span><span class=p>)))</span>  
+</span></span><span class=line><span class=cl><span class=p>})</span> 
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 照舊一個一個定義還是可以  
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>let</span> <span class=nx>post1</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>postLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=nx>userList</span><span class=p>[</span><span class=mi>0</span><span class=p>].</span><span class=nx>id</span><span class=p>)</span>  
+</span></span><span class=line><span class=cl><span class=kd>let</span> <span class=nx>post2</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>postLoader</span><span class=p>.</span><span class=nx>load</span><span class=p>(</span><span class=nx>userList</span><span class=p>[</span><span class=mi>1</span><span class=p>].</span><span class=nx>id</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=結語>結語</h2><p>原本以為 N+1問題要解決必須深入到改寫資料庫的SQL，例如轉成 SELECT IN，但沒想到有個如此簡潔又漂亮的解法，而且不限定用什麼資料庫，真的是太棒了。</p><p>深入底層理解原理，抽象又費時，但我想這樣的投資是值得的，不禁再次感嘆這個Library的精妙，I dont know JS OTZ。</p><h3 id=備註>備註</h3><p>篇幅有點長，所以把一些細節放在這裡</p><h4 id=確保在所有的-promisejobs之後執行>確保在所有的 PromiseJobs之後執行</h4><p>這部分要深入了解 Nodejs 執行 microtask與macrotask的順序</p><p>Promise.resolve ().then (() => {<br>console.log (2);<br>}).then (() => {<br>console.log (9);<br>process.nextTick (() => {<br>console.log (7);<br>});</p><p>Promise.resolve ().then (() => {<br>console.log (8);<br>});<br>});</p><p>process.nextTick (() => {<br>console.log (1);<br>});</p><p>Promise.resolve ().then (() => {<br>console.log (3);<br>}).then (() => {<br>console.log (6);<br>});</p><p>setImmediate (() => {<br>console.log (5);<br>});</p><p>setTimeout (() => {<br>console.log (4);<br>});</p><p>////// 打印結果<br>1<br>2<br>3<br>9<br>6<br>8<br>7 &ndash;> 等同於 dataloader 第一次 batch觸發的時機<br>4<br>5</p><p>這部分蠻有趣的，一開始Event Loop會先從 nextTick queue開始，所以1會先打印；<br>接著處理 Promise.resolve()的 promise queue，也就是2 3；<br>接著 2 3分別又繼續往後resolve 9 6；<br>8之所以在7之前是因為 Nodejs此時再處理 promise queue，所以會優先處理promise，處理完成後才會再處理 nexttick；<br>等 microtask都處理完，才會進到其他timer phase與後續的phase處理。</p><p>這也是為什麼<code>enqueuePostPromiseJob</code> 要用 <code>promise.resolve(()=>process.nextTick(()=>dispatchQueue(this)))</code> ，對應如果 Promise.resolve().then().then() 中的 Promise都是 resolve了就會自動在同一個 batch處理，對印也就是打印 <code>7</code> 的位置。<br>如果開啟了 dataloader cache，dataloader 是直接儲存 resolved promise，性能會有顯著的提升。</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2020/2020-06-07-grpc-%E4%BB%8B%E7%B4%B9%E8%88%87-nodejs-%E5%AF%A6%E4%BD%9C%E5%88%86%E4%BA%AB/><div class=article-details><h2 class=article-title>gRPC 介紹與 Nodejs 實作分享</h2></div></a></article><article><a href=/posts/2020/2020-05-27-js-proxy-/-reflect-%E5%AF%A6%E6%88%B0-%E5%AF%A6%E4%BD%9C-api-%E8%87%AA%E5%8B%95-retry-%E6%A9%9F%E5%88%B6/><div class=article-details><h2 class=article-title>JS Proxy / Reflect 實戰 - 實作 API 自動 retry 機制</h2></div></a></article><article><a href=/posts/2019/2019-10-02-how-javascript-works%E8%AE%80%E5%BE%8C%E6%95%B4%E7%90%86-%E4%B8%8A/><div class=article-details><h2 class=article-title>《How Javascript Works》讀後整理 上</h2></div></a></article><article><a href=/posts/2019/2019-08-09-v8-%E5%85%A7%E7%9A%84%E6%8E%92%E5%BA%8F%E6%BC%94%E7%AE%97%E6%B3%95-timsort/><div class=article-details><h2 class=article-title>V8 內的排序演算法 — Timsort</h2></div></a></article><article><a href=/posts/2019/2019-01-01-v8-zero-stack-async-stack-trace-%E7%A0%94%E7%A9%B6/><div class=article-details><h2 class=article-title>V8 Zero Stack Async Stack Trace 研究</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

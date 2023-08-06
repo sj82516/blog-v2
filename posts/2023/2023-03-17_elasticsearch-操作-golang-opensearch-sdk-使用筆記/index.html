@@ -1,0 +1,198 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="最近在用 Golang 做 Elasticsearch 相關的專案，在看文件到實際使用上有一段落差，寫個簡單的筆記補上 Golang 與 Elasticsearch 互動的方式"><meta name=keywords content="Elastisearch,Golang"><title>Elasticsearch 操作： Golang Opensearch SDK 使用筆記</title><link rel=canonical href=https://yuanchieh.page/posts/2023/2023-03-17-elasticsearch-%E6%93%8D%E4%BD%9C-golang-opensearch-sdk-%E4%BD%BF%E7%94%A8%E7%AD%86%E8%A8%98/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Elasticsearch 操作： Golang Opensearch SDK 使用筆記"><meta property="og:description" content="最近在用 Golang 做 Elasticsearch 相關的專案，在看文件到實際使用上有一段落差，寫個簡單的筆記補上 Golang 與 Elasticsearch 互動的方式"><meta property="og:url" content="https://yuanchieh.page/posts/2023/2023-03-17-elasticsearch-%E6%93%8D%E4%BD%9C-golang-opensearch-sdk-%E4%BD%BF%E7%94%A8%E7%AD%86%E8%A8%98/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2023-03-17T02:21:40+00:00"><meta property="article:modified_time" content="2023-03-17T02:21:40+00:00"><meta name=twitter:title content="Elasticsearch 操作： Golang Opensearch SDK 使用筆記"><meta name=twitter:description content="最近在用 Golang 做 Elasticsearch 相關的專案，在看文件到實際使用上有一段落差，寫個簡單的筆記補上 Golang 與 Elasticsearch 互動的方式"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#前言>前言</a></li><li><a href=#client-sdk-使用>Client SDK 使用</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/db/>DB</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2023/2023-03-17-elasticsearch-%E6%93%8D%E4%BD%9C-golang-opensearch-sdk-%E4%BD%BF%E7%94%A8%E7%AD%86%E8%A8%98/>Elasticsearch 操作： Golang Opensearch SDK 使用筆記</a></h2><h3 class=article-subtitle>最近在用 Golang 做 Elasticsearch 相關的專案，在看文件到實際使用上有一段落差，寫個簡單的筆記補上 Golang 與 Elasticsearch 互動的方式</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Mar 17, 2023</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>3 minute read</time></div></footer></div></header><section class=article-content><h2 id=前言>前言</h2><p>Elasticsearch 是常用來做全文搜尋的 NoSQL Database，公司在使用上有自架也有用 AWS Opensearch 託管服務
+要特別留意的是 Opensearch 是 AWS 自己 fork 維護，兩者不完全兼容，至少在 <code>client sdk 連線是不兼容的!</code> 原本使用 <a class=link href=https://github.com/elastic/go-elasticsearch target=_blank rel=noopener>Golang Elasticsearch 官方 SDK v7.17</a> 要連線 Opensearch 回直接拋錯</p><blockquote><p>error: the client noticed that the server is not a supported distribution of Elasticsearch</p></blockquote><p>一些相關的文章 <a class=link href=https://towardsaws.com/elasticsearch-the-server-is-not-a-supported-distribution-of-elasticsearch-252abc1bd92 target=_blank rel=noopener>[Elasticsearch] The Server Is Not A Supported Distribution Of Elasticsearch</a></p><blockquote><p>Since the AWS Elasticsearch Service has incompatible APIs with Elasticsearch itself, either by missing APIs or has incompatible format, we do not support it.</p></blockquote><p>Beef 應該可以往前追溯幾年前 Elasticsearch 覺得 AWS 在白嫖開源社群進而更改授權，使得 AWS 決定自己維護 Opensearch (新聞 <a class=link href=https://www.ithome.com.tw/news/143812 target=_blank rel=noopener>AWS分叉Elasticsearch重新命名為OpenSearch</a>)</p><p>但有趣的是我測試了一些場景，AWS Opensearch client SDK 可以連線 Elasticsearch (以下簡稱 ES) 與 Opensearch server，所以以下就用 <a class=link href=https://github.com/opensearch-project/opensearch-go target=_blank rel=noopener>Opensearch cliend SDK</a> 操作 ES，後續不會針對 ES 本身有太多介紹，可以參考之前的幾篇文章 <a class=link href=https://yuanchieh.page/posts/2020/2020-07-15-elasticsearch-%E6%95%99%E5%AD%B8-api-%E6%93%8D%E4%BD%9C/ target=_blank rel=noopener>Elasticsearch 教學 - API 操作</a> 和 <a class=link href=https://yuanchieh.page/posts/2020/2020-07-08-elasticsearch-%E7%B3%BB%E7%B5%B1%E4%BB%8B%E7%B4%B9%E8%88%87%E8%A9%95%E4%BC%B0/ target=_blank rel=noopener>Elasticsearch 系統介紹與評估</a></p><h2 id=client-sdk-使用>Client SDK 使用</h2><p>以下使用會覆蓋幾個場景</p><ol><li>建立 Client 連線</li><li>建立 Index</li><li>插入 Document</li><li>搜尋 Document</li><li>建立 Mapping</li><li>刪除 Index</li></ol><p>完整原始碼參考 <a class=link href=https://github.com/sj82516/elasticsearch-golang target=_blank rel=noopener>https://github.com/sj82516/elasticsearch-golang</a>，或是參考 <a class=link href=https://opensearch.org/docs/latest/clients/go/ target=_blank rel=noopener>Opensearch 官方文件</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// connect to elasticsearch
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>client</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>opensearch</span><span class=p>.</span><span class=nf>NewClient</span><span class=p>(</span><span class=nx>opensearch</span><span class=p>.</span><span class=nx>Config</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Addresses</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=s>&#34;http://localhost:9200&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=p>})</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1>// create index
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>res</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>client</span><span class=p>.</span><span class=nx>Indices</span><span class=p>.</span><span class=nf>Create</span><span class=p>(</span><span class=nx>index</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// create document
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nf>createThenSearch</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// refresh
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>client</span><span class=p>.</span><span class=nx>Indices</span><span class=p>.</span><span class=nf>Refresh</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>createThenSearch</span><span class=p>(</span><span class=nx>res</span> <span class=o>*</span><span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>Response</span><span class=p>,</span> <span class=nx>client</span> <span class=o>*</span><span class=nx>opensearch</span><span class=p>.</span><span class=nx>Client</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// create document
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nf>createDocument</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>,</span> <span class=s>`{&#34;key&#34;: &#34;key1&#34;, &#34;title&#34;:&#34;Test my first document&#34;, &#34;number&#34;: 5}`</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nf>createDocument</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>,</span> <span class=s>`{&#34;key&#34;: &#34;key1.child&#34;, &#34;title&#34;:&#34;Test my first document&#34;, &#34;number&#34;: 5}`</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1>// refresh
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>client</span><span class=p>.</span><span class=nx>Indices</span><span class=p>.</span><span class=nf>Refresh</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1>// search document by text field
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>r</span> <span class=o>:=</span> <span class=nf>search</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>,</span> <span class=s>&#34;title&#34;</span><span class=p>,</span> <span class=s>&#34;document&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=s>&#34;search by title:&#34;</span><span class=p>,</span> <span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=nx>r</span> <span class=p>=</span> <span class=nf>search</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>,</span> <span class=s>&#34;key&#34;</span><span class=p>,</span> <span class=s>&#34;key1&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=s>&#34;search by key:&#34;</span><span class=p>,</span> <span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=nx>r</span> <span class=p>=</span> <span class=nf>search</span><span class=p>(</span><span class=nx>res</span><span class=p>,</span> <span class=nx>client</span><span class=p>,</span> <span class=s>&#34;key&#34;</span><span class=p>,</span> <span class=s>&#34;child&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=s>&#34;search by key:&#34;</span><span class=p>,</span> <span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>createDocument</span><span class=p>(</span><span class=nx>res</span> <span class=o>*</span><span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>Response</span><span class=p>,</span> <span class=nx>client</span> <span class=o>*</span><span class=nx>opensearch</span><span class=p>.</span><span class=nx>Client</span><span class=p>,</span> <span class=nx>document</span> <span class=kt>string</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>req</span> <span class=o>:=</span> <span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>IndexRequest</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Index</span><span class=p>:</span> <span class=nx>index</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Body</span><span class=p>:</span>  <span class=nx>strings</span><span class=p>.</span><span class=nf>NewReader</span><span class=p>(</span><span class=nx>document</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span><span class=p>,</span> <span class=nx>_</span> <span class=p>=</span> <span class=nx>req</span><span class=p>.</span><span class=nf>Do</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>Background</span><span class=p>(),</span> <span class=nx>client</span><span class=p>.</span><span class=nx>Transport</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>searchResponse</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Hits</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Total</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=nx>Value</span> <span class=kt>int</span> <span class=s>`json:&#34;value&#34;`</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=s>`json:&#34;total&#34;`</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Hits</span> <span class=p>[]</span><span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=nx>Score</span>  <span class=kt>float64</span> <span class=s>`json:&#34;_score&#34;`</span>
+</span></span><span class=line><span class=cl>            <span class=nx>Source</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nx>Key</span>    <span class=kt>string</span> <span class=s>`json:&#34;key&#34;`</span>
+</span></span><span class=line><span class=cl>                <span class=nx>Title</span>  <span class=kt>string</span> <span class=s>`json:&#34;title&#34;`</span>
+</span></span><span class=line><span class=cl>                <span class=nx>Number</span> <span class=kt>int</span>    <span class=s>`json:&#34;number&#34;`</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span> <span class=s>`json:&#34;_source&#34;`</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=s>`json:&#34;hits&#34;`</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span> <span class=s>`json:&#34;hits&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>search</span><span class=p>(</span><span class=nx>res</span> <span class=o>*</span><span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>Response</span><span class=p>,</span> <span class=nx>client</span> <span class=o>*</span><span class=nx>opensearch</span><span class=p>.</span><span class=nx>Client</span><span class=p>,</span> <span class=nx>key</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>value</span> <span class=kt>string</span><span class=p>)</span> <span class=nx>searchResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>s</span> <span class=o>:=</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>        <span class=s>&#34;query&#34;</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>            <span class=s>&#34;match&#34;</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{}{</span>
+</span></span><span class=line><span class=cl>                <span class=nx>key</span><span class=p>:</span> <span class=nx>value</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>        <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=nx>body</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>s</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>searchReq</span> <span class=o>:=</span> <span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>SearchRequest</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Index</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span><span class=nx>index</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Body</span><span class=p>:</span>  <span class=nx>bytes</span><span class=p>.</span><span class=nf>NewReader</span><span class=p>(</span><span class=nx>body</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=nx>res</span><span class=p>,</span> <span class=nx>_</span> <span class=p>=</span> <span class=nx>searchReq</span><span class=p>.</span><span class=nf>Do</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>Background</span><span class=p>(),</span> <span class=nx>client</span><span class=p>.</span><span class=nx>Transport</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=kd>var</span> <span class=nx>r</span> <span class=nx>searchResponse</span>
+</span></span><span class=line><span class=cl>    <span class=nx>json</span><span class=p>.</span><span class=nf>NewDecoder</span><span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>Body</span><span class=p>).</span><span class=nf>Decode</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>r</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>以上是大致的 API 操作，呼叫起來不太麻煩，只是文件有點簡陋需要不停的查找，建議可以開著 Kibana 的後台對應查詢與回應，有 hint 蠻方便的
+<img src=/post/2023/img/0319/kibana.png loading=lazy></p><p>有兩個地方需要特別留意</p><ol><li>如果是本地端測試，記得在 create document 後 <code>client.Indices.Refresh()</code> 強制 refresh index，因為 ES 收到建立請求後需要一段時間處理才能夠查詢，所以要強制 refresh 才能直接查!</li><li>預設 ES 的 string 輸入都會是 <code>text 型別</code>，而 text 型別會經過 tokenize 、analyzer 加工後支援<code>全文搜尋</code>，這其中的處理包含了去除冗詞贅字、斷詞等等；<br>所以像是我原本預期 <code>key</code> 這個欄位是完全匹配，也就是查詢時要完整的命中，但因為預設是全文搜尋，所以會把沒有完全匹配的結果也回傳，如圖下我查詢 &ldquo;key&rdquo;=&ldquo;key1&rdquo;，結果連 &ldquo;key1.child&rdquo; 都回傳了
+<img src=/post/2023/img/0319/search_text.png loading=lazy></li></ol><p>如果要解決這個問題的話，需要在 Index 建立後增加 Mapping，Mapping 是指定 Index 每個欄位的處理方式，可以切換不同的型別、指定是否要被 indexing 等</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>func</span> <span class=nf>createMapping</span><span class=p>(</span><span class=nx>res</span> <span class=o>*</span><span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>Response</span><span class=p>,</span> <span class=nx>client</span> <span class=o>*</span><span class=nx>opensearch</span><span class=p>.</span><span class=nx>Client</span><span class=p>)</span> <span class=o>*</span><span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>Response</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>mapping</span> <span class=o>:=</span> <span class=s>`{&#34;properties&#34;:{&#34;key&#34;:{&#34;type&#34;:&#34;keyword&#34;}}}`</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span><span class=p>,</span> <span class=nx>_</span> <span class=p>=</span> <span class=nx>client</span><span class=p>.</span><span class=nx>Indices</span><span class=p>.</span><span class=nf>Create</span><span class=p>(</span><span class=nx>index</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>req</span> <span class=o>:=</span> <span class=nx>opensearchapi</span><span class=p>.</span><span class=nx>IndicesPutMappingRequest</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Index</span><span class=p>:</span> <span class=p>[]</span><span class=kt>string</span><span class=p>{</span><span class=nx>index</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Body</span><span class=p>:</span>  <span class=nx>bytes</span><span class=p>.</span><span class=nf>NewReader</span><span class=p>([]</span><span class=nb>byte</span><span class=p>(</span><span class=nx>mapping</span><span class=p>)),</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span><span class=p>,</span> <span class=nx>_</span> <span class=p>=</span> <span class=nx>req</span><span class=p>.</span><span class=nf>Do</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>Background</span><span class=p>(),</span> <span class=nx>client</span><span class=p>.</span><span class=nx>Transport</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>res</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>需要特別留意 Mapping 必須要在 Index 為空的情況下才能生效，如果已經有 document 就不行，需要重新建立</p><p>以下查詢 &ldquo;key&rdquo;=&ldquo;key1&rdquo; 成功回傳一筆資料
+<img src=/post/2023/img/0319/search_keyword.png loading=lazy></p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2023/2023-04-24-vector-db-%E5%88%9D%E6%8E%A2%E8%88%87-weaviate-db-%E6%95%99%E5%AD%B8/><div class=article-details><h2 class=article-title>Vector DB 初探與 Weaviate DB 教學</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

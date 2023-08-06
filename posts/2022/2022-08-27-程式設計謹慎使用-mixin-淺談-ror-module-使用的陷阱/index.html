@@ -1,0 +1,366 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Ruby 提供 Module 用來跨 class reuse code (Mixin)，但如果隨意使用會造成可讀性與維護性困難，淺談問題與分享解法"><meta name=keywords content="RoR,Module,Mixin,OOP"><title>【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱</title><link rel=canonical href=https://yuanchieh.page/posts/2022/2022-08-27-%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88%E8%AC%B9%E6%85%8E%E4%BD%BF%E7%94%A8-mixin-%E6%B7%BA%E8%AB%87-ror-module-%E4%BD%BF%E7%94%A8%E7%9A%84%E9%99%B7%E9%98%B1/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱"><meta property="og:description" content="Ruby 提供 Module 用來跨 class reuse code (Mixin)，但如果隨意使用會造成可讀性與維護性困難，淺談問題與分享解法"><meta property="og:url" content="https://yuanchieh.page/posts/2022/2022-08-27-%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88%E8%AC%B9%E6%85%8E%E4%BD%BF%E7%94%A8-mixin-%E6%B7%BA%E8%AB%87-ror-module-%E4%BD%BF%E7%94%A8%E7%9A%84%E9%99%B7%E9%98%B1/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2022-08-27T01:21:40+00:00"><meta property="article:modified_time" content="2022-08-27T01:21:40+00:00"><meta name=twitter:title content="【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱"><meta name=twitter:description content="Ruby 提供 Module 用來跨 class reuse code (Mixin)，但如果隨意使用會造成可讀性與維護性困難，淺談問題與分享解法"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#module-簡介>Module 簡介</a><ol><li><ol><li><a href=#1-namespace>1. Namespace</a></li><li><a href=#2-code-reuse>2. Code Reuse</a></li></ol></li></ol></li><li><a href=#濫用-module-的壞味道>濫用 Module 的壞味道</a><ol><li><a href=#臭味-1-相依性變成隱式降低易讀性>臭味 1. 相依性變成隱式，降低易讀性</a></li><li><a href=#臭味-2-嚴重耦合如果共用-instance-variable-會讓情況更糟>臭味 2. 嚴重耦合，如果共用 Instance Variable 會讓情況更糟</a></li><li><a href=#壞味道3-多個-module-間可能會有命名衝突>壞味道3. 多個 Module 間可能會有命名衝突</a></li></ol></li><li><a href=#如何解決>如何解決</a><ol><li><a href=#建議-1-composition-over-inheritance>建議 1. Composition over Inheritance</a></li><li><a href=#建議-2-設計-module-時有明確的職責並確保暴露的細節>建議 2. 設計 Module 時有明確的職責，並確保暴露的細節</a><ol><li><a href=#範例enumerable>範例：Enumerable</a></li></ol></li><li><a href=#建議-3-如果要用-instance-variable-請確保只有-module-自己使用>建議 3. 如果要用 instance variable 請確保只有 Module 自己使用</a><ol><li><a href=#範例sidekiqworker>範例：Sidekiq::Worker</a></li></ol></li></ol></li><li><a href=#爭議-rails-activesupportconcern>爭議 Rails ActiveSupport::Concern</a></li><li><a href=#結語>結語</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/program/>Program</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2022/2022-08-27-%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88%E8%AC%B9%E6%85%8E%E4%BD%BF%E7%94%A8-mixin-%E6%B7%BA%E8%AB%87-ror-module-%E4%BD%BF%E7%94%A8%E7%9A%84%E9%99%B7%E9%98%B1/>【程式設計】謹慎使用 Mixin - 淺談 RoR Module 使用的陷阱</a></h2><h3 class=article-subtitle>Ruby 提供 Module 用來跨 class reuse code (Mixin)，但如果隨意使用會造成可讀性與維護性困難，淺談問題與分享解法</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Aug 27, 2022</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><p>平日在公司使用 RoR 開發，過往 code base 在跨 class 時為了方便會抽出一個名為 <code>XXFunction::SharedMethod</code> 的 module，讓多個 class 直接 include 使用，但後續在閱讀時發現 module 與 class 職責不清楚，導致閱讀時要不斷地多個檔案切換，最可怕是 instance variable 在 module / class 都會讀寫，強耦合的情況下任意的改動都有可能破壞原本的設計</p><p>因此有了這篇的文章誕生，探討 Module 在 RoR 中該如何正確地使用，才可以再享有 code reuse 的便利卻不造成可讀性 / 維護性上的困擾</p><p>以下文章大量參考</p><ul><li>Gitlab 上的討論 <a class=link href=https://docs.gitlab.com/ee/development/module_with_instance_variables.html target=_blank rel=noopener>Rails module using instance variable is harmful</a></li><li><a class=link href=https://www.cloudbees.com/blog/good-module-bad-module target=_blank rel=noopener>Good Module or Bad Module</a></li><li><a class=link href=https://www.cloudbees.com/blog/when-to-be-concerned-about-concerns target=_blank rel=noopener>When To Be Concerned About Concerns</a></li></ul><h2 id=module-簡介>Module 簡介</h2><p>Module 在 Rudy 中是一個類似 class 的存在，是 class / method / constant 的集合但不可以被 initiailize，主要的功能有兩個</p><h4 id=1-namespace>1. Namespace</h4><p>如果有兩個 class 在不同的 context 中卻有類似的命名，可以用 Module 當作前綴隔開，例如</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>module</span> <span class=nn>FeatureA</span>
+</span></span><span class=line><span class=cl>    <span class=k>class</span> <span class=nc>Hello</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=nn>FeatureB</span>
+</span></span><span class=line><span class=cl>    <span class=k>class</span> <span class=nc>Hello</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=no>FeatureA</span><span class=o>::</span><span class=no>Hello</span>
+</span></span><span class=line><span class=cl><span class=no>FeatureB</span><span class=o>::</span><span class=no>Hello</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=2-code-reuse>2. Code Reuse</h4><p>在 Ruby 中繼承只能夠 <code>單一繼承</code>，繼承設計的理念偏向是 <code>is-a</code>；<br>如果想更廣泛的賦予 class 某種能力 <code>could-do</code>，那用 module 的方式會更加的適合，在 module 嵌入的數量上 Ruby 並沒有限制 (參考 <a class=link href=https://railsbook.tw/chapters/08-ruby-basic-4 target=_blank rel=noopener>類別（Class）與模組（Module）</a>)</p><p>最基本的例子是 Ruby Core Module <a class=link href=https://ruby-doc.org/core-2.5.0/Comparable.html target=_blank rel=noopener><code>Comparable</code></a>，當 class include Module 後只要實作 <code>&lt;=></code> method，就可以使用 Comparable 定義的功能如 <code>&lt;、>、==、between?</code> 等</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>SizeMatters</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>Comparable</span>
+</span></span><span class=line><span class=cl>  <span class=kp>attr</span> <span class=ss>:str</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>&lt;=&gt;</span><span class=p>(</span><span class=n>other</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>str</span><span class=o>.</span><span class=n>size</span> <span class=o>&lt;=&gt;</span> <span class=n>other</span><span class=o>.</span><span class=n>str</span><span class=o>.</span><span class=n>size</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=n>str</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@str</span> <span class=o>=</span> <span class=n>str</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>inspect</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@str</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>s1</span> <span class=o>=</span> <span class=no>SizeMatters</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;Z&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>s2</span> <span class=o>=</span> <span class=no>SizeMatters</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;YY&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>s1</span> <span class=o>&lt;</span> <span class=n>s2</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=濫用-module-的壞味道>濫用 Module 的壞味道</h2><p>介紹了 Module 的功用，來看一下在濫用的情況下造成的副作用</p><h3 id=臭味-1-相依性變成隱式降低易讀性>臭味 1. 相依性變成隱式，降低易讀性</h3><p>試想今天只是為了降低 class 的程式碼行數，而單純把 code 抽到 Module 會發生什麼？</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>AfterSignupController</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>Wicked</span><span class=o>::</span><span class=no>Wizard</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>SetAdmin</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>MailAfterSuccessfulCreate</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>FooBarFighters</span><span class=o>::</span><span class=no>MyHero</span>
+</span></span><span class=line><span class=cl>  <span class=c1># ...</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>打開了一個檔案，結果發現 class 中所有的 method 都在別的 module 內，這時候要找到對應的 module 在哪就很麻煩</p><p>更可怕的是當你找到後，你怎麼改保證在有 class 依賴的情況下，改動 Module 會不會壞掉？</p><blockquote><p><code>Extracting methods into a module to only turn around and include them is worse than pointless.</code> It&rsquo;s actively damaging to the readability of your codebase.</p></blockquote><h3 id=臭味-2-嚴重耦合如果共用-instance-variable-會讓情況更糟>臭味 2. 嚴重耦合，如果共用 Instance Variable 會讓情況更糟</h3><p>分享一下目前遇到的案例</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>module</span> <span class=nn>SharedFunction</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>update_method</span>
+</span></span><span class=line><span class=cl>        <span class=nb>self</span><span class=o>.</span><span class=n>var</span> <span class=o>+=</span> <span class=mi>10</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>print</span>
+</span></span><span class=line><span class=cl>        <span class=nb>puts</span> <span class=nb>self</span><span class=o>.</span><span class=n>var</span> <span class=o>+</span> <span class=nb>self</span><span class=o>.</span><span class=n>var2</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>Hello</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=no>SharedFunction</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>initialize</span>
+</span></span><span class=line><span class=cl>        <span class=nb>self</span><span class=o>.</span><span class=n>var</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>        <span class=nb>self</span><span class=o>.</span><span class=n>var2</span> <span class=o>=</span> <span class=mi>10</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 耦合點1: class 必須先 initial var，否則 update_method 就會出錯</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 耦合點2: 必需要知道 module method 呼叫順序，變成是要知道 module 所有細節才能使用，缺少封裝的意義</span>
+</span></span><span class=line><span class=cl>        <span class=n>update_method</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>update_var</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 耦合點3. var 這邊也有機會變動，未來在找 var 的值到底是什麼會很困難</span>
+</span></span><span class=line><span class=cl>        <span class=nb>self</span><span class=o>.</span><span class=n>var</span> <span class=o>=</span> <span class=mi>20</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kp>attr_accessor</span> <span class=n>var</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>可以看出 module 在使用 instance variable 後會有很多耦合的地方，包含 initialzie 的時機 / 暴露過多細節等問題</p><h3 id=壞味道3-多個-module-間可能會有命名衝突>壞味道3. 多個 Module 間可能會有命名衝突</h3><p>如果今天兩個 Module 命名重複怎麼辦？ 在 Ruby 中會依照繼承鏈決定套用到的 method，但可能不符合 caller 的預期，這邊可以參考前端 React 圈的討論 <a class=link href=https://reactjs.org/blog/2016/07/13/mixins-considered-harmful.html target=_blank rel=noopener>Mixins Considered Harmful</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>module</span> <span class=nn>A</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>method_a</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=nn>B</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>method_b</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 如果 module B 不小心也定義了 method_a，就會覆蓋過去</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>C</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=n>A</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=n>B</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=如何解決>如何解決</h2><h3 id=建議-1-composition-over-inheritance>建議 1. Composition over Inheritance</h3><p>Module 某種程度是多重繼承，也可以用 class.ancestors 看到 included Module 在繼承鏈上，要解決這樣的臭味可以改用 <code>Composition</code></p><p>Composition 是指說把類似的行為封裝成 class，直接在原本的 class 中使用，這帶來的好處是</p><ol><li>class 有更好的封裝性，只有 public method 可以被使用 (在 Ruby 中不完全正確)</li><li>class 可以獨立測試</li></ol><p>例如以下，原本 tracking 相關的行為被抽到 module 中，要知道 notify_next! 定義在哪就必須找所有的 module 包含繼承的 class</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>Todo</span> <span class=o>&lt;</span> <span class=no>ActiveRecord</span><span class=o>::</span><span class=no>Base</span>
+</span></span><span class=line><span class=cl>  <span class=c1># Other todo implementation</span>
+</span></span><span class=line><span class=cl>  <span class=c1># ...</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>EventTracking</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=nn>EventTracking</span>
+</span></span><span class=line><span class=cl>  <span class=kp>extend</span> <span class=no>ActiveSupport</span><span class=o>::</span><span class=no>Concern</span>
+</span></span><span class=line><span class=cl>  <span class=n>included</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>has_many</span> <span class=ss>:events</span>
+</span></span><span class=line><span class=cl>    <span class=n>before_create</span> <span class=ss>:track_creation</span>
+</span></span><span class=line><span class=cl>    <span class=n>after_destroy</span> <span class=ss>:track_deletion</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>notify_next!</span>
+</span></span><span class=line><span class=cl>    <span class=c1>#</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=kp>private</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>track_creation</span>
+</span></span><span class=line><span class=cl>      <span class=c1># ...</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>但現在 tracking 變成 class <code>EventPlanning</code>，好處是不用猜 <code>notify_next!</code> 在哪個 module，職責與細節都封裝在 EventPlanning 裡面，要改動只要確保相依的 class，就不用特別擔心，而且還有測試保護</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>Todo</span> <span class=o>&lt;</span> <span class=no>ActiveRecord</span><span class=o>::</span><span class=no>Base</span>
+</span></span><span class=line><span class=cl>  <span class=c1># Other todo implementation</span>
+</span></span><span class=line><span class=cl>  <span class=c1># ...</span>
+</span></span><span class=line><span class=cl>  <span class=n>has_many</span> <span class=ss>:events</span>
+</span></span><span class=line><span class=cl>  <span class=n>before_create</span> <span class=ss>:track_creation</span>
+</span></span><span class=line><span class=cl>  <span class=n>after_destroy</span> <span class=ss>:track_deletion</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>notify_next!</span>
+</span></span><span class=line><span class=cl>    <span class=no>EventPlanning</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=nb>self</span><span class=o>.</span><span class=n>events</span><span class=p>)</span><span class=o>.</span><span class=n>notify_next!</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=建議-2-設計-module-時有明確的職責並確保暴露的細節>建議 2. 設計 Module 時有明確的職責，並確保暴露的細節</h3><p>千萬不要為了 reuse code 而放棄 Object Oriented 的思考，要確保每一個 Module 被設計的含義，具體來說就是</p><ol><li>include 的 class 必須實作什麼功能 (決定耦合點)</li><li>Module 可以提供 class 怎樣的額外功能</li></ol><p>讓我們看幾個漂亮的 Module 設計</p><h4 id=範例enumerable>範例：Enumerable</h4><p><a class=link href=https://ruby-doc.org/core-3.1.2/Enumerable.html target=_blank rel=noopener>Enumerable</a> 是提供集合類型的 class 有方便遍歷 (iterate) 的方法</p><ol><li>include class 必須實作 <code>each</code></li><li>Module 可以提供 class <code>map / select / sort / count</code> 等 iterator 該有的功能</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>Foo</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>Enumerable</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>each</span>
+</span></span><span class=line><span class=cl>    <span class=k>yield</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl>    <span class=k>yield</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>2</span>
+</span></span><span class=line><span class=cl>    <span class=k>yield</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=no>Foo</span><span class=o>.</span><span class=n>new</span><span class=o>.</span><span class=n>each_entry</span><span class=p>{</span> <span class=o>|</span><span class=n>element</span><span class=o>|</span> <span class=nb>p</span> <span class=n>element</span> <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>Enumerable 與 class 耦合點只有 each 這個 method，完全沒有 instance variable 等其他耦合，非常乾淨</p><h3 id=建議-3-如果要用-instance-variable-請確保只有-module-自己使用>建議 3. 如果要用 instance variable 請確保只有 Module 自己使用</h3><p>如果 Module 還是需要使用 instance variable 也沒關係，確保 class 不會用到即可</p><h4 id=範例sidekiqworker>範例：Sidekiq::Worker</h4><p>讓我們看一個稍微複雜的案例</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>HardWorker</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=no>Sidekiq</span><span class=o>::</span><span class=no>Worker</span>
+</span></span><span class=line><span class=cl>    <span class=n>sidekiq_options</span> <span class=ss>queue</span><span class=p>:</span> <span class=s1>&#39;critical&#39;</span><span class=p>,</span> <span class=k>retry</span><span class=p>:</span> <span class=mi>5</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>perform</span><span class=p>(</span><span class=o>*</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=c1># do some work</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=no>HardWorker</span><span class=o>.</span><span class=n>perform_async</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>在 include Sidekiq::Worker，可以手動調整參數 sidekiq_options，這邊實作就會建立 instance variable</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=nb>self</span><span class=o>.</span><span class=n>sidekiq_options_hash</span> <span class=o>=</span> <span class=n>get_sidekiq_options</span><span class=o>.</span><span class=n>merge</span><span class=p>(</span><span class=n>opts</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>但很明顯這個 variable 在 class 是完全不會用到，只有 module 內部使用，所以沒有問題</p><p>另外當我們往下追 perform_async 時，可以看到</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>def</span> <span class=nf>perform_inline</span><span class=p>(</span><span class=o>*</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=no>Setter</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=nb>self</span><span class=p>,</span> <span class=p>{})</span><span class=o>.</span><span class=n>perform_inline</span><span class=p>(</span><span class=o>*</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>這邊出現一個 module 內部定義的 class <code>Setter</code>，可以看到實際發送的邏輯在這邊，透過 class 封裝好處是不怕被其他人不小心複寫或改動</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>module</span> <span class=nn>Test</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>module_method</span>
+</span></span><span class=line><span class=cl>        <span class=nb>puts</span> <span class=n>private_method</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kp>private</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>private_method</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;module private&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>A</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=no>Test</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kp>private</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>private_method</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;class private&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>A</span><span class=o>.</span><span class=n>new</span><span class=o>.</span><span class=n>module_method</span> <span class=sr>//</span> <span class=s2>&#34;class private&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p>module 內的 method 會被覆寫，但如果改用 class 指定就不會</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>module</span> <span class=nn>Test</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>module_method</span>
+</span></span><span class=line><span class=cl>        <span class=nb>puts</span> <span class=no>ModuleClass</span><span class=o>.</span><span class=n>new</span><span class=o>.</span><span class=n>private_method</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kp>private</span>
+</span></span><span class=line><span class=cl>    <span class=k>class</span> <span class=nc>ModuleClass</span>
+</span></span><span class=line><span class=cl>        <span class=k>def</span> <span class=nf>private_method</span>
+</span></span><span class=line><span class=cl>            <span class=s2>&#34;module private&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>A</span>
+</span></span><span class=line><span class=cl>    <span class=kp>include</span> <span class=no>Test</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kp>private</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>private_method</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;class private&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>A</span><span class=o>.</span><span class=n>new</span><span class=o>.</span><span class=n>module_method</span> <span class=sr>//</span> <span class=s2>&#34;module private&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=爭議-rails-activesupportconcern>爭議 Rails ActiveSupport::Concern</h2><p>ActiveSupport::Concern 是 Rails 中蠻有趣的設計，類似於 Module 但有增加更多的 <code>魔法</code>，可以把太大的 orm class 以 module 的形式分拆出去，算是 orm 版的 Module，在使用的心法與上述雷同，就不贅述，也可以參考 <a class=link href=https://blog.appsignal.com/2020/09/16/rails-concers-to-concern-or-not-to-concern.html target=_blank rel=noopener>Rails Concerns: To Concern Or Not To Concern</a></p><p>基本上也都是提到 <code>如果 module 與 class 產生了 circular dependency</code>，如果有人沒注意到直接改 class，那 module 就可能會壞掉；解法同樣是降低依賴的機會，讓 module 做的事情簡單一些</p><p>但有趣的是 <a class=link href=https://twitter.com/jubiweb/status/964346236588494848 target=_blank rel=noopener>DHH 本人看起來很喜歡這樣的寫法</a> ，或許這也是一種 convention over configuration 的體現 XD 但蠻多人抱持反對立場，就大家斟酌使用</p><h2 id=結語>結語</h2><p>Ruby 是一門有趣的物件導向語言，所有的東西都是物件，所以在設計上如果多使用物件導向的思維去設計，會讓程式碼更好維護</p><p>另外發現很多人都會把 <code>DRY (Dont repeat yourself)</code> 當作聖旨，看到一點點重複就會忍不住抽共用，但沒有考慮到<code>抽共用看起來避免了重複代碼，但這樣造成了意外的耦合</code>，在理解 Clean Architecture 後會發現很多看似重複都是<code>隱性的重複</code>，其實沒有必要抽共用導致耦合的存在，這點未來有機會再延伸探討</p><p>在使用 Module 上，請確保</p><ol><li>真的需要用 module 在用，否則用 composition + class 會讓生活更簡單</li><li>Module 設計上要確定暴露的細節與耦合點</li><li>使用 instance variable 要小心，請限縮在 module 內使用</li></ol></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2023/2023-04-21-%E5%9C%A8-clean-architecture-%E4%B8%8B-transaction-%E8%A9%B2%E5%A6%82%E4%BD%95%E5%AF%A6%E4%BD%9C%E7%9A%84%E5%95%8F%E9%A1%8C%E7%99%BC%E6%83%B3-golang-%E8%88%87-ruby-%E5%AF%A6%E4%BD%9C/><div class=article-details><h2 class=article-title>在 Clean Architecture 下 transaction 該如何實作的問題發想 (Golang 與 Ruby 實作)</h2></div></a></article><article><a href=/posts/2022/2022-11-26-%E9%96%8B%E7%99%BC%E7%B0%A1%E6%98%93%E7%9A%84-protobuf-plugin/><div class=article-details><h2 class=article-title>開發簡易的 Protobuf plugin</h2></div></a></article><article><a href=/posts/2022/2022-09-11-%E6%B7%BA%E8%AB%87-clean-architecture-%E5%AF%A6%E4%BD%9C-port-mapping-%E6%96%B9%E5%BC%8F/><div class=article-details><h2 class=article-title>淺談 Clean Architecture 實作 - Port Mapping 方式</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,366 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Webassembly 實戰分享"><meta name=keywords content="Webassembly,JS"><title>Webassembly 教學 - 基本運算、陣列處理與指針</title><link rel=canonical href=https://yuanchieh.page/posts/2020/2020-01-01-webassembly-%E6%95%99%E5%AD%B8-%E5%9F%BA%E6%9C%AC%E9%81%8B%E7%AE%97%E9%99%A3%E5%88%97%E8%99%95%E7%90%86%E8%88%87%E6%8C%87%E9%87%9D/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Webassembly 教學 - 基本運算、陣列處理與指針"><meta property="og:description" content="Webassembly 實戰分享"><meta property="og:url" content="https://yuanchieh.page/posts/2020/2020-01-01-webassembly-%E6%95%99%E5%AD%B8-%E5%9F%BA%E6%9C%AC%E9%81%8B%E7%AE%97%E9%99%A3%E5%88%97%E8%99%95%E7%90%86%E8%88%87%E6%8C%87%E9%87%9D/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2020-01-01T05:21:40+00:00"><meta property="article:modified_time" content="2020-01-01T05:21:40+00:00"><meta name=twitter:title content="Webassembly 教學 - 基本運算、陣列處理與指針"><meta name=twitter:description content="Webassembly 實戰分享"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#使用-emscripten-產生範例-code>使用 Emscripten 產生範例 code</a><ol><li><a href=#安裝-emscripten>安裝 Emscripten</a></li><li><a href=#官方基礎教學-hello-world>官方基礎教學 Hello World</a><ol><li><a href=#產生-hello_worldc>產生 hello_world.c</a></li></ol></li></ol></li><li><a href=#乘法運算並移植到網頁上>乘法運算並移植到網頁上</a><ol><li><a href=#產生-multiplycpp>產生 multiply.cpp</a></li><li><a href=#在網頁使用-multiplyoutjs>在網頁使用 multiply.out.js</a></li></ol></li><li><a href=#記憶體操作關於-pointer--array>記憶體操作，關於 Pointer & Array</a><ol><li><ol><li><a href=#arraybuffer--typedarray>ArrayBuffer & TypedArray</a></li><li><a href=#pass-array-by-pointer>Pass Array by pointer</a></li><li><a href=#pointer>Pointer</a></li><li><a href=#free>free</a></li></ol></li></ol></li><li><a href=#總結>總結</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E6%87%89%E7%94%A8%E9%96%8B%E7%99%BC/>應用開發</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2020/2020-01-01-webassembly-%E6%95%99%E5%AD%B8-%E5%9F%BA%E6%9C%AC%E9%81%8B%E7%AE%97%E9%99%A3%E5%88%97%E8%99%95%E7%90%86%E8%88%87%E6%8C%87%E9%87%9D/>Webassembly 教學 - 基本運算、陣列處理與指針</a></h2><h3 class=article-subtitle>Webassembly 實戰分享</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Jan 01, 2020</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>6 minute read</time></div></footer></div></header><section class=article-content><p>近日因為公司專案，要把之前寫好處理圖片的 C++ code 搬移至網頁上，趁機會探索 Web Assembly，未來可以持續移植現有的 C/C++ Library，增加程式的復用性與前端的開發自由度</p><p>Webassembly 其實也不是什麼新技術了，在 2017 年已經正式推出，並在<code>四大瀏覽器</code>都能夠使用，Nodejs 也支援，但網路上相對的中文較少，例如記憶體操作、pass by reference 等等較少提及，這也是讓我頭疼許久的地方，花了兩天不斷試錯，趁跨年假期整理並分享</p><p>以下兩天是主要參考的文章<br><a class=link href=https://hacks.mozilla.org/2017/07/creating-a-webassembly-module-instance-with-javascript/ target=_blank rel=noopener>Creating a WebAssembly module instance with JavaScript</a><br><a class=link href=https://developers.google.com/web/updates/2018/03/emscripting-a-c-library target=_blank rel=noopener>Emscripting a C library to Wasm</a><br><a class=link href=https://becominghuman.ai/passing-and-returning-webassembly-array-parameters-a0f572c65d97 target=_blank rel=noopener>Passing and returning WebAssembly array parameters</a></p><p>Webassembly(Wasm) 主要目的是將其他語言透過編譯方式輸出瀏覽器可以運作的 bytecode，目前除了 C/C++ 外，Rust 也是個熱門的 Wasm 開發語言，周圍的生態系與工具鏈都相對完善；</p><p>以下的教學主要專注於使用 <code>Emscripten</code>，Emscripten 功用是將 C/C++ 編譯成 Wasm，除此之外提供 JS 嫁接到 Wasm 這端的處理(膠水程式)，例如說 malloc / free / printf / cout 等等 C/C++ 的標準函式庫支援的函式，<code>目前 Wasm 不能直接 Access，只能透過 JS 去操作 WebAPI</code>，這些都必須在編譯時被納入實作，此外 Wasm 目前還不能像一般的 JS Library 直接 include 就能使用，而是要處理 Memory Mapping 等，這些 Emscripten 都會處理好</p><p>主要教學項目有</p><ol><li>使用 Emscripten 產生範例 code</li><li>移植乘法運算 C++ Code</li><li>記憶體操作，關於 Pointer & Array</li><li>Wasm 總結</li></ol><h2 id=使用-emscripten-產生範例-code>使用 Emscripten 產生範例 code</h2><h3 id=安裝-emscripten>安裝 Emscripten</h3><p><a class=link href=https://emscripten.org/docs/getting_started/downloads.html target=_blank rel=noopener>Emscripten 官方安裝步驟</a>，按照步驟安裝最新版的 Emscripten，確認安裝完成</p><blockquote><p>emcc &ndash;version</p></blockquote><h3 id=官方基礎教學-hello-world>官方基礎教學 Hello World</h3><p>以下參考 <a class=link href=https://emscripten.org/docs/getting_started/Tutorial.html target=_blank rel=noopener>官方基礎教學 Hello World</a>，並翻譯(解釋)每個步驟</p><h4 id=產生-hello_worldc>產生 hello_world.c</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=cm>/*
+</span></span></span><span class=line><span class=cl><span class=cm> * Copyright 2011 The Emscripten Authors.  All rights reserved.
+</span></span></span><span class=line><span class=cl><span class=cm> * Emscripten is available under two separate licenses, the MIT license and the
+</span></span></span><span class=line><span class=cl><span class=cm> * University of Illinois/NCSA Open Source License.  Both these licenses can be
+</span></span></span><span class=line><span class=cl><span class=cm> * found in the LICENSE file.
+</span></span></span><span class=line><span class=cl><span class=cm> */</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp></span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;hello, world!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>執行</p><blockquote><p>$ emcc build/hello_world.c -o hello_world.html</p></blockquote><p>此時會輸出三個檔案，<code>hello_world.html、hello_world.out.js、hello_world.wasm</code></p><p><code>-o</code> 指定輸出的檔案與檔名，如果沒有指定會輸出 <code>a.out.js、a.wasm</code>；</p><ul><li>.html 檔是 Emscripten 方便開發者除錯用的網頁；</li><li>.wasm 檔即是 binary 格式的 assembly code，人類無法閱讀；</li><li>.js 檔是後續與 JS 整合會需要用到的檔案，也可以直接用 NodeJS 執行</li></ul><blockquote><p>$ node hell_world.out.js</p></blockquote><p><code>-o</code> 如果有指定 <code>{file_name}.html</code>，則會生成配合的前端頁面，顯示 main function 的執行結果</p><p>有了 html 檔，可以使用 http server 用瀏覽器開啟網頁，例如 npm 套件 <code>http-server</code>，在本地端開啟頁面查看結果</p><p>C++ 的 code 雷同</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp></span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=n>std</span><span class=o>::</span><span class=n>cout</span> <span class=o>&lt;&lt;</span> <span class=s>&#34;hello, world!&#34;</span> <span class=o>&lt;&lt;</span> <span class=n>std</span><span class=o>::</span><span class=n>endl</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=乘法運算並移植到網頁上>乘法運算並移植到網頁上</h2><p>上述的 hello_world 主要是檢測環境與工具鍊是否正常，接著開始暖身，用 C++ 寫一個簡單的整數乘法運算，輸入兩個整數，回傳兩整數相乘的結果，<code>著重於如何將 Wasm 整合進前端中</code></p><h3 id=產生-multiplycpp>產生 multiply.cpp</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;emscripten/emscripten.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp></span>
+</span></span><span class=line><span class=cl><span class=k>extern</span> <span class=s>&#34;C&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>EMSCRIPTEN_KEEPALIVE</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>multiply</span><span class=p>(</span><span class=kt>int</span> <span class=n>num1</span><span class=p>,</span> <span class=kt>int</span> <span class=n>num2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>num1</span> <span class=o>*</span> <span class=n>num2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>main</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>result</span> <span class=o>=</span> <span class=n>multiply</span><span class=p>(</span><span class=mi>2</span><span class=p>,</span> <span class=mi>5</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>std</span><span class=o>::</span><span class=n>cout</span> <span class=o>&lt;&lt;</span> <span class=n>result</span> <span class=o>&lt;&lt;</span> <span class=n>std</span><span class=o>::</span><span class=n>endl</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>預設 Emscripten 產生的 .js 只會執行 main function，如果想要呼叫其他韓式必須在欲輸出 function 前加上 <code>EMSCRIPTEN_KEEPALIVE</code>，在 Comile 時指定參數 <code>-s NO_EXIT_RUNTIME=1</code> 避免 wasm 執行 main function 後直接退出</p><p>另外如果是使用 C++ 而不是 C，建議在要輸出的 function 前加上 <code>extern "C"</code>，主要是指定這一段程式碼用 C 的方式編譯，這樣輸出的 function 名稱會保持原狀，可以試著拿掉看看</p><blockquote><p>$ emcc build/multiply.cpp -s NO_EXIT_RUNTIME=1 -o multiply.js</p></blockquote><p>此時會輸出 <code>multiply.js & multiply.wasm</code></p><p>如果不確定 compiled 出來的檔案能不能運行，建議先 <code>-o {filename}.html</code> 確認可以運作，接著再考慮移植</p><h3 id=在網頁使用-multiplyoutjs>在網頁使用 multiply.out.js</h3><p>獨立產生 index.html</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-html data-lang=html><span class=line><span class=cl><span class=cp>&lt;!DOCTYPE html&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>&lt;</span><span class=nt>html</span> <span class=na>lang</span><span class=o>=</span><span class=s>&#34;en&#34;</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;</span><span class=nt>head</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>charset</span><span class=o>=</span><span class=s>&#34;UTF-8&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>name</span><span class=o>=</span><span class=s>&#34;viewport&#34;</span> <span class=na>content</span><span class=o>=</span><span class=s>&#34;width=device-width, initial-scale=1.0&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>http-equiv</span><span class=o>=</span><span class=s>&#34;X-UA-Compatible&#34;</span> <span class=na>content</span><span class=o>=</span><span class=s>&#34;ie=edge&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>title</span><span class=p>&gt;</span>Document<span class=p>&lt;/</span><span class=nt>title</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>script</span> <span class=na>src</span><span class=o>=</span><span class=s>&#34;./multiply.js&#34;</span><span class=p>&gt;&lt;/</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>      <span class=nx>Module</span><span class=p>.</span><span class=nx>onRuntimeInitialized</span> <span class=o>=</span> <span class=kd>function</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>Module</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>Module</span><span class=p>.</span><span class=nx>_main</span><span class=p>());</span>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>Module</span><span class=p>.</span><span class=nx>_multiply</span><span class=p>(</span><span class=mi>2</span><span class=p>,</span> <span class=mi>7</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>      <span class=p>};</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;/</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;/</span><span class=nt>head</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;</span><span class=nt>body</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    請打開 Console
+</span></span><span class=line><span class=cl>  <span class=p>&lt;/</span><span class=nt>body</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>&lt;/</span><span class=nt>html</span><span class=p>&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>當我們打開 Console，可以看到 <code>10</code>，以及 <code>Module</code> 這個由 <code>multiply.js</code> export 的 Object，當我們想要使用 Module 當中的參數，需要包在 <code>onRuntimeInitialized</code> listener 當中，等 Module 初始化完成才能調用，Module 裡頭包含非常多的參數與 function，後續會再介紹</p><p>而我們輸出的 function 會主動被加上 <code>_</code> 前綴，如果要傳入 int 直接用 JS 的 number 就可以了</p><p>甚至如果用 <code>Module._multiply(2, "10")</code> 都會成功輸出 20，傳入參數時會自動做型別轉換，如果輸入純字串則會回傳 0</p><h2 id=記憶體操作關於-pointer--array>記憶體操作，關於 Pointer & Array</h2><p>在 C/C++ 中，pointer 很常被直接當作參數傳遞，讓 sub function 直接操作 pointer 指向的記憶體位置，function return 後原 function 可以直接取值出來用</p><p>目標是實作一個 filter function biggerThan，只有大於 target 的 element 會被塞進 array_pointer 指向的記憶體位置，size 指向最後的 array length</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=c1>// 目標
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>biggerThan</span><span class=p>([</span><span class=nx>elements</span><span class=p>],</span> <span class=nx>elements</span><span class=p>.</span><span class=nx>length</span><span class=p>,</span> <span class=nx>target</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>array_pointer</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>size</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;emscripten/emscripten.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp></span>
+</span></span><span class=line><span class=cl><span class=k>extern</span> <span class=s>&#34;C&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>EMSCRIPTEN_KEEPALIVE</span>
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>biggerThan</span><span class=p>(</span><span class=kt>int</span> <span class=o>*</span><span class=n>elementList</span><span class=p>,</span> <span class=kt>int</span> <span class=n>elementListLength</span><span class=p>,</span> <span class=kt>int</span> <span class=n>target</span><span class=p>,</span> <span class=kt>int</span> <span class=o>**</span><span class=n>result</span><span class=p>,</span> <span class=kt>int</span> <span class=o>*</span><span class=n>size</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=o>*</span><span class=n>result</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span> <span class=o>*</span><span class=p>)</span><span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>target</span><span class=p>)</span> <span class=o>*</span> <span class=n>elementListLength</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>std</span><span class=o>::</span><span class=n>cout</span> <span class=o>&lt;&lt;</span> <span class=o>*</span><span class=n>result</span> <span class=o>&lt;&lt;</span> <span class=n>std</span><span class=o>::</span><span class=n>endl</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>elementListLength</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>elementList</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>&gt;</span> <span class=n>target</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=p>(</span><span class=o>*</span><span class=n>result</span><span class=p>)[</span><span class=o>*</span><span class=n>size</span><span class=p>]</span> <span class=o>=</span> <span class=n>elementList</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>                <span class=o>*</span><span class=n>size</span> <span class=o>=</span> <span class=o>*</span><span class=n>size</span> <span class=o>+</span> <span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=n>std</span><span class=o>::</span><span class=n>cout</span> <span class=o>&lt;&lt;</span> <span class=s>&#34;size mem position:&#34;</span> <span class=o>&lt;&lt;</span> <span class=o>*</span><span class=n>size</span> <span class=o>&lt;&lt;</span> <span class=s>&#34;</span><span class=se>\n</span><span class=s>result mem position:&#34;</span> <span class=o>&lt;&lt;</span> <span class=n>result</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>&lt;&lt;</span> <span class=n>std</span><span class=o>::</span><span class=n>endl</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><blockquote><p>$ emcc build/bigger_than.cpp -O1 -s NO_EXIT_RUNTIME=1 -o bigger_than.js</p></blockquote><p><code>-O1</code> 是指名要 compiler optimize 輸出結果，-O1 是初步優化，-O2 / -O3 是更進階耗時的優化，但要小心優化可能會移除需要的功能</p><p>接著是 index.html</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-html data-lang=html><span class=line><span class=cl><span class=cp>&lt;!DOCTYPE html&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>&lt;</span><span class=nt>html</span> <span class=na>lang</span><span class=o>=</span><span class=s>&#34;en&#34;</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;</span><span class=nt>head</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>charset</span><span class=o>=</span><span class=s>&#34;UTF-8&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>name</span><span class=o>=</span><span class=s>&#34;viewport&#34;</span> <span class=na>content</span><span class=o>=</span><span class=s>&#34;width=device-width, initial-scale=1.0&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>meta</span> <span class=na>http-equiv</span><span class=o>=</span><span class=s>&#34;X-UA-Compatible&#34;</span> <span class=na>content</span><span class=o>=</span><span class=s>&#34;ie=edge&#34;</span> <span class=p>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>title</span><span class=p>&gt;</span>Document<span class=p>&lt;/</span><span class=nt>title</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>script</span> <span class=na>src</span><span class=o>=</span><span class=s>&#34;./bigger_than.js&#34;</span><span class=p>&gt;&lt;/</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>      <span class=nx>Module</span><span class=p>.</span><span class=nx>onRuntimeInitialized</span> <span class=o>=</span> <span class=kd>function</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>elementList</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>([</span><span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>,</span> <span class=mi>4</span><span class=p>,</span> <span class=mi>5</span><span class=p>,</span> <span class=mi>6</span><span class=p>]);</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>elementListBuffer</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>_malloc</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=nx>elementList</span><span class=p>.</span><span class=nx>length</span> <span class=o>*</span> <span class=nx>elementList</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span>
+</span></span><span class=line><span class=cl>        <span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>.</span><span class=nx>set</span><span class=p>(</span><span class=nx>elementList</span><span class=p>,</span> <span class=nx>elementListBuffer</span> <span class=o>&gt;&gt;</span> <span class=mi>2</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>target</span> <span class=o>=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>result</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>(</span><span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>resultBuffer</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>_malloc</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=nx>result</span><span class=p>.</span><span class=nx>length</span> <span class=o>*</span> <span class=nx>result</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span>
+</span></span><span class=line><span class=cl>        <span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>.</span><span class=nx>set</span><span class=p>(</span><span class=nx>result</span><span class=p>,</span> <span class=nx>resultBuffer</span> <span class=o>/</span> <span class=nx>result</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>size</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>(</span><span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>sizeBuffer</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>_malloc</span><span class=p>(</span><span class=nx>size</span><span class=p>.</span><span class=nx>length</span> <span class=o>*</span> <span class=nx>size</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>.</span><span class=nx>set</span><span class=p>(</span><span class=nx>size</span><span class=p>,</span> <span class=nx>sizeBuffer</span> <span class=o>/</span> <span class=nx>size</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=sb>`mem position:\nsizeBuffer: </span><span class=si>${</span><span class=nx>sizeBuffer</span><span class=si>}</span><span class=sb> resultBuffer: </span><span class=si>${</span><span class=nx>resultBuffer</span><span class=si>}</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>        <span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>_biggerThan</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=nx>elementListBuffer</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>elementList</span><span class=p>.</span><span class=nx>length</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>target</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>resultBuffer</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>sizeBuffer</span>
+</span></span><span class=line><span class=cl>        <span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>sizeInMem</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>          <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>sizeBuffer</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>resultRef</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>          <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>resultBuffer</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=kr>const</span> <span class=nx>resultInMem</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>(</span><span class=nx>sizeInMem</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=nx>resultBuffer</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>resultRef</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>resultRef</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>        <span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kd>let</span> <span class=nx>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=nx>i</span> <span class=o>&lt;</span> <span class=nx>sizeInMem</span><span class=p>;</span> <span class=nx>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=nx>resultInMem</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>            <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>resultRef</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span> <span class=o>+</span> <span class=nx>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>sizeInMem</span><span class=p>,</span> <span class=nx>resultInMem</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>_free</span><span class=p>(</span><span class=nx>resultBuffer</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>_free</span><span class=p>(</span><span class=nx>sizeBuffer</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Module</span><span class=p>.</span><span class=nx>_free</span><span class=p>(</span><span class=nx>elementListBuffer</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>      <span class=p>};</span>
+</span></span><span class=line><span class=cl>    <span class=p>&lt;/</span><span class=nt>script</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;/</span><span class=nt>head</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=p>&lt;</span><span class=nt>body</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    請打開 Console
+</span></span><span class=line><span class=cl>  <span class=p>&lt;/</span><span class=nt>body</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>&lt;/</span><span class=nt>html</span><span class=p>&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=arraybuffer--typedarray>ArrayBuffer & TypedArray</h4><p>在開始之前，必須先了解 JS 如何處理 binary data，在 JS 中 binary data 是以 <code>ArrayBuffer</code> 表示，ArrayBuffer 只能讀不能做其他的操作，只能透過 <code>TypedArray</code> 與 <code>Dataview</code>轉換，而 Wasm 中會用到的是 TypedArray</p><p>TypedArray 有許多不同長度的類型，如 Int8Array / Int16Array，數字代表每個 element 的 bit 長度</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kr>const</span> <span class=nx>buffer</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>ArrayBuffer</span><span class=p>(</span><span class=mi>2</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kr>const</span> <span class=nx>i8</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int8Array</span><span class=p>(</span><span class=nx>buffer</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>i8</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=nx>i8</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=kr>const</span> <span class=nx>i16</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int16Array</span><span class=p>(</span><span class=nx>buffer</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>i16</span><span class=p>[</span><span class=mi>0</span><span class=p>]);</span> <span class=c1>// 5220，因為是 0x14 0x64
+</span></span></span></code></pre></td></tr></table></div></div><p>如果兩個 Type Array 從同一個 ArrayBuffer 生成，則兩者改動都會互相影響，如果遇到不同類型互轉，則高位在後低位在前，所以 <code>i16[0] = i8[1] * 2^8 + i8[0]</code>
+<img src=https://media.prod.mdn.mozit.cloud/attachments/2014/09/16/8629/80522bcbdb9d77c4a4c72a289365ea63/typed_arrays.png loading=lazy></p><p>在 C/C++中，有多種不同長度的型別，例如 char / int / float / double 加上 signed / unsigned 等，就會一一對照到 JS 的 Typed Array
+<img src=/post/img/typedarray.jpeg loading=lazy></p><h4 id=pass-array-by-pointer>Pass Array by pointer</h4><p>當我們要讓 C++ 讀取陣列，我們不能直接傳遞陣列，而是先在 JS 中把陣列放進 Memory &ndash;> 接著傳遞 Memory 中的位址 &ndash;> 從 Memory 位址讀取陣列的元素</p><p>在 Wasm 中，一開始初始化會需要 Memory Object，表明整個 Wasm 能夠使用多大的記憶體，接著把資料放進記憶體當中，並取得存放的位址，將位址從 JS 傳遞給 C++，C++ 去相對應的記憶體空間將值取出</p><p>Emscripten 簡化這個過程，改用 <code>_malloc</code> 去取得記憶體空間，並由對應類別大小的 HEAP 塞入空間，此時會拿到記憶體位址</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kr>const</span> <span class=nx>elementList</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>([</span><span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>,</span> <span class=mi>4</span><span class=p>,</span> <span class=mi>5</span><span class=p>,</span> <span class=mi>6</span><span class=p>]);</span>
+</span></span><span class=line><span class=cl><span class=kr>const</span> <span class=nx>elementListBuffer</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>_malloc</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>  <span class=nx>elementList</span><span class=p>.</span><span class=nx>length</span> <span class=o>*</span> <span class=nx>elementList</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span>
+</span></span><span class=line><span class=cl><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>.</span><span class=nx>set</span><span class=p>(</span><span class=nx>elementList</span><span class=p>,</span> <span class=nx>elementListBuffer</span> <span class=o>&gt;&gt;</span> <span class=mi>2</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>這段話的翻譯是</p><ol><li>產生 [1, 2, 3, 4, 5, 6] 陣列，每個元素是 32 bits (4 bytes) 大，剛好對應 C++ 的 int 大小</li><li>索取記憶體空間，_malloc 需指定要多大的 bytes 空間，此例需要 6 * 4 = 24 bytes，elementListBuffer 此時代表這塊記憶體的起始位置，每間隔 4 個 bytes 就是陣列的下一個元素</li><li>因為每個元素是 32 bits，所以用 HEAP32 塞資料，這邊 elementListBuffer &#187; 2 是因為每個儲存單位是 4 bytes， &#187; 2 代表 / 4<br>可以想像是大小抽屜，JS 中操作最小單位是單一個 byte，如果是 Int8Array 則是一個抽屜對應一個單位，但如果是 Int32Array，就是一個抽屜對應四個單位，所以編號(位址)也會比小抽屜少四分之一</li></ol><p>在 C++ 當中，要輪詢 elementList 陣列的值，就只要</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>elementListLength</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>elementList</span><span class=p>[</span><span class=n>i</span><span class=p>]....</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=pointer>Pointer</h4><p>在 Wasm 中，pointer 是 32 bits，所以針對 result / size 都是用 Int32Array，即使 size 是整數而非"陣列"，但是一樣用 Int32Array 宣告</p><p>先看 size，宣告方式相同，最後要取值時，同樣是去 Memory 中的位置找，記得一樣要做位址座標的切換</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kr>const</span> <span class=nx>size</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>(</span><span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kr>const</span> <span class=nx>sizeBuffer</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>_malloc</span><span class=p>(</span><span class=nx>size</span><span class=p>.</span><span class=nx>length</span> <span class=o>*</span> <span class=nx>size</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>.</span><span class=nx>set</span><span class=p>(</span><span class=nx>size</span><span class=p>,</span> <span class=nx>sizeBuffer</span> <span class=o>/</span> <span class=nx>size</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 取值
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kr>const</span> <span class=nx>sizeInMem</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>sizeBuffer</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>];</span>
+</span></span></code></pre></td></tr></table></div></div><h5 id=pointer-of-pointer>Pointer of pointer</h5><p>再來是比較特別的 result，這其實是一個 pointer of pointer，先看 C++ 實作</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=o>*</span><span class=n>result</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span> <span class=o>*</span><span class=p>)</span><span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>target</span><span class=p>)</span> <span class=o>*</span> <span class=n>elementListLength</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>在 JS 層我並沒有先建立整個陣列，而是到了 C++ 才用 malloc 方式去索取陣列的記憶體空間，此時新增加的記憶體空間 JS 並不知道在哪裡，所以我必須想辦法回傳，此時可以透過 return value，我選擇直接修改 result 的值，暫存記憶體位址，再用這個位址去找真正的陣列所在處</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=kr>const</span> <span class=nx>resultRef</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>resultBuffer</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span><span class=p>];</span>
+</span></span><span class=line><span class=cl><span class=kr>const</span> <span class=nx>resultInMem</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Int32Array</span><span class=p>(</span><span class=nx>sizeInMem</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>for</span> <span class=p>(</span><span class=kd>let</span> <span class=nx>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=nx>i</span> <span class=o>&lt;</span> <span class=nx>sizeInMem</span><span class=p>;</span> <span class=nx>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>resultInMem</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=o>=</span> <span class=nx>Module</span><span class=p>.</span><span class=nx>HEAP32</span><span class=p>[</span><span class=nx>resultRef</span> <span class=o>/</span> <span class=nx>Int32Array</span><span class=p>.</span><span class=nx>BYTES_PER_ELEMENT</span> <span class=o>+</span> <span class=nx>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>唸起來很擾口，但也就是多一次的記憶體位址的轉換</p><h4 id=free>free</h4><p>最後別忘了要釋放索取的記憶體，避免 Memory leak</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=nx>Module</span><span class=p>.</span><span class=nx>_free</span><span class=p>(</span><span class=nx>resultBuffer</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=總結>總結</h2><p>WebAssembly 讓網頁開發的「部分功能」可以外包給給其他語言，讓網頁開發的疆域與技術更加的彈性與兼容，甚至未來可以有更多的跨語言協作的可能，十分令人期待</p><p>這一篇教學介紹了 Emscripten 工具，與 C/C++ 編譯出的 Wasm 如何跟 JS 互動，包含基本的整數運算、陣列操作、Pointer 與記憶體存取</p><p>下一篇預計介紹不使用 Emscripten，直接用 Clang 編譯 Wasm，還原到最簡單原始的狀態去認識 Wasm</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2021/2021-02-16-%E6%A5%B5%E9%80%9F%E9%96%8B%E7%99%BC-%E4%B8%8A%E8%AA%B2%E8%88%87%E7%B7%B4%E7%BF%92%E5%BF%83%E5%BE%97/><div class=article-details><h2 class=article-title>【極速開發+】上課與練習心得</h2></div></a></article><article><a href=/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/><div class=article-details><h2 class=article-title>使用 Redis 當作 API Rate limit 的三種方法</h2></div></a></article><article><a href=/posts/2020/2020-06-07-grpc-%E4%BB%8B%E7%B4%B9%E8%88%87-nodejs-%E5%AF%A6%E4%BD%9C%E5%88%86%E4%BA%AB/><div class=article-details><h2 class=article-title>gRPC 介紹與 Nodejs 實作分享</h2></div></a></article><article><a href=/posts/2020/2020-05-27-js-proxy-/-reflect-%E5%AF%A6%E6%88%B0-%E5%AF%A6%E4%BD%9C-api-%E8%87%AA%E5%8B%95-retry-%E6%A9%9F%E5%88%B6/><div class=article-details><h2 class=article-title>JS Proxy / Reflect 實戰 - 實作 API 自動 retry 機制</h2></div></a></article><article><a href=/posts/2020/2020-02-06-expressjs-middleware-%E5%A6%82%E4%BD%95%E5%9C%A8-response-%E7%B5%90%E6%9D%9F%E8%A7%B8%E7%99%BC/><div class=article-details><h2 class=article-title>Expressjs Middleware 如何在 Response 結束觸發</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

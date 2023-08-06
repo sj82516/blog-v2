@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>閱讀 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E9%96%B1%E8%AE%80/</link><description>Recent content in 閱讀 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 17 May 2023 00:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E9%96%B1%E8%AE%80/index.xml" rel="self" type="application/rss+xml"/><item><title>《彼得原理》與《彼得處方》心得分享</title><link>https://yuanchieh.page/posts/2023/2023-05-17-%E5%BD%BC%E5%BE%97%E5%8E%9F%E7%90%86%E8%88%87%E5%BD%BC%E5%BE%97%E8%99%95%E6%96%B9%E5%BF%83%E5%BE%97%E5%88%86%E4%BA%AB/</link><pubDate>Wed, 17 May 2023 00:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2023/2023-05-17-%E5%BD%BC%E5%BE%97%E5%8E%9F%E7%90%86%E8%88%87%E5%BD%BC%E5%BE%97%E8%99%95%E6%96%B9%E5%BF%83%E5%BE%97%E5%88%86%E4%BA%AB/</guid><description>&lt;p>&lt;code>彼得原理&lt;/code>是彼得博士觀察眾多低效組織所得出的結論 &lt;sup>1&lt;/sup>&lt;/p>
+&lt;blockquote>
+&lt;p>只有升遷的機會夠多夠頻繁，最終人們都會抵得不適任的職位&lt;/p>
+&lt;/blockquote>
+&lt;p>這些不適任的人做出不恰當的決策，導致整個組織的效能與產出十分低落，但有趣的是這些不適任的人不是刻意擺爛，甚至在他們升職之前都是&lt;code>優秀且適任的員工&lt;/code>&lt;sup>2&lt;/sup>，到底發生才會產生這樣的悲劇？我們又該如何避免這樣的悲劇發生呢？&lt;/p>
+&lt;h2 id="造成彼得原理的原因">造成彼得原理的原因&lt;/h2>
+&lt;p>主要有兩個&lt;/p>
+&lt;ol>
+&lt;li>找工作的技能與實際工作的技能無關&lt;sup>3&lt;/sup>&lt;br>
+當主管職位空缺時，底下有一批工程師，這時候會怎麼從中選拔出適合的人選當作主管？是透過年資、資歷還是身為工程師的工作能力 ?!&lt;br>
+主管必須有良好的溝通與管理能力，如果用上述的幾種方式都可能選出不適任的主管，例如寫程式速度很快的工程師升上主管後依然親力親為，不懂的管理與分配工作，整體的產能只會下降&lt;br>
+所以當&lt;code>提拔的評估方式與實際工作的技能脫鉤&lt;/code>，就容易有不適任的狀況&lt;/li>
+&lt;li>彼得苦樂論&lt;sup>4&lt;/sup>&lt;br>
+&lt;code>如果某種行為帶來正面回饋，那未來該行為就會持續發生&lt;/code>，從動物實驗(如古典制約)，到人類的社會化過程都是如此
+我們從小就被灌輸成績、金錢與地位的重要，逐漸內化成我們的價值觀就是要不斷的往階層上爬，如果不往上爬反而會被咎責&lt;br>
+衍生的問題是「當我們升遷後發現不適任，通常不會有往後退的想法」，只能無限的上攀直到不適任為止&lt;/li>
+&lt;/ol>
+&lt;h3 id="彼得原理看似例外但其實不是例外">彼得原理看似例外但其實不是例外&lt;/h3>
+&lt;p>有沒有違反彼得原理的存在？也就是說「人連續獲得提拔但還是依然適用的階段」，作者提出幾個很有趣看似例外但不是例外的案例&lt;sup>5&lt;/sup>&lt;/p>
+&lt;ol>
+&lt;li>雞肋升遷&lt;br>
+有時候會看到某些能力不足的人依然可以獲得「升遷」，但這種屬於明升暗降，掛個更好的頭銜但其實拔除實質的負面影響力&lt;/li>
+&lt;li>倒置彼得：重視程序勝過於結果&lt;br>
+常見於行政人員，瘋狂的填寫各種表格卻不思考這對於結果是否有幫助，這與組織的文化有關，如果組織&lt;code>在意員工的穩定性勝過於能力&lt;/code>，那就會造成這個情況劣化&lt;/li>
+&lt;li>適任高峰：在自己位置發揮卓越的人可能只是達到頂峰沒有位置可以升遷&lt;br>
+在某些領域有些人爬到頂峰依然適任，但可能不安份跨足其他領域讓自己最終不適任，例如希特勒是好的政治家，但不是好的元帥&lt;/li>
+&lt;li>階級去角質：當表現太好反而有可能被認為不適任，因為實力好到足以擾亂整個階層的穩定&lt;/li>
+&lt;li>子承父業&lt;/li>
+&lt;/ol>
+&lt;h3 id="彼得原理看婚姻sup11sup">彼得原理看婚姻&lt;sup>11&lt;/sup>&lt;/h3>
+&lt;p>社會價值導致兩性對於彼此的期待過高，導致自己成為不適任的伴侶，進而導致不幸福的婚姻&lt;/p>
+&lt;blockquote>
+&lt;p>灰姑娘雖然透過魔法變漂亮嫁給王子，但有沒有可能因為家世背景不同，王子很快就受不了灰姑娘不懂禮俗與上流文化 ?! 反而使得這場婚姻以悲劇收場&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="症狀">症狀&lt;/h2>
+&lt;p>最後當人抵達不適任職位時，稱為&lt;code>「最終職位症候群」&lt;/code>，以下來看各種相關的症狀&lt;/p>
+&lt;h3 id="外顯的症狀">外顯的症狀&lt;/h3>
+&lt;p>開始用一些外在、虛無縹緲的事情來掩飾自己的無能，條列幾個蠻有趣且常見的症狀&lt;sup>6&lt;/sup>&lt;/p>
+&lt;ul>
+&lt;li>變態辦公桌：巨大化辦公桌、檔案癖&lt;/li>
+&lt;li>顧影自憐：喜歡回憶當年 (還在適任階段)&lt;/li>
+&lt;li>圖表狂熱&lt;/li>
+&lt;li>反覆無常&lt;/li>
+&lt;li>用外表評斷事情&lt;/li>
+&lt;li>口若懸河不知所云&lt;/li>
+&lt;li>自創名詞自我解釋&lt;/li>
+&lt;/ul>
+&lt;p>~你的主管又中了幾項呢~&lt;/p>
+&lt;h3 id="內在症狀">內在症狀&lt;/h3>
+&lt;p>胃潰瘍、高血壓、便秘、腹瀉等壓力造成的文明病，常出現在所謂的「成功人士」身上，這時候可能會採用治標不治本的方式，例如轉移焦點培養新的興趣等，但真正問題是「不適任」導致的壓力過大&lt;/p>
+&lt;p>Pansci 最近的影片 &lt;a class="link" href="https://www.youtube.com/watch?v=cE9JacHPxPY" target="_blank" rel="noopener"
+>科學實證「心情不佳真的會造成消化、皮膚發炎、心血管健康問題」，但為什麼？&lt;/a>佐證了心情與身體疾病的關聯&lt;/p>
+&lt;h2 id="如何避免不適任的狀況">如何避免不適任的狀況&lt;/h2>
+&lt;p>主要分成兩個面向，一個是「個人要認清不應該無綫往上攀爬階層」以及「管理者應該避免升遷不適任人選」&lt;/p>
+&lt;h3 id="個人篇">個人篇&lt;/h3>
+&lt;p>前面提到彼得苦樂論，人被社會培養成只能從外在獲得動機與快樂，但最高層次應該是要「自我肯定」，這背後需要有明確的個人目標、清晰的計畫邁向目標、有可量化的指標時刻注意離目標的距離，最終透過自我的檢視來肯定自己&lt;sup>7&lt;/sup>&lt;br>
+擺脫外在的價值觀才能帶來真正的快樂，也就避免掉無謂的攀比與不適任的機會&lt;/p>
+&lt;p>如何讓人生保持快樂是個大哉問，《彼得處方》在個人篇只有稍微點出一些常見的作法，例如運動、靜心、盤點自己熱愛的事情、設定個人目標等&lt;/p>
+&lt;p>實際面對升遷時，可以用兩種彼得預防性治療來思考&lt;/p>
+&lt;ul>
+&lt;li>負面思考&lt;sup>8&lt;/sup>&lt;br>
+使用「想想未來要跟主管的主管共事、升遷後的工作與生活型態是否想要？當有了更多的錢想要做什麼？真的需要升遷或更多的錢嗎？」決定是否要升遷&lt;/li>
+&lt;li>假性不適任&lt;sup>9&lt;/sup>&lt;br>
+在一些無損專業能力的小毛病犯錯，讓別人誤以為已經到達不適任，避開升遷機會，切記&lt;code>不可以直接回絕升遷&lt;/code>這會讓人覺得沒有上進心等負面觀感，要用比較迂迴的手段達到不升遷的目的&lt;/li>
+&lt;/ul>
+&lt;p>如果已經升遷到不適任階級，可以用彼得安慰劑來緩解症狀&lt;/p>
+&lt;ul>
+&lt;li>永無止盡的準備：逃避實際執行&lt;/li>
+&lt;li>專精枝微末節的小事&lt;/li>
+&lt;li>以形象蓋過工作表現&lt;/li>
+&lt;li>做跟工作完全無關的事情&lt;/li>
+&lt;li>成為職務代理人：避免了原本不適任的職位，也不用承擔現有代理職位的責任&lt;/li>
+&lt;/ul>
+&lt;h3 id="管理者篇">管理者篇&lt;/h3>
+&lt;p>管理者首要之重是明定目標與職位所需的能力，才能依此來評斷人選是否適合，可以透過試行升遷、暗中考核、提前培養能力等方式，先&lt;code>確保人選有足夠能力才升遷&lt;/code>&lt;sup>9&lt;/sup>&lt;/p>
+&lt;p>往後退一步，升遷只是管理者激勵員工的一種方式，這邊需要了解到員工工作的動機因素，這點在《你如何衡量你的人生》書中有特別著重 &lt;code>雙因素理論&lt;/code> &lt;sup>12&lt;/sup>&lt;/p>
+&lt;blockquote>
+&lt;p>雙因素理論：薪水只是「保健因素」，充其量讓你不討厭工作而「內在動機」才會讓工作更快樂&lt;/p>
+&lt;/blockquote>
+&lt;p>更近一步來說，&lt;code>消滅不快樂不會使你快樂!&lt;/code>，這是一個蠻有趣的觀念，更進一步說明可以參考 &lt;a class="link" href="https://www.youtube.com/watch?v=s6g68rXh0go" target="_blank" rel="noopener"
+>人生真正的快樂是什麼？大多數人都理解錯了&amp;hellip; ► 聽聽哈佛教授怎麼說 - Dr. Arthur Brooks 阿瑟·布魯克斯&lt;/a>&lt;/p>
+&lt;p>攤開所有的獎勵辦法，包含薪水、升遷、提升地位、績效考核、員工分潤外，還有讚美、授權、強化員工能力等方式&lt;sup>10&lt;/sup>，需要妥善依照員工能力與階段給與對應的獎勵如 &lt;a class="link" href="https://jctraining.co/situational-leadership-introduction/" target="_blank" rel="noopener"
+>情境式領導&lt;/a>，&lt;code>單純用薪資或升遷不是良好的激勵辦法&lt;/code>&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>彼得博士在書中用比較諷刺辛辣的口吻在描述，並創造一堆彼得前綴的詞彙來諷刺現象，讀起來蠻有趣的，看到某一些人物設定與場景跟以前的工作經驗吻合不免會心一笑，但看看別人想想自己，也在思考自己是否一直被外在所驅動，抑或是自己已經成為彼得而不自知 (希望還沒)&lt;/p>
+&lt;p>整理上這兩本書蠻值得一起看，《彼得處方》這本書內容個人覺得比較單薄，只能說蜻蜓點水式把常見的作法提點出來，但內容比較少需要再往下鑽研&lt;/p>
+&lt;hr>
+&lt;h2 id="附錄">附錄&lt;/h2>
+&lt;p>目前嘗試用卡片盒筆記 &lt;a class="link" href="https://app.heptabase.com/w/2f64499816932c964fa39d53516e9a6fbda23bd863906fc1a04be9e9422ac40c" target="_blank" rel="noopener"
+>heptabase《彼得原理》與《彼得處方》筆記&lt;/a>，盡量會把摘要內容對應的書頁附上，方便回頭查閱&lt;/p>
+&lt;ol>
+&lt;li>《彼得原理》p42&lt;/li>
+&lt;li>《彼得原理》p48&lt;/li>
+&lt;li>《彼得原理》p7&lt;/li>
+&lt;li>《彼得處方》p104&lt;/li>
+&lt;li>《彼得原理》p54&lt;/li>
+&lt;li>《彼得原理》p162&lt;/li>
+&lt;li>《彼得處方》p75&lt;/li>
+&lt;li>《彼得原理》p219&lt;/li>
+&lt;li>《彼得處方》p189&lt;/li>
+&lt;li>《彼得處方》p213&lt;/li>
+&lt;li>《彼得處方》p30&lt;/li>
+&lt;li>《你如何衡量你的人生》p54&lt;/li>
+&lt;/ol></description></item></channel></rss>

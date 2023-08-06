@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>測試 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E6%B8%AC%E8%A9%A6/</link><description>Recent content in 測試 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sat, 26 Jun 2021 01:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E6%B8%AC%E8%A9%A6/index.xml" rel="self" type="application/rss+xml"/><item><title>壓測工具：JMeter 使用教學 + 自定義變數使用</title><link>https://yuanchieh.page/posts/2021/2021-06-26-jmeter-%E4%BD%BF%E7%94%A8%E6%95%99%E5%AD%B8-+-%E8%87%AA%E5%AE%9A%E7%BE%A9%E8%AE%8A%E6%95%B8%E4%BD%BF%E7%94%A8/</link><pubDate>Sat, 26 Jun 2021 01:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-06-26-jmeter-%E4%BD%BF%E7%94%A8%E6%95%99%E5%AD%B8-+-%E8%87%AA%E5%AE%9A%E7%BE%A9%E8%AE%8A%E6%95%B8%E4%BD%BF%E7%94%A8/</guid><description>&lt;p>最近功能上線遇到一些 OOM 問題，在 Staging 手動驗證流量不夠測不出來有點頭疼，所以回頭用 JMeter 進行壓力測試，因為有 Cache 所以只打單一種 request 是沒有用的，必須組合出多種參數一起執行，好在 JMeter 支援 csv 輸入參數，以下將介紹如何使用&lt;/p>
+&lt;p>Sample 可以參考我的 github repo &lt;a class="link" href="https://github.com/sj82516/jmeter-pre-post-processor" target="_blank" rel="noopener"
+>jmeter-pre-post-processor&lt;/a>&lt;/p>
+&lt;h3 id="安裝">安裝&lt;/h3>
+&lt;p>到&lt;a class="link" href="https://jmeter.apache.org/download_jmeter.cgi" target="_blank" rel="noopener"
+>官網&lt;/a>下載最新版，解壓縮完 &lt;code>$ bin/jmeter&lt;/code> 即可執行，記得電腦要安裝 java&lt;/p>
+&lt;h3 id="sample1-操作">Sample1: 操作&lt;/h3>
+&lt;p>進行基本的壓力測試，大概會有以下的步驟&lt;/p>
+&lt;ol>
+&lt;li>決定進行幾輪測試&lt;/li>
+&lt;li>要發送多少 request、同時間併發數&lt;/li>
+&lt;li>request 針對的 host / 參數設定&lt;/li>
+&lt;li>結果的顯示，可以將 response 存成檔案 / 圖表顯示 response 速度、成功率等&lt;/li>
+&lt;/ol>
+&lt;p>對應 JMeter 設定是&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Thread Group&lt;/code>
+&lt;ol>
+&lt;li>Number of Threads: 多少 request&lt;/li>
+&lt;li>Loop Count: 總共幾輪&lt;/li>
+&lt;li>Ramp-Up Second: 有點 ticky 的參數，指定多少時間內 Thread 會啟動，假設設定 90 sec 總共有 10 個 thread，則下一個 thread 會上一個 thread 成功後 + 9 (90/10) sec 後啟動，官方建議 &lt;code>預設 = threads 數量再視情況增減&lt;/code>，如果要確保同時併發，request 執行時間要大於 thread 啟動時間&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>在 Thread Group 上，按下右鍵增加
+&lt;ol>
+&lt;li>&lt;code>Config Element&lt;/code> 系列：可以放共用參數
+&lt;ol>
+&lt;li>Http Request Default: Http request 的預設參數，可以放 host / port 等共用設定&lt;/li>
+&lt;li>Http Header Manager: 放共同 Header&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>&lt;code>Sampler&lt;/code>: 採樣，也就是要測試的項目
+&lt;ol>
+&lt;li>Http Request: 指定要打的參數&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>&lt;code>Listener&lt;/code>: 收集結果
+&lt;ol>
+&lt;li>Summary Report：統計所有 request 的速度與成功率等
+&lt;img src="https://yuanchieh.page/post/2021/img/0626/jmeter.png"
+loading="lazy"
+>&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="sample2-從-csv-讀取參數">Sample2: 從 csv 讀取參數&lt;/h3>
+&lt;p>選擇 Config Element &amp;gt; CSV Data Set Config，選擇 csv 檔案後，在 Http Request 可以用 &lt;code>${變數名}&lt;/code> 的方式，就可以讀取到對應的 csv 欄位喔
+例如我的 csv 長這樣&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">account,password
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">user1,test1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">user2,test2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">user3,test3
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我希望打出 POST /login 中的 body 帶參數，變成&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-md" data-lang="md">&lt;span class="line">&lt;span class="cl">{&amp;#34;user&amp;#34;: &amp;#34;${account}&amp;#34;, &amp;#34;password&amp;#34;: &amp;#34;${password}&amp;#34;}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>JMeter 會依序從上至下不斷輪迴發送喔&lt;/p>
+&lt;h3 id="sample3-pre-processor">Sample3: Pre Processor&lt;/h3>
+&lt;p>如果我們希望在每次 Request 前做一些預處理，例如產生亂數、字串組合等，就可以用 Pre Processor，有分成很多種，可以用 BeanShell (java-like script language) 或是 JSR223 (javascript / groovy 等更多的 script language)，這邊就用 javascript&lt;/p>
+&lt;p>延伸自 Sample2，先將 csv 讀進來的 account / password 當作參數，在 account 前面加一個 &amp;ldquo;prefix_&amp;rdquo; 字串，做法上新增一個 JSR223 Preprocessor，選擇 javascript，並輸入&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">account&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">vars&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;account&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">account&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;prefix_&amp;#34;&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nx">account&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">vars&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">put&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;account&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">account&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">info&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">vars&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>有一些環境變數可以使用，例如 &lt;code>vars&lt;/code> 可以取得/設定當前的變數，其餘還有 &lt;code>sample&lt;/code> 可以改變 sample 結果 / &lt;code>log&lt;/code> 打出 log， console.log 是不能用的 / &lt;code>props&lt;/code> 取得當前 JMeter 設定等，這些比較進階，可以參考 &lt;a class="link" href="https://www.blazemeter.com/blog/how-use-beanshell-jmeters-favorite-built-component" target="_blank" rel="noopener"
+>How to Use BeanShell: JMeter&amp;rsquo;s Favorite Built-in Component&lt;/a>&lt;/p>
+&lt;h3 id="post-processor">Post Processor&lt;/h3>
+&lt;p>有些時候，我們會希望做一些後處理，例如 parse response 做 assertion 等，可以增加 post-processor，例如我們可以接登入取得的 token，當作下一個 request 的參數，新增一個 JSR223 PostProcessor&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">responseBody&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">sampler&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">sample&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="nx">getResponseDataAsString&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">responseBody&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">JSON&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">responseBody&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">vars&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">put&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s2">&amp;#34;user_id&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">String&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">responseBody&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這樣下一個 request 就可以拿 ${user_id} 了&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>JMeter 有非常多方便且強大的組件，可以組合出各種客製化的壓測環境&lt;/p></description></item><item><title>Golang Test - 單元測試、Mock與http handler 測試</title><link>https://yuanchieh.page/posts/2021/2021-03-18-golang-test/</link><pubDate>Thu, 18 Mar 2021 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2021/2021-03-18-golang-test/</guid><description>&lt;p>上過 91 老師的 TDD 後，開始注重程式語言支援的測試框架，&lt;code>編寫測試代碼與寫出容易寫測試的代碼&lt;/code>是很重要的一件事，好測試的代碼通常好維護，因為通常代表有更低的耦合性、物件依賴關係明確等，說是「通常」也代表不是這麼絕對；但反之 &lt;code>不容易寫測試的代碼&lt;/code>往往都是有奇怪 smell 的&lt;/p>
+&lt;p>關於測試案例的種類請參考 91 老師的 &lt;a class="link" href="https://dotblogs.com.tw/hatelove/2012/11/29/learning-tdd-in-30-days-day7-unit-testing-stub-mock-and-fake-object-introduction" target="_blank" rel="noopener"
+>Unit Test - Stub, Mock, Fake 簡介&lt;/a>&lt;/p>
+&lt;p>以下將分享如何在 Golang 中編寫&lt;/p>
+&lt;ul>
+&lt;li>單元測試&lt;/li>
+&lt;li>如何 Stub/Mock 外部相依&lt;/li>
+&lt;li>如何針對 http handler 做 http request 假請求檢查&lt;/li>
+&lt;/ul>
+&lt;p>自己開始真正寫 Golang 也是這幾個禮拜，有一些命名、寫法不正確，煩請指教，但針對測試的本身應該是沒什麼問題的&lt;br>
+目前採用 &lt;code>Ginkgo&lt;/code> + &lt;code>gomock&lt;/code> + &lt;code>httptest&lt;/code> 組合的測試工具&lt;/p>
+&lt;p>以下我們將寫一個簡單的匯率兌換表，用戶輸入既有的幣別 / 欲兌換的幣別 / 數量，Server 回傳兌換後的數量，程式碼於此 &lt;a class="link" href="https://github.com/sj82516/golang-exchange-currency" target="_blank" rel="noopener"
+>golang-exchange-currency&lt;/a>&lt;/p>
+&lt;p>以下是程式碼結構&lt;/p>
+&lt;ul>
+&lt;li>main.go: 啟動 http server&lt;/li>
+&lt;li>src/exchange_currency_model.go: 模擬去資料庫讀取匯率兌換表&lt;/li>
+&lt;li>src/currency_exchange_handler.go: http handler，處理 request 與 response&lt;/li>
+&lt;/ul>
+&lt;h2 id="單元測試">單元測試&lt;/h2>
+&lt;p>首先要決定測試框架，這部分評估過 &lt;code>原生的testing&lt;/code>、&lt;code>Testify&lt;/code>，最後選擇了 &lt;a class="link" href="https://onsi.github.io/ginkgo/#getting-ginkgo" target="_blank" rel="noopener"
+>&lt;code>Ginkgo&lt;/code>&lt;/a>，最大原因是熟悉原本 Nodejs的 &lt;code>Decribe / It&lt;/code> 組織 test case 的方式，以及有方便的 BeforeEach 可以抽出重複測試行為的部分，例如在每個測試案例之前都先 new 好 object&lt;br>
+這些在 testing / Testify 都要額外的功夫處理&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="kn">import&lt;/span> &lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span> &lt;span class="s">&amp;#34;github.com/onsi/ginkgo&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span> &lt;span class="s">&amp;#34;github.com/onsi/gomega&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">_&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">Describe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;currency exchange&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">c&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">CurrencyExchangeHandler&lt;/span>&lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">...&lt;/span>&lt;span class="p">.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">BeforeEach&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">func&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">c&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">NewCurrencyExchangeHandler&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">It&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;should get 0 if amount is 0&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span> &lt;span class="nx">Done&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">...&lt;/span>&lt;span class="p">.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">Expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Exchange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;US&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;TW&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)).&lt;/span>&lt;span class="nf">To&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">Equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">close&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">...&lt;/span>&lt;span class="p">.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="stubmock">Stub/Mock&lt;/h2>
+&lt;p>&lt;code>Stub&lt;/code> 專注於測試物件本身，只是把外部相依的方法塞一個設定值回傳；&lt;br>
+&lt;code>Mock&lt;/code> 則延伸 Stub，除了塞回傳值外，而外檢查被呼叫物件的傳入值 / 呼叫次數 / 狀態改變等非測試物件本身的狀態&lt;/p>
+&lt;p>在 Golang 中，使用 &lt;a class="link" href="https://github.com/golang/mock" target="_blank" rel="noopener"
+>&lt;code>gomock&lt;/code>&lt;/a> 真的是超級方便，可以直接針對檔案產出對應的 mock 檔 exchange_price_model_mock.go，這邊要注意 mock 是針對 interface 產生，所以如果你的檔案中沒有 interface，mock 檔出來就會是空的&lt;/p>
+&lt;p>所以我在 exchange_price_model.go 中有定義&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">IExchangePriceModel&lt;/span> &lt;span class="kd">interface&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">GetExchangeRate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">chan&lt;/span>&lt;span class="o">&amp;lt;-&lt;/span> &lt;span class="nx">ExchangeRateResult&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>接著執行 &lt;code>mockgen -source={要 mock 的檔案} -destination={輸出位置} -package={package 名稱}&lt;/code>，例如 &lt;code>$ mockgen -source=exchange_price_model.go -destination=exchange_price_model_mock.go -package=src&lt;/code>，mockgen 是 gomock 用來產生 mock 檔案的 binary 執行工具&lt;/p>
+&lt;p>之後測試案例採用 &lt;code>NewMockIExchangePriceModel&lt;/code> 這個由 mockgen 產生的 struct 即可&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">_&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">Describe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;currency exchange&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">c&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">CurrencyExchangeHandler&lt;/span>&lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">mockCtrl&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Controller&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">e&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">MockIExchangePriceModel&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">BeforeEach&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">func&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">mockCtrl&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewController&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">GinkgoT&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">e&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">NewMockIExchangePriceModel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">mockCtrl&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">c&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">NewCurrencyExchangeHandler&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">It&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;should get 0 if amount is 0&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span> &lt;span class="nx">Done&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">e&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">EXPECT&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="nf">GetExchangeRate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;US&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;TW&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Any&lt;/span>&lt;span class="p">()).&lt;/span>&lt;span class="nf">Do&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">from&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">to&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">ch&lt;/span> &lt;span class="kd">chan&lt;/span>&lt;span class="o">&amp;lt;-&lt;/span> &lt;span class="nx">ExchangeRateResult&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">ch&lt;/span> &lt;span class="o">&amp;lt;-&lt;/span> &lt;span class="nx">ExchangeRateResult&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">IsExists&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">ExchangeRate&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">40&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">Expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Exchange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;US&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;TW&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)).&lt;/span>&lt;span class="nf">To&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">Equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">close&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">...&lt;/span>&lt;span class="p">.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>編寫 mock 的方式如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="nx">e&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">EXPECT&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="nf">Method&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;預期 method 要收到的參數&amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="nf">Do&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;實際執行時收到的參數&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">做任何造假&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>等於是寫一次連&lt;code>預期輸入&lt;/code>、&lt;code>造假輸出&lt;/code>都一並做完，如果要方便可以 &lt;code>.Return()&lt;/code> 直接寫回傳內容，但因為涉及 channel 要傳遞資料，所以我選擇 .Do() 並塞入造假的資料回傳 channel&lt;/p>
+&lt;p>如果不在意預期輸入，可以都用 &lt;code>gomock.Any()&lt;/code> 跳過檢查&lt;/p>
+&lt;h3 id="如何造假-timenow-等系統相依的函式">如何造假 Time.Now 等系統相依的函式&lt;/h3>
+&lt;p>搜尋了一下這類問題，建議是把有外部相依都抽到另一個 Object 去，然後透過依賴注入的方式傳進去，才能夠造假&lt;/p>
+&lt;p>例如&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">ObjectA&lt;/span> &lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ObjectA&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">MethodA&lt;/span>&lt;span class="p">(){&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">MethodB&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ObjectA&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">MethodB&lt;/span>&lt;span class="p">(){&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">Time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Now&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這樣是無法測試的，要拆解成&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">interface&lt;/span> &lt;span class="nx">IObjectB&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">MethodB&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">ObjectA&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">ObjB&lt;/span> &lt;span class="nx">IObjectB&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ObjectA&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">MethodA&lt;/span>&lt;span class="p">(){&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ObjB&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">MethodB&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在使用 Interface 替換過程，要注意 *Type 跟 Type 的差異，如果發現以下錯誤訊息請參考 &lt;a class="link" href="https://stackoverflow.com/questions/40823315/x-does-not-implement-y-method-has-a-pointer-receiver" target="_blank" rel="noopener"
+>X does not implement Y (… method has a pointer receiver)&lt;/a>&lt;br>
+從問答中回去文件看，可以注意到以下內容
+&lt;a class="link" href="https://golang.org/ref/spec#Method_sets" target="_blank" rel="noopener"
+>Method sets ¶&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">The method &lt;span class="nb">set&lt;/span> of any other &lt;span class="nb">type&lt;/span> T consists of all methods declared with receiver &lt;span class="nb">type&lt;/span> T. The method &lt;span class="nb">set&lt;/span> of the corresponding pointer &lt;span class="nb">type&lt;/span> *T is the &lt;span class="nb">set&lt;/span> of all methods declared with receiver *T or T &lt;span class="o">(&lt;/span>that is, it also contains the method &lt;span class="nb">set&lt;/span> of T&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這一段也就是說&lt;/p>
+&lt;ul>
+&lt;li>如果 method 宣告的 reciever 是 non pointer type &lt;code>func (t T) method&lt;/code>，則 T / *T 都有包含此 method&lt;/li>
+&lt;li>但如果 method 宣告的 reciever 是 pointer type，則只有 *T 包含此 method&lt;/li>
+&lt;/ul>
+&lt;p>延伸至 embedded struct&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">- If S contains an embedded field T, the method sets of S and *S both include promoted methods with receiver T. The method &lt;span class="nb">set&lt;/span> of *S also includes promoted methods with receiver *T.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">- If S contains an embedded field *T, the method sets of S and *S both include promoted methods with receiver T or *T.
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果是&lt;/p>
+&lt;ul>
+&lt;li>S 是 non pointer，且 T 也是 non pointer，則包含了 T non pointer type methods&lt;/li>
+&lt;li>S 是 non pointer + T 是 pointer / 只要 S 是 pointer type，則包含了 T non pointer / pointer type methods&lt;/li>
+&lt;/ul>
+&lt;p>詳見程式碼，我把 struct 有的 method 都列出來，可以清楚看到以上的規則 &lt;a class="link" href="https://play.golang.org/p/jkYrqF4KyIf" target="_blank" rel="noopener"
+>Go playground&lt;/a>&lt;/p>
+&lt;p>另外抽出依賴再注入，如果忘記初始化會有記憶體存取失敗的錯誤 &lt;code>http: panic serving runtime error: invalid memory address or nil pointer dereference&lt;/code>，看到錯誤記得去檢查&lt;/p>
+&lt;h2 id="針對-http-handler-做檢查">針對 HTTP Handler 做檢查&lt;/h2>
+&lt;p>透過單元測試與 Stub/Mock，可以檢查完商業邏輯的部份，但如果想更確定 server 是否有正確處理 http request，包含是否回傳預期的錯誤結果，可以再進一步針對 http handler 做測試&lt;/p>
+&lt;p>這邊採用 core library 包含 &lt;code>net/http/httptest&lt;/code> 測試，完整教學可以參考 &lt;a class="link" href="https://blog.questionable.services/article/testing-http-handlers-go/" target="_blank" rel="noopener"
+>Testing Your (HTTP) Handlers in Go&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-golang" data-lang="golang">&lt;span class="line">&lt;span class="cl">&lt;span class="nf">It&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;test ServeHttp integration&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span> &lt;span class="nx">Done&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">e&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">EXPECT&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="nf">GetExchangeRate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Any&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Any&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="nx">gomock&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Any&lt;/span>&lt;span class="p">()).&lt;/span>&lt;span class="nf">Do&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">from&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">to&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">ch&lt;/span> &lt;span class="kd">chan&lt;/span>&lt;span class="o">&amp;lt;-&lt;/span> &lt;span class="nx">ExchangeRateResult&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">ch&lt;/span> &lt;span class="o">&amp;lt;-&lt;/span> &lt;span class="nx">ExchangeRateResult&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">IsExists&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="kc">false&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">ExchangeRate&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">close&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">ch&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">req&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">_&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">http&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewRequest&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;GET&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;/exchange-currency&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kc">nil&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">query&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">req&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">URL&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Query&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">query&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;from&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;US&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">query&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;to&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;TW&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">query&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;amount&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;10&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">req&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">URL&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">RawQuery&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">query&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Encode&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">rr&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">httptest&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewRecorder&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">e&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">ExchangePriceModel&lt;/span>&lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">c&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">CurrencyExchangeHandler&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">E&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">e&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">handler&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">http&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">HandlerFunc&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ServeHTTP&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">handler&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">ServeHTTP&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rr&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">req&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">Expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Code&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="nf">To&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">Equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">200&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">body&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Amount&lt;/span> &lt;span class="kt">int&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">_&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">json&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Unmarshal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Body&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Bytes&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">body&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nf">Expect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">body&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Amount&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="nf">To&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">Equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">300&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">close&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">done&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以上基本就是造假 / 初始化 handler / 初始化 http request / 透過 &lt;code>handler.ServeHTTP(rr, req)&lt;/code> 模擬 http handler 處理過程 / 檢查 response&lt;/p>
+&lt;p>基本上 Context / Cookie 等都可以處理，處理起來相當方便&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>從動態語言過來，最不習慣的就是要一直去想物件之間的相依，包含要處理 mock 時要拆出 interface 與外部物件，而不能針對某一個 object 的某一個 method 造假&lt;/p>
+&lt;p>但整體上，Golang 的測試算方便且好上手，~找不到偷懶不寫測試的理由了~&lt;/p></description></item></channel></rss>

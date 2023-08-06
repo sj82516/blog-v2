@@ -1,0 +1,241 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="公司一開始在 pre sync 階段採用 data-migration 在部署前觸發事件，例如回補資料等，但後來在一些場景需要在 post sync 機器部署後也觸發事件，分享自己簡單魔改 data-migration 完成需求"><meta name=keywords content="Rails,CD"><title>Rails 部署優化: 魔改 data-migration 實作 post sync 機制</title><link rel=canonical href=https://yuanchieh.page/posts/2023/2023-03-28-rails-%E9%83%A8%E7%BD%B2%E5%84%AA%E5%8C%96-%E9%AD%94%E6%94%B9-data-migration-%E5%AF%A6%E4%BD%9C-post-sync-%E6%A9%9F%E5%88%B6/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Rails 部署優化: 魔改 data-migration 實作 post sync 機制"><meta property="og:description" content="公司一開始在 pre sync 階段採用 data-migration 在部署前觸發事件，例如回補資料等，但後來在一些場景需要在 post sync 機器部署後也觸發事件，分享自己簡單魔改 data-migration 完成需求"><meta property="og:url" content="https://yuanchieh.page/posts/2023/2023-03-28-rails-%E9%83%A8%E7%BD%B2%E5%84%AA%E5%8C%96-%E9%AD%94%E6%94%B9-data-migration-%E5%AF%A6%E4%BD%9C-post-sync-%E6%A9%9F%E5%88%B6/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2023-03-28T02:21:40+00:00"><meta property="article:modified_time" content="2023-03-28T02:21:40+00:00"><meta name=twitter:title content="Rails 部署優化: 魔改 data-migration 實作 post sync 機制"><meta name=twitter:description content="公司一開始在 pre sync 階段採用 data-migration 在部署前觸發事件，例如回補資料等，但後來在一些場景需要在 post sync 機器部署後也觸發事件，分享自己簡單魔改 data-migration 完成需求"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#前言>前言</a></li><li><a href=#實作>實作</a><ol><li><a href=#1-透過-generator-產生-migration-script-template>1. 透過 Generator 產生 migration script template</a><ol><li><a href=#generator-實作>Generator 實作</a></li></ol></li><li><a href=#2-註冊-rake-指令>2. 註冊 Rake 指令</a></li><li><a href=#3-避免-timestamp-collision>3. 避免 timestamp collision</a></li></ol></li><li><a href=#總結>總結</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2023/2023-03-28-rails-%E9%83%A8%E7%BD%B2%E5%84%AA%E5%8C%96-%E9%AD%94%E6%94%B9-data-migration-%E5%AF%A6%E4%BD%9C-post-sync-%E6%A9%9F%E5%88%B6/>Rails 部署優化: 魔改 data-migration 實作 post sync 機制</a></h2><h3 class=article-subtitle>公司一開始在 pre sync 階段採用 data-migration 在部署前觸發事件，例如回補資料等，但後來在一些場景需要在 post sync 機器部署後也觸發事件，分享自己簡單魔改 data-migration 完成需求</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Mar 28, 2023</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>3 minute read</time></div></footer></div></header><section class=article-content><h2 id=前言>前言</h2><p>公司當前是透過 GitOps ArgoCD 這套工具來管理持續部署的流程，ArgoCD 有個方便的 hook 機制 <code>pre sync</code> 和 <code>post sync</code>，可以在機器部署前與部署後執行對應的腳本</p><p>在我們原本的 Rails 部署機制，會於 pre sync 階段執行</p><ul><li><code>db:migration</code>：負責 DB schema 改動</li><li><code>data:migration</code>：<a class=link href=https://github.com/ilyakatz/data-migrate target=_blank rel=noopener>data-migrate</a> 負責跑一些 Rails script 回補資料等
+避免 API server 上線因為有髒資料或錯誤的 DB schema 而執行錯誤</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>.
+</span></span><span class=line><span class=cl>└── db/
+</span></span><span class=line><span class=cl>    ├── data =&gt; data migration at presync
+</span></span><span class=line><span class=cl>    └── migrate =&gt; schema change
+</span></span></code></pre></td></tr></table></div></div><p>但有時候我們會需要在機器部署完成後觸發 script，例如說當我們新增了 sidekiq job 需要觸發時，必須等到 sidekiq server 都更新到最新的版本才可以觸發，否則會 sidekiq server 會認不得新的 job</p><p>簡而言之，我們會需要在 pre sync 有一套 data-migration，在 post sync 也需要在一套 data-migration，但同一套 data-migration 是不能直接用在兩個觸發點，執行時會無法區分哪些 migration script 該在什麼時間點觸發</p><p>化成具體的需求是提供一套基於 data-migration 的 post sync 觸發機制，希望封裝出類似於 data-migration 的效果</p><ol><li>透過指令可以簡單產生 migration script template <code>$ $ bin/rails generate post_sync hello_post_sync</code></li><li>執行指令 <code>$ bin/rake post_sync:migrate</code></li><li>紀錄在 DB 中避免 script 反覆執行</li><li>不影響現有的 pre sync 機制</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>.
+</span></span><span class=line><span class=cl>└── db/
+</span></span><span class=line><span class=cl>    ├── data =&gt; data migration at presync
+</span></span><span class=line><span class=cl>    ├── migrate =&gt; schema change
+</span></span><span class=line><span class=cl>    └── post_sync =&gt; data migration at post sync
+</span></span></code></pre></td></tr></table></div></div><p>以下將介紹透過 rails generator 簡單魔改達到我們要的效果</p><h2 id=實作>實作</h2><h3 id=1-透過-generator-產生-migration-script-template>1. 透過 Generator 產生 migration script template</h3><p>透過 <a class=link href=https://guides.rubyonrails.org/generators.html target=_blank rel=noopener>Rails Generator</a> 基於模板產生對應的檔案，透過 generator 產生 generator <code>$ bin/rails generate generator initializer</code></p><p>在 generator 中可以定義產生檔案的方式，也可以從 CLI 吃不同的參數</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=nc>InitializerGenerator</span> <span class=o>&lt;</span> <span class=no>Rails</span><span class=o>::</span><span class=no>Generators</span><span class=o>::</span><span class=no>NamedBase</span>
+</span></span><span class=line><span class=cl>  <span class=n>source_root</span> <span class=no>File</span><span class=o>.</span><span class=n>expand_path</span><span class=p>(</span><span class=s1>&#39;templates&#39;</span><span class=p>,</span> <span class=n>__dir__</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>copy_initializer_file</span>
+</span></span><span class=line><span class=cl>    <span class=n>copy_file</span> <span class=s2>&#34;initializer.rb&#34;</span><span class=p>,</span> <span class=s2>&#34;config/initializers/</span><span class=si>#{</span><span class=n>file_name</span><span class=si>}</span><span class=s2>.rb&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>create_helper_file</span>
+</span></span><span class=line><span class=cl>    <span class=n>create_file</span> <span class=s2>&#34;app/helpers/</span><span class=si>#{</span><span class=n>file_name</span><span class=si>}</span><span class=s2>_helper.rb&#34;</span><span class=p>,</span> <span class=s>&lt;&lt;-FILE
+</span></span></span><span class=line><span class=cl><span class=s></span><span class=n>module</span> <span class=c1>#{class_name}Helper</span>
+</span></span><span class=line><span class=cl>  <span class=kp>attr_reader</span> <span class=p>:</span><span class=c1>#{plural_name}, :#{plural_name.singularize}</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=no>FILE</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>file_name 是從 Rails::Generators::NamedBase 繼承而來，從 CLI 讀取，例如 <code>$ bin/rails generate initializer core_extensions</code> file_name 就是 core_extensions</li><li>copy_file 複製檔案</li><li>create_file 直接輸入檔案內容</li><li>其他更多有趣的 method <a class=link href=https://guides.rubyonrails.org/generators.html#generator-methods target=_blank rel=noopener>10 Generator methods</a></li></ul><h4 id=generator-實作>Generator 實作</h4><p>目標是打造一個類似 data-migrate 的 generator，儲存在獨立的 folder 下，並有著 timestamp 結尾的檔案</p><p>在閱讀 <a class=link href=https://github.com/ilyakatz/data-migrate/blob/86f10f277deaf9aac4844f12ffea727442690d47/lib/data_migrate/config.rb#L20-L23 target=_blank rel=noopener>data-migrate 原始碼時</a>，看到可以針對 data_migrations script 的 folder 進行調整</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>@data_migrations_path = &#34;db/data/&#34;
+</span></span></code></pre></td></tr></table></div></div><p>所以靈機一動就想說在 generator 中如果可以動態置換，並觸發 data-migrate 就可以產生新的檔案到對應的資料夾下，而不會污染於本的 data-migrate</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=c1># lib/generators/post_sync_generator.rb</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=n>post</span> <span class=n>syncGenerator</span> <span class=o>&lt;</span> <span class=no>Rails</span><span class=o>::</span><span class=no>Generators</span><span class=o>::</span><span class=no>NamedBase</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>copy_initializer_file</span>
+</span></span><span class=line><span class=cl>    <span class=no>DataMigrate</span><span class=o>.</span><span class=n>configure</span> <span class=k>do</span> <span class=o>|</span><span class=n>config</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=n>config</span><span class=o>.</span><span class=n>data_migrations_path</span> <span class=o>=</span> <span class=no>POST_SYNC_PATH</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=no>Rails</span><span class=o>::</span><span class=no>Generators</span><span class=o>.</span><span class=n>invoke</span><span class=p>(</span><span class=s2>&#34;data_migration&#34;</span><span class=p>,</span> <span class=o>[</span><span class=n>file_name</span><span class=o>]</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>data-migrate 本身就有提供 data_migration 的 generator，而且可以直接在 generator 中觸發另一個 generator，再加上 file_name 可以從 CLI 讀取，這樣就可以串起來</p><p>成果是輸入 <code>$ rails generate post_sync xxxx_xxx</code>，會在指定的路徑下產生</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>.
+</span></span><span class=line><span class=cl>└── rails/
+</span></span><span class=line><span class=cl>    └── db/
+</span></span><span class=line><span class=cl>        ├── data/
+</span></span><span class=line><span class=cl>        │   └── 20210408091311_migration.rb
+</span></span><span class=line><span class=cl>        └── post_sync/
+</span></span><span class=line><span class=cl>            └── 20210429100009_post_sync.rb
+</span></span></code></pre></td></tr></table></div></div><h3 id=2-註冊-rake-指令>2. 註冊 Rake 指令</h3><p>當我們希望透過 CLI 觸發特定指令時，可以透過 <a class=link href=https://github.com/ruby/rake target=_blank rel=noopener>Rake</a>，處理任務與任務間相依性的 gem 套件</p><p>這邊的用法相當簡單，同樣去改 migrations_path，並觸發原本 data migrate 的 Rake task 即可</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=c1># lib/tasks/post_sync.rake</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>namespace</span> <span class=ss>:post_sync</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=n>task</span> <span class=ss>:migrate</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=no>DataMigrate</span><span class=o>.</span><span class=n>configure</span> <span class=k>do</span> <span class=o>|</span><span class=n>config</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=n>config</span><span class=o>.</span><span class=n>data_migrations_path</span> <span class=o>=</span> <span class=no>POST_SYNC_PATH</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=no>Rake</span><span class=o>::</span><span class=no>Task</span><span class=o>[</span><span class=s1>&#39;data:migrate&#39;</span><span class=o>].</span><span class=n>invoke</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=3-避免-timestamp-collision>3. 避免 timestamp collision</h3><p>前面我們透過 generator 與 rake 成功產生 migration script template 與執行 post sync，並且在檔案路徑上與原本的 data migration 分開</p><p>但目前還有個問題是最後 data-migrate 紀錄 script 是否曾經跑過<code>還是在同一張 DB table</code> 中，這邊沒有 config 可以直接調整</p><p>後來跟同事討論後，決定手寫一個檢查在 CI 執行時確認 db/data 跟 db/post_sync 下的 timestamp 沒有重複</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=k>class</span> <span class=n>post</span> <span class=n>syncChecker</span>
+</span></span><span class=line><span class=cl>  <span class=no>CHECK_FOLDER</span> <span class=o>=</span> <span class=o>[</span>
+</span></span><span class=line><span class=cl>    <span class=no>DataMigrate</span><span class=o>.</span><span class=n>config</span><span class=o>.</span><span class=n>data_migrations_path</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=no>POST_SYNC_PATH</span>
+</span></span><span class=line><span class=cl>  <span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>class</span> <span class=o>&lt;&lt;</span> <span class=nb>self</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>is_collision?</span>
+</span></span><span class=line><span class=cl>      <span class=p>(</span><span class=n>pre</span> <span class=n>sync_versions</span><span class=p>,</span> <span class=n>post</span> <span class=n>sync_versions</span><span class=p>)</span> <span class=o>=</span> <span class=no>CHECK_FOLDER</span><span class=o>.</span><span class=n>map</span> <span class=k>do</span> <span class=o>|</span><span class=n>path</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>        <span class=n>list_migration_versions</span><span class=p>(</span><span class=ss>path</span><span class=p>:</span> <span class=no>File</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=no>Rails</span><span class=o>.</span><span class=n>root</span><span class=p>,</span> <span class=n>path</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>      <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>      <span class=nb>puts</span> <span class=n>pre</span> <span class=n>sync_versions</span>
+</span></span><span class=line><span class=cl>      <span class=p>(</span><span class=n>pre</span> <span class=n>sync_versions</span> <span class=o>&amp;</span> <span class=n>post</span> <span class=n>sync_versions</span><span class=p>)</span><span class=o>.</span><span class=n>present?</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>list_migration_versions</span><span class=p>(</span><span class=ss>path</span><span class=p>:)</span>
+</span></span><span class=line><span class=cl>      <span class=no>Dir</span><span class=o>.</span><span class=n>entries</span><span class=p>(</span><span class=n>path</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>         <span class=o>.</span><span class=n>map</span> <span class=p>{</span> <span class=o>|</span><span class=n>filename</span><span class=o>|</span> <span class=n>parse_version</span><span class=p>(</span><span class=ss>filename</span><span class=p>:</span> <span class=n>filename</span><span class=p>)</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>         <span class=o>.</span><span class=n>compact</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># ref: https://github.com/ilyakatz/data-migrate/blob/2dd90c495b4d57e4dc700e3f9be149c7e2b93b57/lib/data_migrate/data_migrator_five.rb#L44</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>parse_version</span><span class=p>(</span><span class=ss>filename</span><span class=p>:)</span>
+</span></span><span class=line><span class=cl>      <span class=n>result</span> <span class=o>=</span> <span class=sr>/(\d{14})_(.+)\.rb$/</span><span class=o>.</span><span class=n>match</span><span class=p>(</span><span class=n>filename</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=k>return</span> <span class=k>unless</span> <span class=n>result</span><span class=o>.</span><span class=n>present?</span>
+</span></span><span class=line><span class=cl>      <span class=n>result</span><span class=o>[</span><span class=mi>1</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>夾在測試中執行</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-rb data-lang=rb><span class=line><span class=cl><span class=c1># spec/unit/lib/post_sync_checker_spec.rb</span>
+</span></span><span class=line><span class=cl><span class=nb>require</span> <span class=s1>&#39;rails_helper&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>describe</span> <span class=s2>&#34;post syncChecker&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=n>let</span><span class=p>(</span><span class=ss>:version</span><span class=p>)</span> <span class=p>{</span> <span class=mi>12345678901234</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=n>let</span><span class=p>(</span><span class=ss>:file_paths</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=o>::</span><span class=n>post</span> <span class=n>syncChecker</span><span class=o>::</span><span class=no>CHECK_FOLDER</span><span class=o>.</span><span class=n>map</span> <span class=k>do</span> <span class=o>|</span><span class=n>path</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=no>File</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=no>Rails</span><span class=o>.</span><span class=n>root</span><span class=p>,</span> <span class=n>path</span><span class=p>,</span> <span class=s2>&#34;</span><span class=si>#{</span><span class=n>version</span><span class=si>}</span><span class=s2>_test.rb&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>context</span> <span class=s2>&#34;when there are two file with same version&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>before</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>      <span class=n>file_paths</span><span class=o>.</span><span class=n>each</span> <span class=k>do</span> <span class=o>|</span><span class=n>file_path</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>        <span class=no>File</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>file_path</span><span class=p>,</span> <span class=no>File</span><span class=o>::</span><span class=no>CREAT</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>after</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>      <span class=n>file_paths</span><span class=o>.</span><span class=n>each</span> <span class=k>do</span> <span class=o>|</span><span class=n>file_path</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>        <span class=no>File</span><span class=o>.</span><span class=n>delete</span><span class=p>(</span><span class=n>file_path</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>it</span> <span class=s1>&#39;should failed&#39;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>      <span class=n>expect</span><span class=p>(</span><span class=o>::</span><span class=n>post</span> <span class=n>syncChecker</span><span class=o>.</span><span class=n>is_collision?</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>eq</span><span class=p>(</span><span class=kp>true</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s2>&#34;check when running test&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=o>::</span><span class=n>post</span> <span class=n>syncChecker</span><span class=o>.</span><span class=n>is_collision?</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>eq</span><span class=p>(</span><span class=kp>false</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=總結>總結</h2><p>這是一個小小的工具，不過在對於整個部署流程有還不錯的幫助</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

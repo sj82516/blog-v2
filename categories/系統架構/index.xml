@@ -1,0 +1,1173 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>系統架構 on Yuanchieh</title><link>https://yuanchieh.page/categories/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B/</link><description>Recent content in 系統架構 on Yuanchieh</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 03 Nov 2020 08:21:40 +0000</lastBuildDate><atom:link href="https://yuanchieh.page/categories/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B/index.xml" rel="self" type="application/rss+xml"/><item><title>Raft 演算法介紹與《In Search of an Understandable Consensus Algorithm》摘要</title><link>https://yuanchieh.page/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/</link><pubDate>Tue, 03 Nov 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/</guid><description>&lt;p>共識演算法主要應用於分散式系統中，一個集群中有多個節點組成，讓每個節點都維護相同的狀態，例如說在多種系統中都需要集群有單一個 Leader 存在，所有節點都必須承認這一個 Leader，否則多個 Leader 可能會導致 Split brain 等資料不一致等問題；&lt;br>
+但如何讓節點狀態一致是一件不簡單的事情，要考慮到節點可能失敗 / 網路封包延遲等等&lt;/p>
+&lt;p>Raft 演算法是由史丹佛大學的教授所提出，他在影片中提到過往的共識演算法 Paxos 過於複雜，世界上真正了解的人沒有幾個，市面上的實作也分歧出非常多的實作版本，理論太過艱深導致實務上有很大的落差&lt;/p>
+&lt;p>所以他在設計 Raft 的一個核心理念是&lt;code>好懂&lt;/code>，他在 Conference 上也僅用約 10 分鐘就大致介紹完 Raft 的原理，整份論文也才 16 頁&lt;/p>
+&lt;p>以下將整理影片介紹與論文摘要，探討 Raft 如何在分散式系統中讓&lt;code>多節點在容忍錯誤下達到強一致性&lt;/code>&lt;/p>
+&lt;h2 id="影片介紹">影片介紹&lt;/h2>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/no5Im1daS-o"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>先從在 Conf 上的介紹影片快速理解，Raft 由三個部分組成&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Leader Election&lt;/code>:&lt;br>
+整個集群中票選出一位 Leader&lt;/li>
+&lt;li>&lt;code>Log Replication&lt;/code>:&lt;br>
+Leader 負責接收 Client 的指令，並把狀態同步到多數節點上&lt;/li>
+&lt;li>&lt;code>Safety&lt;/code>:&lt;br>
+當 Leader 要重新票選時，確保擁有最新資料的節點才能當上 Leader，避免確認過(commited)的資料被取消&lt;/li>
+&lt;/ol>
+&lt;p>以下將摘要論文 &lt;a class="link" href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener"
+>《In Search of an Understandable Consensus Algorithm (Extended Version)》&lt;/a>部分內容&lt;/p>
+&lt;h1 id="論文摘要">論文摘要&lt;/h1>
+&lt;p>Raft 是一種用於管理副本紀錄的共識演算法，效果類似於 Paxos，但結構上完全不同，這也使得 Raft 相較於 Paxos 更容易了解&lt;br>
+為了增加可讀性，Raft 解構出幾個共識演算法中關鍵的元素，像是 Leader Election / Log replication / Safety，並透過減少狀態達到更強的凝聚性 (意指節點可以變化的狀態少，就更容易達到一致)&lt;/p>
+&lt;h2 id="1-introduction">1. Introduction&lt;/h2>
+&lt;p>共識演算法 (Consensus) 提供由機器組成的集合可以運作類似同一體並能夠容忍部分成員出錯，也這是這些特性，共識演算法在建構大型軟體系統是很關鍵的角色&lt;/p>
+&lt;p>Paxos 主宰這一塊近十年，但不幸的是 Paxos 很難懂，同時在實務上需要有很負責的設計才能夠使用，所以不論是學生還是系統工程師都十分困擾&lt;/p>
+&lt;p>所以作者開始想要設計一門足夠好理解、同時對於系統工程師也容易實踐的共識演算法&lt;/p>
+&lt;blockquote>
+&lt;p>our primary goal was &lt;code>understandability&lt;/code>: could we define a consensus algorithm for
+practical systems and describe it in a way that is significantly easier to learn than Paxos&lt;/p>
+&lt;/blockquote>
+&lt;p>透過解構出獨件以及減少機器在不一致狀態的可能性，讓整個演算法更容易理解&lt;/p>
+&lt;p>Raft 有以下幾個特點&lt;/p>
+&lt;ol>
+&lt;li>Strong Leader:&lt;br>
+Log 的寫入必須經由 Leader 再到其他節點上，這樣可以簡化很多不必要的複雜性&lt;/li>
+&lt;li>Leader Election:&lt;br>
+在選舉時，Raft 利用隨機延遲(randomized timers)方式快速且有效解決可能的衝突 (避免大家在同一個時刻想要變成 Leader)&lt;/li>
+&lt;li>身份改變&lt;br>
+在改變節點的設定檔時，可以將前後兩種設定檔以聯集方式合併(joint consensus)，在更改設定同時還能維持服務&lt;/li>
+&lt;/ol>
+&lt;p>作者認為 Raft 是個優異的共識演算法，就讓我們繼續往下看&lt;/p>
+&lt;h2 id="2-replicated-state-machines">2. Replicated state machines&lt;/h2>
+&lt;p>Replicated state machines 是指一群機器的集合，可以運算出相同的狀態，並在少數節點失敗時還能正常運行，主要用來解決分散式系統中各種錯誤容忍性的問題，例如 GFS / HDFS / RAMCloud，在這些系統中有獨立的 Replicated state machine 掌管 Leader Election / 保存 Config，在 Leader crash 情況下還能繼續運作；
+Replicated state machine 的實際案例有 Chubby / ZooKeeper&lt;/p>
+&lt;p>Replicated state machine 通常是由複製 Log 所實踐，如下圖，每個 Server 都有一份 log，依照相同順序紀錄著相同的指令，運算整份 log 就能得到相同的狀態機 (state machine)&lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20201103/stateMachine.png"
+loading="lazy"
+alt="stateMachine"
+>&lt;/p>
+&lt;p>從 client 收到指令後，&lt;code>如何保持順序複製相同的指令到每台機器上，就是共識演算法的任務&lt;/code>，共識演算法具體提供下列保證&lt;/p>
+&lt;ol>
+&lt;li>Safety:&lt;br>
+在非拜占庭情況下，系統即使遭遇網路延遲、網路分隔 (partition)、封包遺失、指令重複發送、發送順序改變等問題，都不影響結果&lt;/li>
+&lt;li>只要多數節點存活就能夠正常運行，例如 5 個節點 3 個還活著就可以，並且失敗的節點可以在後面重新加回集群中&lt;/li>
+&lt;li>不依賴時間當作判斷，在分散式系統中時間是不可信的(除非學 Google 用原子鐘自幹出 &lt;a class="link" href="https://cloud.google.com/spanner/docs/true-time-external-consistency" target="_blank" rel="noopener"
+>TrueTime&lt;/a> )，每個系統都存在著時鐘沒對齊的可能&lt;/li>
+&lt;li>多數節點有回應收到副本就算成功，少數節點晚回覆不會造成性能影響&lt;/li>
+&lt;/ol>
+&lt;h2 id="3-whats-wrong-with-paxos">3. What’s wrong with Paxos?&lt;/h2>
+&lt;p>這一章節主要在描繪 Paxos 的背景與有多難理解的原因，但因為之前沒有學過 Paxos，就先略過這章&lt;/p>
+&lt;h2 id="4-designing-for-understandability">4. Designing for understandability&lt;/h2>
+&lt;p>這一章節主要是作者不斷強調 &lt;code>understandability&lt;/code> 是他們的核心理念，當遇到設計有多種方案選擇時，他們會選擇最好解釋給別人聽的那一個，對於他們來說可讀性是核心理念&lt;/p>
+&lt;p>具體上，透過 &lt;code>decomposition 拆分獨立模組&lt;/code>以及&lt;code>減少不確定性與狀態可能性&lt;/code> 達成目的，但在某一些部分還是有用上隨機性，因為這讓演算法更好理解&lt;/p>
+&lt;h2 id="5-the-raft-consensus-algorithm">5. The Raft consensus algorithm&lt;/h2>
+&lt;p>Raft 在實作上會先選出一名 Leader ，由 Leader 管理 log 的複製到其他節點的狀態機上，透過 Leader 的好處是不需要其他節點同意 Leader 能獨自決定新的 log 要儲放的位置；&lt;br>
+如果 Leader 失敗了可以再選新的 Leader 出來&lt;/p>
+&lt;h3 id="51-raft-basics">5.1 Raft basics&lt;/h3>
+&lt;p>通常 Raft 集群會由五個節點組成，可以容忍兩個節點失敗，而每個節點有三種狀態 &lt;code>leader / follower / candidate&lt;/code>，通常情況下是一個 leader 其他人都是 follower&lt;/p>
+&lt;ol>
+&lt;li>follower: 被動的處理來自 leader 或 candidate 的請求&lt;/li>
+&lt;li>leader: 負責所有 client 的 request，並複製指令到 follower 中&lt;/li>
+&lt;li>candidate: follower 發現沒有 leader，設一個隨機 timeout 切換成 candidate 模式，準備要選新 leader&lt;/li>
+&lt;/ol>
+&lt;p>下圖為狀態機示意圖
+&lt;img src="https://yuanchieh.page/post/img/20201103/state.png"
+loading="lazy"
+alt="state-machine"
+>&lt;/p>
+&lt;p>Raft 將時間切割成 &lt;code>回合 (term)&lt;/code>，每一個回合代表著一次的選舉，也就是 candidate 去競選 leader 的過程，如果成功推選出 leader 後，則每個節點紀錄這一個回合數；如果選舉失敗，則開啟新的回合直到有人成為 leader&lt;/p>
+&lt;p>以下為概念圖
+&lt;img src="https://yuanchieh.page/post/img/20201103/term.png"
+loading="lazy"
+alt="term"
+>&lt;/p>
+&lt;p>回合本身是一個遞增數值，用來表示邏輯上的時間概念，有可能節點觀察到的回合跟其他節點不同，如果回合數小則代表自身的資料過時，他必須更新自己的回合數；&lt;br>
+例如說原本的 leader 可能斷線，其他節點推選出新的 leader 則會進到下一個回合數，&lt;code>原本的 leader 回歸後發現自己的回合數比較小，則會主動變成 follower&lt;/code>；&lt;br>
+如果節點收到請求時，發現回合數比自己小，則代表請求過期，直接拋棄該請求&lt;/p>
+&lt;h3 id="52-leader-election">5.2 Leader election&lt;/h3>
+&lt;p>Raft 透過 &lt;code>heartbeat&lt;/code> 觸發 leader 選舉，當 leader 選上時，會在固定時間內發&lt;code>內容為空的 AppendEntries RPC 當作心跳包&lt;/code>，如果 follower 超過 election timeout 沒有收到心跳包，則進入選舉階段&lt;/p>
+&lt;p>folower 會將現今的回合數加一便轉為 candidate，並請求其他 follower 投票給他 &lt;code>RequestVote RPC&lt;/code>，遇到以下情況 candidate 才會改變狀態&lt;/p>
+&lt;ol>
+&lt;li>贏得選舉&lt;/li>
+&lt;li>其他節點成為 leader&lt;/li>
+&lt;li>超過一定時間都沒選出 leader&lt;/li>
+&lt;/ol>
+&lt;h4 id="贏得選舉">贏得選舉&lt;/h4>
+&lt;p>如果 candidate 拿下過半的票數，則成為新的 leader，每一個 follower &lt;code>在同一個回合數下只會投票給請求先到的 candidate&lt;/code>，這避免無效選舉的發生&lt;br>
+如果 candidate 成為 leader，則開始發送心跳包&lt;/p>
+&lt;h4 id="發現有其他-leader">發現有其他 leader&lt;/h4>
+&lt;p>如果在 candidate 階段收到心跳包(AppendEntries)，則代表有其他 leader 產生，candidate 會去比對回合數至少要大於等於他自身的回合數，如果是則轉成 follower；&lt;br>
+反之則繼續維持 candidate&lt;/p>
+&lt;h4 id="超過一定時間都沒選出-leader">超過一定時間都沒選出 leader&lt;/h4>
+&lt;p>超過一定時間還是沒有選出來的話，timeout 後開始下一輪新的選舉&lt;/p>
+&lt;p>Raft 透過在一定時間內隨機 timeout (150-300ms)，避免所有的 follower 同時進入選舉階段，這樣能加速 leader 的推選，後續會有更近一步的說明&lt;/p>
+&lt;p>在設計過程，作者曾考慮加入 rank ，rank 較高者更有機會成為 leader，但發現這會導致演算法設計更加複雜，且有可用性的問題，例如高順位 candidate 發生狀況，則低順位 candidate 要多一次 timeout 才能當上 leader 等問題&lt;/p>
+&lt;h3 id="53-log-replication">5.3 Log replication&lt;/h3>
+&lt;p>Leader 會透過 AppendEntries RPC 將指令同步到 follower 並回傳執行結果給 client，如果 follower 此時 crash 等，leader 會持續送直到 follower 狀態同步&lt;/p>
+&lt;p>Log 是以 &lt;code>回合數 + 指令&lt;/code> 的方式依序儲存，主要是檢視是否有不一致的狀況產生&lt;/p>
+&lt;p>每個節點都會保存現今最後一個 commited log 的索引 (&lt;code>commitIndex&lt;/code>)，Leader 在同步 log 時，會紀錄 log 要寫入的位置 (commitIndex + 1)，並同時發送給 follower (leaderCommit)，等到多數的 follower 都寫入 log 後才標記成 &lt;code>commited&lt;/code>，Raft 保證 commited log 是已經持久化且最終每個 follower 都會達到一致性&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/log.png"
+loading="lazy"
+alt="log"
+>&lt;/p>
+&lt;p>因此 Raft 保證 Logs 有以下特性&lt;/p>
+&lt;ol>
+&lt;li>如果任意兩個節點的 log 有著相同的 index 與回合數，則他們必定儲存相同的指令&lt;/li>
+&lt;li>如果任意兩個節點的 log 有著相同的 index 與回合數，則該指令先前的 log 紀錄都必定相同&lt;/li>
+&lt;/ol>
+&lt;p>第一點保證節點儲存 log 後就不會再被改變，第二點則確保當 follower 發現自己的 log 跟 leader 不同時，可以依此重新跟 leader 同步紀錄&lt;/p>
+&lt;p>Leader 會針對每一個 follower 維護指針 &lt;code>nextIndex&lt;/code>，用來記錄 follower 目前需要同步的 log 索引，leader 在發送 AppendEntries 指令時，會夾帶最新 committed log 的回合數與 index，讓 follower 可以比對 log 是否同步，如果 follower 在自己的 logs 中沒有找到對應的紀錄，則代表兩者非同步，回傳失敗，接著 &lt;code>Leader 不斷遞減 nextIndex 直到 follower 找到兩者最近一次同步的紀錄&lt;/code>，接著開始一步步同步紀錄&lt;/p>
+&lt;blockquote>
+&lt;p>leader 與 follower 找到最近一次同步紀錄的方式，可以優化成 follower 回傳這一個回合數下他所以紀錄的索引，leader 直接倒回這個回合開始同步；&lt;br>
+但作者認為不一致狀態應該很少發生，優化的效益不大&lt;/p>
+&lt;/blockquote>
+&lt;p>透過這樣的 log 同步設計，Leader 在剛啟動時不用擔心太多同步的問題，利用 AppendEntries 的成功與失敗去調配 follower 儲存的紀錄，leader 也不用去刪除或更新自身的 log，讓整個同步的過程更加的簡單&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/AppendEntries.png"
+loading="lazy"
+alt="AppendEntries"
+>&lt;/p>
+&lt;h3 id="54-safety">5.4 Safety&lt;/h3>
+&lt;p>先前介紹了 leader election 和 relicate log，但僅有這樣的機制是不夠的，試想如果 leader 發生錯誤，今天有一個 follower 僅包含部分的 commited log，選上 leader 後便會複寫原本其他已經 commited 的 log，這樣就不能保證一致性與持久化&lt;/p>
+&lt;p>這一章介紹 Raft 在 leader election 加上限制後，如何達到&lt;code>確保每一台狀態機都以相同順序保存相同的指令&lt;/code>&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/safety.png"
+loading="lazy"
+alt="safety"
+>&lt;/p>
+&lt;p>Raft 會確保任何時候集群都符合上述條件&lt;/p>
+&lt;ol>
+&lt;li>Election Safety: 每一輪選舉至多只選出一位 leader&lt;/li>
+&lt;li>Leader Append-Only: leader 從不刪除或改寫自己的 log，只會一直增加&lt;/li>
+&lt;li>Log Matching: 任兩份 logs 在同一個 term 同一個 index 上，則 log 內容必定相同，且先前的 log 也都相同&lt;/li>
+&lt;li>Leader Completeness: 某個 log 在任一一個 term 中認定 commited，則後續 term 中的 leader 都必須有該份 log&lt;/li>
+&lt;li>State Machine Safety: 如果某個 server 在某 index 上的 log 套用至狀態機，則不會有其他的 server 在同一個 index 上套用不同的 log&lt;/li>
+&lt;/ol>
+&lt;h4 id="541-election-restriction">5.4.1 Election restriction&lt;/h4>
+&lt;p>在 leader-based 的共識演算法中，leader 最終會儲存所有的 commited log，在某些演算法中，leader 在沒有保存所有 commited log 情況下也能夠檔選，並透過額外的機制去回補這些未同步的 log，這增加了蠻多的複雜性&lt;/p>
+&lt;p>Raft 確保 leader 必須是由 &lt;code>擁有大多數節點同意的最新 committed log 的 candidate&lt;/code> 才能當選，確保 leader 一定是擁有最新 log 的節點，只負責增加新的 log，讓資料流只有一個方向，省去其他的麻煩&lt;/p>
+&lt;p>在 RequestVote RPC 中增加了限制，RPC 中夾帶 candidate 最後一個 log 中的回合數與索引數，如果 follower 發現 candidate 的紀錄比自己舊，則回傳失敗&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/RequestVote.png"
+loading="lazy"
+alt="RequestVote"
+>&lt;/p>
+&lt;h4 id="542-committing-entries-from-previous-terms">5.4.2 Committing entries from previous terms&lt;/h4>
+&lt;p>先前提到，Leader 會等多數的節點儲存 log 才標記成 commited， 但如果 leader 將 log 寫到多個 follower 後，還來不及收到 commited 就 crash 了&lt;br>
+此時&lt;code>新的 leader 會持續同步 log，但無法確認先前的 log 是不是被 commit&lt;/code> 了，因為只有先前的 leader 才能確認 log 已經被多數的節點所保存&lt;/p>
+&lt;p>如以下圖示
+&lt;img src="https://yuanchieh.page/post/img/20201103/commit.png"
+loading="lazy"
+alt="commit"
+>&lt;/p>
+&lt;ol>
+&lt;li>S1 一開始是 leader，同步 term2 到 S2 就 crash&lt;/li>
+&lt;li>S5 接著當 leader (S3,S4 可以投給他) 開始了 term 3，此時發生 crash&lt;/li>
+&lt;li>S1 又回來當 leader，將 term2 的 log 同步到 S3 後，此時又 crash&lt;/li>
+&lt;/ol>
+&lt;p>接著拆兩種情況&lt;br>
+d. S1 來不及同步 term4 資料，則 S5 有機會當入 leader，並用 term3 複寫掉其他資料&lt;br>
+e. S1 同步 term4 資料到大多數節點上，則 S5 無法當上 leader&lt;/p>
+&lt;p>&lt;code>在 leader 還沒收到 commited 情況下，即使多數的節點已經同步 log，但新的 leader 有機會複寫&lt;/code>&lt;/p>
+&lt;p>為了減少這樣的情況，Raft 不去計算先前 log 所同步的副本數去判定是否 commited，&lt;code>只有 leader 當下的回合數是透過副本的計算來決定 log 是否被 commited，如果 commit 後，則先前的所有 log 都被視為 commited&lt;/code>，降低計算上的複雜性，並因為之前的 log 特性保證，先前的 log 一定也都被複製到其他副本上&lt;/p>
+&lt;h4 id="543-safety-argument">5.4.3 Safety argument&lt;/h4>
+&lt;p>更進一步解釋 &lt;code>Leader Completeness&lt;/code>，透過反證法，找出集群無法不遵守 Leader Completeness&lt;/p>
+&lt;p>假設 leaderT 代表在 term T 的 leader，leader U 則是 term U，且 U 代表是 T 的下一位，且 leaderT 所認定的 commited log (logT) 在 leader U 不存在 (違反 Leader Completeness)&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201103/leader-completeness.png"
+loading="lazy"
+alt="leader-completeness"
+>&lt;/p>
+&lt;ol>
+&lt;li>leaderU 在當 follower 時並保存沒有 logT&lt;/li>
+&lt;li>leaderT 將 logT 同步到多數節點上，而 leaderU 在選舉時獲得多數同意，也就是至少有一位投票節點 (voter) 收到 logT 同時又投票給 leaderU&lt;/li>
+&lt;li>voter 必須先保存 logT，才又投票給 leaderU，反過來就不會有衝突 (term U &amp;gt; term T 所以 logT 後到會被丟棄)&lt;/li>
+&lt;li>voter 依然保存 logT，因為 leader 從不改變既定 log，而 follower 也只有與 leader 衝突時才會複寫&lt;/li>
+&lt;/ol>
+&lt;p>製造出場景後，讓我們來看為什麼 Raft 不可能達到這樣的狀況&lt;br>
+5. 依據先前規定， follower 只會投給 log 保留比自己更多的 candidate&lt;br>
+6. 如果 voter 與 leaderU 最新一個 term 都是 T 的話，則 leaderU 的 log 數應該與 voter 相同，也就是 leaderU 至少擁有 voter 所擁有的 log&lt;br>
+7. 反之，如果 leaderU 的最新 log term 大於 voter 的話，為了要符合早於 leaderU 的 leader 所有 commited log 都應該被保留到 leaderU 中，因此根據 &lt;code>Log Matching&lt;/code> 則 leaderU 應該要儲存這些 log&lt;/p>
+&lt;p>在無法達成的情況，證明了 Raft 滿足 Leader Completeness 條件，確保 leader 如果最新的 log term &amp;gt; T，則 leader 必定擁有 term T 所 commited 的一切 log&lt;/p>
+&lt;blockquote>
+&lt;p>Thus, the leaders of all terms greater than T must contain all entries from term T that are committed in term T&lt;/p>
+&lt;/blockquote>
+&lt;p>有了 Leader Completeness 屬性，就能進一步證明 &lt;code>State Machine Safety&lt;/code>，如果某一機器在某一 index 套用指令到狀態機中，則其他機器在相同 index 下並然套用相同的指令，因為能夠被套用的 log 一定是 leader commited 後的 log，且因為 Log
+Completeness，所有更新的 leader 也都保留被 commited 後的 log，因此能&lt;code>確保所有的節點終將以相同的順序套用相同的指令到狀態機上&lt;/code>&lt;/p>
+&lt;h3 id="55-follower-and-candidate-crashes">5.5 Follower and candidate crashes&lt;/h3>
+&lt;p>先前都是討論 leader crashed 後的處置，至於 follower 與 candidate 則單純很多，因為 Raft 的 RPC 指令都是 &lt;code>idempotent&lt;/code>，leader 可以持續的送指令直到成功，follower 跟 candidate 失敗後重啟就重新接收指令就好&lt;/p>
+&lt;h3 id="56-timing-and-availability">5.6 Timing and availability&lt;/h3>
+&lt;p>Raft Safety 建立在不依賴 timing，系統不會因為訊息發送的快慢而得到不預期的結果；&lt;br>
+但整體系統的可用性卻還是跟時間有一些關聯，例如說 server 不能再 election timeout 期間內票選出 leader，而 Raft 在沒有 leader 的情況下就不可用&lt;/p>
+&lt;p>所以整體上要符合以下不等式 Raft 才能運作正常&lt;/p>
+&lt;blockquote>
+&lt;p>broadcastTime ≪ electionTimeout ≪ MTBF&lt;/p>
+&lt;/blockquote>
+&lt;ol>
+&lt;li>&lt;code>broadcastTime&lt;/code> 代表 RPC 完整 request / response 所耗費的時間，須小於 electionTimeout 一個量級，通常在 0.5ms ~ 20ms；&lt;/li>
+&lt;li>&lt;code>electionTimeout&lt;/code> 則是 follower 等待多久後會觸發選舉，這是可以主動去設定的，通常在 100ms ~ 500ms；&lt;/li>
+&lt;li>&lt;code>MTBF&lt;/code> 則代表 server 進入錯誤狀態的區間，通常是數天至數個月&lt;/li>
+&lt;/ol>
+&lt;p>試想如果 broadcastTime &amp;gt; electionTimeout，則每一次選舉在還沒收到投票結果又開始下一輪選舉，則永遠選不完；&lt;br>
+如果 electionTimeout &amp;gt; MTBF，則選舉還沒結束 server 又 crash，那也一樣會有 leader 無法產生的問題&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>後續還有 Cluster membership changes / Log compaction / Client interaction 進階探討，就先暫時略過，僅理解前半部演算法的核心設計&lt;/p>
+&lt;p>分散式系統的迷人之處在於&lt;code>複雜&lt;/code>，需要面對網路延遲 / 時間不一致(time skewed) / 機器失敗等不穩定的因子，「再不穩定的條件下架構出可容錯/高可用/一致性的穩定系統」，看似荒謬卻可以透過演算法的設計達成目的(或是說更貼近)，實在令人讚嘆這些設計演算法的專家們&lt;/p>
+&lt;p>Raft 透過由 Leader 主導 Log 的同步，並加入選舉時的條件限制，確保 commited log 不會被改寫達到 &lt;code>強一致性&lt;/code>；如果 Leade 失敗，也不用擔心 log 發生問題，等下一位 Leader 被推選出來又能夠繼續維持系統運作&lt;/p>
+&lt;p>整份論文讀起來還算蠻好理解的，確實符合作者不斷強調可讀性的重要&lt;/p></description></item><item><title>Gossip Protocol 介紹 (下) - 《Efficient Reconciliation and Flow Control for Anti-Entropy Protocols》論文摘要</title><link>https://yuanchieh.page/posts/2020/2020-10-28-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8B-efficient-reconciliation-and-flow-control-for-anti-entropy-protocols%E8%AB%96%E6%96%87%E6%91%98%E8%A6%81/</link><pubDate>Wed, 28 Oct 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-10-28-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8B-efficient-reconciliation-and-flow-control-for-anti-entropy-protocols%E8%AB%96%E6%96%87%E6%91%98%E8%A6%81/</guid><description>&lt;h1 id="gossip-protocol">Gossip Protocol&lt;/h1>
+&lt;p>Gossip Protocol 是一種通訊機制，應用於同一網路內機器與機器間交換訊息使用，原理類似於辦公室傳謠言一樣，一個傳一個，最終每一個機器都擁有相同的資訊，又稱 Epidemic Protocol&lt;/p>
+&lt;p>上一篇分享到 &lt;a class="link" href="https://yuanchieh.page/post/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9%E4%B8%8A/" target="_blank" rel="noopener"
+>Cassandra 內部如何使用 Gossip Protocol&lt;/a>，影片中有推薦 &lt;a class="link" href="https://www.cs.cornell.edu/home/rvr/papers/flowgossip.pdf" target="_blank" rel="noopener"
+>Efficient Reconciliation and Flow Control for Anti-Entropy Protocols&lt;/a>，以下摘要此篇論文所探討的內容&lt;/p>
+&lt;p>建議可以先讀上篇，有個概略認識後在看理論會比較好懂些&lt;/p>
+&lt;h2 id="efficient-reconciliation-and-flow-control-for-anti-entropy-protocols-摘要">《Efficient Reconciliation and Flow Control for Anti-Entropy Protocols》 摘要&lt;/h2>
+&lt;p>anti-entropy，又或稱作 gossip，用於不需要強一致性的狀態同步，在一些限制下，時間複雜度是 log(N) (N 為群體數量) 且在 host 遭遇錯誤或是訊息丟失都不影響&lt;/p>
+&lt;p>gossip 希望盡量在可控制的回合內完成同步，但如同其他同步操作，這會仰賴 CPU 資源與 Network 流量，在高負載下 CPU 可能來不及運算要更新的狀態或是網路流量不夠快導致延遲封包&lt;/p>
+&lt;p>這份論文主要提供兩個價值，&lt;/p>
+&lt;ol>
+&lt;li>在限定 CPU / Network 下優化 gossip protocol 傳輸效率&lt;/li>
+&lt;li>分析 gossip protocol 的流量管制&lt;/li>
+&lt;/ol>
+&lt;p>gossip protocol 主要有兩種類型&lt;/p>
+&lt;ol>
+&lt;li>anti-entropy: 持續傳送 gossip information 直到全部資料都更新完成&lt;/li>
+&lt;li>rumormongering: 選定一個足夠有效的時間持續送 gossip information，大概率節點都會拿到最新資訊&lt;/li>
+&lt;/ol>
+&lt;p>假設目前的集群 {p,q &amp;hellip;}，每個參與者都需要維護一份列表，這個列表是由 key -&amp;gt; (value + version) 組成，也就是 Cassandra 內的 ApplicationState&lt;/p>
+&lt;blockquote>
+&lt;p>σ ∈ S = K → (V × N ) // σ 代表取狀態
+σ(k) = (v, n) ，表示 key 此時對應的 value v 跟 version n&lt;/p>
+&lt;/blockquote>
+&lt;p>列表包含 key -&amp;gt; value -&amp;gt; version，如果是這個 key 的最新資料，則他的 version 會大於舊的 version&lt;/p>
+&lt;blockquote>
+&lt;p>σ1(k) = (v1, n1), σ2(k) = (v2, n2) // σ1(k) 代表這一個節點取他的 key，返回 (v1, n1) 代表 value 為 v1 且 version n1；
+σ(k) 表示取 σ1 與 σ2 取 XOR，並遇到相同 key 時取 verson 較大者，也就是如果 n1 &amp;gt; n2 則 σ(k) = (v1, n1)&lt;/p>
+&lt;/blockquote>
+&lt;p>操作流程大致是&lt;/p>
+&lt;ol>
+&lt;li>從集群中隨機挑一個 host 傳送訊息，訊息內容是自己所維護的列表&lt;/li>
+&lt;li>收到訊息後運算，此動作稱為 merge 或稱為 reconciliation ，也就是收到訊息時會去運算列表的差異，並保留差異中 version 較高的 key -&amp;gt; value&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>∀r : µq (r) = µq (r) ⊕ µp(r) // q 真正要更新的是 p 傳來的訊息與 q 自身現在的訊息取 XOR 找出差異處&lt;/p>
+&lt;/blockquote>
+&lt;p>傳送訊息有三種格式&lt;/p>
+&lt;ol>
+&lt;li>push: 節點 p 傳送整份列表，節點 q 收到則計算 merge 後合併入自己的列表&lt;/li>
+&lt;li>pull: 節點 p 傳送 key -&amp;gt; version 而沒有 value，節點 q 回傳節點 p 須要更新的鍵值，變免多餘的值傳送&lt;/li>
+&lt;li>push-pull: 就像 push，節點 p 傳送完整列表，節點 q 會回傳 p 過期須要更新的鍵值 ( pull 後半段，&lt;code>push-pull 是最有效率的做法&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>如果某個 key 不再更新，那在一定的時間內很高的機率大家都會同步相同的 value，如果集群隨機挑選節點的演算法 &lt;code>(Fp ⊆ P − {p})&lt;/code> 夠隨機的話，即使遇到 message loss 或是 host 短暫 failed，也僅僅是稍微延遲同步的時間&lt;/p>
+&lt;p>假設 update key 的時間是固定的，那隨著集群數量線性增長 N，則達成同步所需要的時間會成 log(N) 增長。&lt;/p>
+&lt;p>但實務上必須考量到 CPU / Network 以及更新的頻率，如果更新的頻率太高，因為資源受限則同步的延遲可能會無限的增長，實際上應用程式在意的不是多常更新，而是資料是不是抵達同步&lt;/p>
+&lt;p>接著要探討如果我們限定 gossip message 不能超過 MTU(Maximum Transmission Unit)，那我們該怎麼決定要更新哪些 key 才能最有效讓所有節點狀態一致&lt;/p>
+&lt;h2 id="reconciliation">RECONCILIATION&lt;/h2>
+&lt;p>先前提到 p 跟 q 來回通信都只送兩者狀態的 delta，如果超過 MTU 則必須有一個優先序決定哪些鍵值要先更新( &lt;code>&amp;lt;π&lt;/code> 代表此排序演算法)，作者介紹了兩種，一種是 &lt;code>precise reconciliation&lt;/code> 最為基準線，對比另一個作者提出的 &lt;code>Scuttlebutt&lt;/code> 更新機制&lt;/p>
+&lt;h3 id="precise-reconciliation">precise reconciliation&lt;/h3>
+&lt;p>根據更新時間序決定哪些 key 要先送出去，在實務上 precise reconciliation 比較麻煩些，如先前說必須要先送 state 給對方做比較才能算出 delta，這會消耗頻寬以及 CPU cycle&lt;/p>
+&lt;p>依據時間序又可以細分成 &lt;code>precise-oldest&lt;/code>: 在 MTU 限制下先送那些很久沒有更新的 key / &lt;code>precise-newest&lt;/code>: 先送最近才被更新的 key，後者要留意會有 starvation 問題，在實作上節點必須同步時間，才能作為判斷的依據&lt;/p>
+&lt;blockquote>
+&lt;p>Note that, if implemented, both these orderings would require a synchronized clock among the members and that all
+updates be timestamped with this clock.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="scuttlebutt-reconciliation">Scuttlebutt Reconciliation&lt;/h3>
+&lt;p>作者提及另一種解法，也是 Cassandra 採納的做法，初始化時 version 固定是最小的數字，每次更新鍵值時，要把 version 設定大於成目前任意鍵值對應的最高版號&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>{(r, max(µp(r))) | r ∈ P}&lt;/code> // 此公式表示 r 是屬於節點 P 的屬性，找出 r 以及當下 P 中 r 最大的版號；&lt;/p>
+&lt;/blockquote>
+&lt;p>例如說目前 Participant p 的列表是&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">key &lt;span class="p">|&lt;/span> value &lt;span class="p">|&lt;/span> version
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">a &lt;span class="p">|&lt;/span> a1 &lt;span class="p">|&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">b &lt;span class="p">|&lt;/span> b1 &lt;span class="p">|&lt;/span> &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">c &lt;span class="p">|&lt;/span> c1 &lt;span class="p">|&lt;/span> &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果此時 a 要更新，則版號至少要拉到 4，而且不像 precise-conciliation 會一次送多組間值更新，Scuttlebutt 允許一次可以送一個鍵值，但必須按照 version 大小逐一送
+整個架構必須符合以下狀態
+&lt;img src="https://yuanchieh.page/post/img/20201028/gossip_equation.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>也就是說在整個集群下，任一鍵值 k 在節點 p / 節點 q 必須滿足以下任一條件&lt;/p>
+&lt;ol>
+&lt;li>在節點 p 跟節點 q 中同一個 key version 是一樣，代表&lt;code>資料已經同步&lt;/code>&lt;/li>
+&lt;li>如果節點 p 的 key version 跟節點 q 不同，則此 version 必須比是節點q 中任意最大的版號還要大&lt;/li>
+&lt;/ol>
+&lt;p>第二點非常重要，這是保持每次更新不需要整包送，先從版本判斷就能判斷哪些欄位真的需要更新的依據&lt;/p>
+&lt;p>來看一個實際案例，目前有三個節點 r,p,q，共有 3 個 key a,b,c，可以看到 t1 時 r 的三個 key 都被更新過，版號分別是 21/22/23；&lt;br>
+此時 r 要向 p,q 發送 gossip message，他必須先從 a 開始，因為這是 a,b,c 三者中版號最小，且大於&lt;code> µq(p) / µp(p)&lt;/code> ，這意味著節點 p 和 節點q 都要更新，所以 r 會同時送訊息給 p , q，在 t2 時只有 key a 先被更新&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201028/example.png"
+loading="lazy"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>可以回去看 Gossip 介紹(上)的 GossipDigestSynMessage 部分&lt;/p>
+&lt;/blockquote>
+&lt;p>雖然說一次只更新一個鍵值效率好像很低，但優點是 r 不需要送已經更新過的值，減少重複，在頻寬有限情況下，Scuttlebutt 也必須決定 gossip message 傳送的優先序，這裡有兩種做法&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>scuttle-breadth&lt;/code>: 在同一個 participant 中，將 delta 用 version 從小到大排序，如果兩個不同 delta 的 version 相同，則隨機抽 participant 發送&lt;/li>
+&lt;li>&lt;code>scuttle-depth&lt;/code>: 在 participant 中，只有鍵值有落差就算一個 delta，從 delta 最多的 participant 開始送，所以有可能都送給同一個 participant&lt;/li>
+&lt;/ol>
+&lt;h4 id="實驗結果">實驗結果&lt;/h4>
+&lt;p>總共 128 participants 與 64 組 key/ value，每秒每個 participant gossip 一次；
+前 15 sec 暖機，並開始限縮頻寬 / 25 秒開始加倍更新頻率 / 75 秒更新頻率回歸正常 / 120 sec 停止更新，中間 25~75 加大流量主要是想要看演算法在高負載下的表現，以及高峰過去後的恢復速度&lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20201028/gossip.png"
+loading="lazy"
+>&lt;/p>
+&lt;ol>
+&lt;li>第一張圖表代表這一個時間上，該鍵值自從上次被更新後隔了多久才收到最新資訊，越低者越好&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>staleness of such a mapping µq (p)(k) is the amount of time that has lapsed since µq(p)(k) was last updated&lt;/p>
+&lt;/blockquote>
+&lt;ol start="2">
+&lt;li>第二張圖表代表這一個時間有多少個鍵值是過期的 ，越低者越好&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>reports the number of stale mappings as a function of time&lt;/p>
+&lt;/blockquote>
+&lt;p>交叉比對有以下結論&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>Scuttle-depth 表現優異&lt;/code>&lt;/li>
+&lt;li>Precise-newest 可以看出有 starvation 狀況，也就是有鍵值很久沒有被更新 (圖一他最高)，但是真正影響到的鍵值其實是少數 (同一時間點其實過期的鍵值數不多)，但是高峰過去收斂很快&lt;/li>
+&lt;li>其餘兩者表現普普&lt;/li>
+&lt;/ol>
+&lt;h2 id="flow-control">Flow Control&lt;/h2>
+&lt;p>在一些情況下，participant 交換訊息時更新頻率可能不同，所以會需要一個流量控制的演算法，去平衡一個 participant 想要增加更新頻率而另一個想要降低頻率的可能，要製造出這樣的不同更新頻率，但同時系統必須維持相同的最大交換頻率上限&lt;br>
+在 participant 交換 gossip 時，會連帶交換彼此預設更新的頻率 (ρp , ρq)以及最大值 (τp,τq )，當兩個 participant 在交換時會順便交換&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/20201028/flow1.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>機制有點類似於 TCP 的 Additive Increase Multiplicative Decrease (AIMD)，逐漸增加發送的頻率但遇到錯誤時快速減少；&lt;br>
+如果要發送的 delta 數量高於 MTU，則線性增加，反之，則倍數減少&lt;/p>
+&lt;p>實驗過程是在 t = 90 時限縮 mtu 從 100 降到 50，可以看到 90 之後 max out of date 大幅增加，之後才慢慢收斂，其中 scuttle-depth 在表現上比較穩定 &lt;br>
+&lt;img src="https://yuanchieh.page/post/img/20201028/exp2.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>這一章節比較不確定，如果有什麼錯誤麻煩指教 🙏&lt;/p>
+&lt;h2 id="總結">總結&lt;/h2>
+&lt;p>本篇提出兩個重點&lt;/p>
+&lt;ol>
+&lt;li>新的 reconciliation 機制，加速同步的效率，同時避免 starvation&lt;/li>
+&lt;li>引入 flow control 機制，讓 participant 可以用合理的速度更新&lt;/li>
+&lt;/ol>
+&lt;h2 id="實作面">實作面&lt;/h2>
+&lt;p>網路上找了一個 nodejs 版本的 gossip protocol 實作 &lt;a class="link" href="https://github.com/bpot/node-gossip" target="_blank" rel="noopener"
+>node-gossip&lt;/a>，看起來是使用 scuttle-depth 協議機制
+計算與 peer 中的 delta 最多的，接著先按照 peer 中最舊的 version 開始排序&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Sort by peers with most deltas
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="nx">deltas_with_peer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">sort&lt;/span>&lt;span class="p">(&lt;/span> &lt;span class="kd">function&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="nx">b&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">deltas&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">deltas&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">deltas&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">for&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">i&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="nx">deltas_with_peer&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">peer&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">deltas_with_peer&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">peer_deltas&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">peer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">deltas&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Sort deltas by version number
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="nx">peer_deltas&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">sort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kd">function&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">a&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="nx">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">];&lt;/span> &lt;span class="p">})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">peer_deltas&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">length&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// console.log(peer_deltas);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">j&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="nx">peer_deltas&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">var&lt;/span> &lt;span class="nx">delta&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nx">peer_deltas&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">j&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">delta&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">unshift&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">peer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">peer&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">deltas&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">push&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">delta&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>Gossip Protocol 介紹 (上) - 從 Cassandra 內部實作認識 Gossip Protocol 的使用</title><link>https://yuanchieh.page/posts/2020/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8A-%E5%BE%9E-cassandra-%E5%85%A7%E9%83%A8%E5%AF%A6%E4%BD%9C%E8%AA%8D%E8%AD%98-gossip-protocol-%E7%9A%84%E4%BD%BF%E7%94%A8/</link><pubDate>Mon, 26 Oct 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-10-26-gossip-protocol-%E4%BB%8B%E7%B4%B9-%E4%B8%8A-%E5%BE%9E-cassandra-%E5%85%A7%E9%83%A8%E5%AF%A6%E4%BD%9C%E8%AA%8D%E8%AD%98-gossip-protocol-%E7%9A%84%E4%BD%BF%E7%94%A8/</guid><description>&lt;p>Gossip Protocol 是一種通訊機制，應用於同一網路內機器與機器間交換訊息，原理類似於辦公室傳謠言一樣，一個傳一個，最終每一個機器都擁有相同的資訊，又稱 &lt;code>Epidemic Protocol&lt;/code>&lt;/p>
+&lt;p>實務上有幾個好處&lt;/p>
+&lt;ol>
+&lt;li>去中心化:&lt;br>
+機器與機器間直接溝通 (peer to peer)&lt;/li>
+&lt;li>容錯率高:&lt;br>
+即便節點與節點之間無法直接相連，只有有其他 節點 可以傳遞狀態，也可以維持一致的狀態&lt;/li>
+&lt;li>效率高且可靠&lt;/li>
+&lt;/ol>
+&lt;p>Gossip Protocol 被廣泛採納，如Cassandra / Redis Cluster / Consul 等集群架構，以下將從 Cassandra 的實作來理解 Gossip Protocol&lt;/p>
+&lt;h2 id="apple-inc-cassandra-internals--understanding-gossip">Apple Inc.: Cassandra Internals — Understanding Gossip&lt;/h2>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/FuP1Fvrv6ZQ"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>先從實務面來看，Gossip Protocol 在 Cassandra 中主要用於同步 節點 的 Metadata，包含&lt;/p>
+&lt;ol>
+&lt;li>cluster membership&lt;/li>
+&lt;li>heartbeat&lt;/li>
+&lt;li>node status&lt;br>
+同時每個節點都會保存一份其他節點狀態的 Mapping Table&lt;/li>
+&lt;/ol>
+&lt;p>更具體來看節點狀態所保存的資料格式&lt;/p>
+&lt;ol>
+&lt;li>HeartbeatState:&lt;br>
+每一個節點會有一個 HeartbeatState，紀錄 generation / version，&lt;code>generation&lt;/code> 是節點啟動時的 timestamp，用來區分機器是否重新啟動過；&lt;code>version&lt;/code> 則是遞增數值，每次 ApplicationState 有值更新時就會遞增&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>所以同一個節點內的 ApplicationState version 不會重複，且 version 比較大一定代表這個鍵值比較新&lt;/p>
+&lt;/blockquote>
+&lt;ol start="2">
+&lt;li>ApplicationState: 一個由&lt;code>{enum_name, value, version}&lt;/code>建立的 tuple，enum_name 代表固定的 key 名稱，version 則表示 value 的版本號碼，號碼大者則代表資料較新&lt;/li>
+&lt;li>EndpointState: 紀錄某一個節點下所有的 ApplicationState&lt;/li>
+&lt;li>EndpointStateMapping: 一個節點會有一張針對已知的節點所紀錄的 EndpointState，同時會包含自己的狀態&lt;/li>
+&lt;/ol>
+&lt;p>如下圖&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259909635, version &lt;span class="m">325&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 5.2, generation 1259909635, version &lt;span class="m">45&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">56&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">87&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259911052, version &lt;span class="m">61&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 2.7, generation 1259911052, version &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: AujDMftpyUvebtnn, generation 1259911052, version &lt;span class="m">31&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">.....
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這邊可以看到節點 10.0.0.1 所保存的 &lt;code>EndPointStateMap&lt;/code> 有兩筆 EndPointState，其中 10.0.0.1 的 HeartBeatState 是 &lt;code>generation 1259909635, version 325&lt;/code>，這代表 10.0.0.1 是在 1259909635 時啟動的，並且他目前保存欄位中最新的版本是 325；&lt;br>
+接著看 &lt;code>ApplicationState &amp;quot;load-information&amp;quot;: 5.2, generation 1259909635, version 45&lt;/code>，這代表節點內 &amp;ldquo;load-information&amp;rdquo; 這個 Key 對應的值是 5.2 以及當時收到的 generation 與 version，後兩者用來決定 &lt;code>這個 key 收到訊息後要不要更新的依據&lt;/code>&lt;/p>
+&lt;h3 id="gossip-messaging">Gossip Messaging&lt;/h3>
+&lt;p>接著來看每次 Gossip 的實作流程，每個節點會在每一秒啟動一個新的 gossip 回合&lt;/p>
+&lt;ol>
+&lt;li>挑出 &lt;code>1~3&lt;/code> 的節點，優先選擇 live 狀態的節點，接著會機率性選擇 Seed 節點 / 先前判定已經離綫的節點&lt;/li>
+&lt;li>傳遞訊息的流程是 SYN / ACK / ACK2 (類似於 TCP 的3次交握)&lt;/li>
+&lt;/ol>
+&lt;p>假設現在是節點 A 要傳訊息給 節點 B 關於節點 C 的 Gossip&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>GossipDigestSynMessage&lt;/strong> :&lt;br>
+節點 A 要發送的 SYN 訊息包含 &lt;code>{ipAddr, generation, heartbeat}&lt;/code>，需注意此時只要送 HeartbeatState，而沒有送詳細的 ApplicationState，避免多餘的資料傳輸&lt;/li>
+&lt;li>&lt;strong>GossipDigestAckMessage&lt;/strong> :&lt;br>
+節點 B 收到後，會去比對他自己暫存節點 C 的狀態，運算兩者差異 &lt;br>
+a. 節點 A 的資料比較新，則節點 B 會準備跟節點 A 要新的資料&lt;br>
+b. 節點 B 的資料比較新，打包要更新的 ApplicationState 回傳 &lt;code>ACK&lt;/code> 通知節點 A&lt;/li>
+&lt;li>&lt;strong>GossipDigestAck2Message&lt;/strong> :&lt;br>
+節點 A 收到 ACK 後，更新自己暫存的資料，並且根據 (2.a) 中節點 B 所需要的 ApplicationState，回傳 &lt;code>ACK2&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>會多一個 &lt;code>ACK2&lt;/code> 是為了讓通訊更穩定，達到更快收斂的作用，但這邊如果 節點 B 沒收到 ACK2 是否會重試等如同 TCP 作法就沒有提及&lt;/p>
+&lt;blockquote>
+&lt;p>總結來看傳送訊息的過程，在 Cluster 沒有節點狀態異動下，傳送的訊息量是固定的，不會有 &lt;code>Gossip Storm&lt;/code> 網路封包突然爆量的情況； &lt;br>
+除非是有節點 新加入，多個節點 希望同步資訊才有可能&lt;/p>
+&lt;/blockquote>
+&lt;p>來看實際案例，假設
+目前有節點A (10.0.0.1)&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259909635, version &lt;span class="m">325&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 5.2, generation 1259909635, version &lt;span class="m">45&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">56&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">87&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259911052, version &lt;span class="m">61&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 2.7, generation 1259911052, version &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: AujDMftpyUvebtnn, generation 1259911052, version &lt;span class="m">31&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259912238, version &lt;span class="m">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 12.0, generation 1259912238, version &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259912942, version &lt;span class="m">18&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 6.7, generation 1259912942, version &lt;span class="m">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bj05IVc0lvRXw2xH, generation 1259912942, version &lt;span class="m">7&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以及節點B (10.0.0.2)&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259909635, version &lt;span class="m">324&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 5.2, generation 1259909635, version &lt;span class="m">45&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">56&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version &lt;span class="m">87&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259911052, version &lt;span class="m">63&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 2.7, generation 1259911052, version &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: AujDMftpyUvebtnn, generation 1259911052, version &lt;span class="m">31&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: AujDMftpyUvebtnn, generation 1259911052, version &lt;span class="m">62&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">EndPointState 10.0.0.3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> HeartBeatState: generation 1259812143, version &lt;span class="m">2142&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 16.0, generation 1259812143, version &lt;span class="m">1803&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: W2U1XYUC3wMppcY7, generation 1259812143, version &lt;span class="m">6&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="節點a-決定向節點b-發起-gossip">節點A 決定向節點B 發起 Gossip&lt;/h4>
+&lt;p>產生的 GossipDigestSynMessage 會是類似於 &lt;code>10.0.0.1:1259909635:325 10.0.0.2:1259911052:61 10.0.0.3:1259912238:5 10.0.0.4:1259912942:18&lt;/code>，主要是傳送 &lt;code>Node IP:generation:version&lt;/code>&lt;/p>
+&lt;h4 id="節點b-收到-gossipdigestsynmessage">節點B 收到 GossipDigestSynMessage&lt;/h4>
+&lt;p>會有以下流程&lt;/p>
+&lt;ol>
+&lt;li>跟自己的狀態比較，從差異最多的遞減排序，這意味著優先處理差異最多的節點資訊&lt;/li>
+&lt;li>接著檢驗每一個節點的資料
+-節點A 所保存的 &lt;code>10.0.0.1:1259909635:325&lt;/code> 會大於節點B 所保存的&lt;code>10.0.0.1:1259909635:324&lt;/code>，generation 一樣所以略過，但是 version 325 &amp;gt; 324，則代表節點B 需要向節點 A 索取 10.0.0.1 在 ApplicationState 在版本 324 之後的資料
+&lt;ul>
+&lt;li>&lt;code>10.0.0.2:1259911052:61&lt;/code> 比節點B 保存的版本還要小，所以到時候會打包資料給節點A&lt;/li>
+&lt;li>&lt;code>10.0.0.3:1259912238:5&lt;/code> 部分節點B generation 比較小，這意味著 10.0.0.3 有 reboot 過，所以節點B 需要更新全部的資料&lt;/li>
+&lt;li>&lt;code>10.0.0.4:1259912942:18&lt;/code>節點B 根本沒有 10.0.0.4 的資料，所以需要全部的資料&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;p>組合以上結果 GossipDigestAckMessage的內容會是&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">10.0.0.1:1259909635:324
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.0.3:1259912238:0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.0.4:1259912942:0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.0.2:&lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: AujDMftpyUvebtnn, generation 1259911052, version 62&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>HeartBeatState, generation 1259911052, version 63&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這代表著&lt;/p>
+&lt;ul>
+&lt;li>請給我 10.0.0.1 在 generation 1259909635 中 version 324 以後的更新資料&lt;/li>
+&lt;li>請給我 10.0.0.3 在 generation 1259912238 全部資料 (version:0)&lt;/li>
+&lt;li>10.0.0.4 同上&lt;/li>
+&lt;li>這是你需要更新關於 10.0.0.2 的 ApplicationState 資料&lt;/li>
+&lt;/ul>
+&lt;h4 id="節點a-回覆-gossipdigestack2message">節點A 回覆 GossipDigestAck2Message&lt;/h4>
+&lt;p>節點A 收到後，更新完 10.0.0.2 的資訊後，接著回覆節點B 所要的資料&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">10.0.0.1:&lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 5.2, generation 1259909635, version 45&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;bootstrapping&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version 56&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bxLpassF3XD8Kyks, generation 1259909635, version 87&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>HeartBeatState, generation 1259909635, version 325&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.0.3:&lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 12.0, generation 1259912238, version 3&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>HeartBeatState, generation 1259912238, version 3&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.0.4:&lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;load-information&amp;#34;&lt;/span>: 6.7, generation 1259912942, version 3&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>ApplicationState &lt;span class="s2">&amp;#34;normal&amp;#34;&lt;/span>: bj05IVc0lvRXw2xH, generation 1259912942, version 7&lt;span class="o">]&lt;/span>, &lt;span class="o">[&lt;/span>HeartBeatState: generation 1259912942, version 18&lt;span class="o">]&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>這樣就完成一輪的 Gossip 了&lt;/p>
+&lt;blockquote>
+&lt;p>可以看出為什麼 HeartbeatState 的 version 會與 ApplicationState 共享，這邊的共享指的是在&lt;code>同一個節點下 ApplicationState 的 version 必須是獨一無二且遞增&lt;/code>，這樣才能在 SYN 時只傳送 HeartbeatState 直接判斷有哪些欄位需要更新&lt;/p>
+&lt;/blockquote>
+&lt;p>以上範例整理自 &lt;a class="link" href="https://cwiki.apache.org/confluence/display/CASSANDRA2/ArchitectureGossip" target="_blank" rel="noopener"
+>ArchitectureGossip&lt;/a>&lt;/p>
+&lt;h2 id="其他集群上的管理">其他集群上的管理&lt;/h2>
+&lt;p>集群管理上，除了透過 Gossip Protocol 同步資訊外，還有幾個問題要解決&lt;/p>
+&lt;ol>
+&lt;li>誰在 Cluster 當中&lt;/li>
+&lt;li>如何決定節點的狀態是 Up / Down，這又會帶來什麼影響&lt;/li>
+&lt;li>何時要終止跟某節點的通訊&lt;/li>
+&lt;li>應該要偏好與哪個節點通訓&lt;/li>
+&lt;li>增加/移除/刪除/取代節點時如何實作&lt;/li>
+&lt;/ol>
+&lt;h3 id="誰在-cluster-當中">誰在 Cluster 當中&lt;/h3>
+&lt;p>當一個新的節點要啟動時，他必須要知道集群中有哪些節點去 Gossip，在 Cassandra 的設定檔中可以指定 &lt;code>Seed&lt;/code>，有不同的作法可以指定，常見是寫死某一些節點的 ip addr，節點啟動後就跟 Seed 節點溝通，後續就透過 Gossip Protocol 取得所有節點的狀態與 IP&lt;/p>
+&lt;blockquote>
+&lt;p>在 Consul 中，會自己透過廣播在 LAN 裡面自動發現有沒有其他節點，在 EC2 上還可以指定 EC2 Tag 去找出其他節點&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="failure-detection-決定節點是-up-或-down">Failure Detection: 決定節點是 Up 或 Down&lt;/h3>
+&lt;p>在 Cassandra 中，錯誤偵測是該節點在本地端決定某節點的狀態，而這個狀態不會隨著 Gossip 所傳送&lt;/p>
+&lt;blockquote>
+&lt;p>ex.節點A 覺得節點B 是 Down，當節點A 跟節點C Gossip 時，節點C 不會因為節點A 而把節點B 判斷成 Down，節點 C 會自行判斷&lt;/p>
+&lt;/blockquote>
+&lt;p>偵測的方式透過 Heartbeat，Heartbeat 可以是節點跟節點直接用 Gossip 通訊，也可以是從其他節點間接取得 Gossip；&lt;br>
+節點會計算每次 Heartbeat 的間隔，當超過 &lt;code>phi_convict_threshold&lt;/code> 則判定為 Down，系統需要因應硬體狀態/網路環境去調整閥值，避免太敏感誤判或是太遲鈍而反應不及等狀況&lt;/p>
+&lt;p>在節點斷線的時候，其他節點部分的寫入可能因此沒有收到 ACK 回覆，此時會暫存在本地當作 Hint，如果節點在一定時間內恢復，則會透過 Hint 重新傳送寫入，修復掉資料的可能&lt;/p>
+&lt;p>如果節點重新恢復時，其他節點會定期重送 Gossip 給 Offline 節點，屆時就能把 Down 調整回 Up&lt;/p>
+&lt;h3 id="節點偏好">節點偏好&lt;/h3>
+&lt;p>除了錯誤偵測外，Cassandra 內部有模組 Dynamic Snitch 專門做節點間的通訊品質偵測，每 100 ms計算與其他節點的延遲，藉此找出表現較好的節點；&lt;br>
+為了避免一時網路波動，每 10 分鐘就會重新計算&lt;/p>
+&lt;p>其餘的節點管理就暫時略過，對於理解 Gossip Protocol 不大&lt;/p>
+&lt;h2 id="結語">結語&lt;/h2>
+&lt;p>在分散式系統中，節點的狀態同步十分基礎且重要，而 Gossip Protocol 目前是被廣泛應用的解法，模擬人類傳送八卦的方式，想不到在機器也一樣適用&lt;br>
+整體最有趣的設計應該在於 &lt;code>generation / version&lt;/code> 的實作，透過 generation 可以知道機器重啟過後要不要重新要資料；透過 version 可以快速 diff 僅有哪些資料要更新，避免額外的傳輸浪費，下一篇將從理論上去分析 Gossip Protocol&lt;/p></description></item><item><title>使用 Redis 當作 API Rate limit 的三種方法</title><link>https://yuanchieh.page/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/</link><pubDate>Sun, 18 Oct 2020 08:21:40 +0000</pubDate><guid>https://yuanchieh.page/posts/2020/2020-10-18-%E4%BD%BF%E7%94%A8-redis-%E7%95%B6%E4%BD%9C-api-rate-limit-%E7%9A%84%E4%B8%89%E7%A8%AE%E6%96%B9%E6%B3%95/</guid><description>&lt;p>最近公司 API 服務被 Client 不預期的高頻存取，造成後端 DB 很大的負擔，開始評估各種 API Rate Limit 的方案，其中一個最常見的作法就是靠 Redis，但具體的方案其實有蠻多種，參考以下影片整理三種作法&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/HnSb8DFU5UA"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>順便推薦一下 RedisLabs 所推出的 GUI 管理工具 &lt;code>RedisInsights&lt;/code>，可以快速分析 Redis 中 Key Space 的使用 / Profiling 一段時間內哪些 Key 被大量存取等等，基本的 Redis CLI 操作就更不用提了，對比之前用的 &lt;code>medis&lt;/code> 功能強化不少，尤其是&lt;code>管理/監控這一塊的功能&lt;/code>&lt;br>
+目前是免費的，支援 Cluster Mode，連接 AWS ElasticCache 也沒問題，十分推薦&lt;/p>
+&lt;h2 id="rate-limit-全觀">Rate Limit 全觀&lt;/h2>
+&lt;p>要設計 Rate Limit 機制時需要考量幾個面向&lt;/p>
+&lt;h3 id="who">Who&lt;/h3>
+&lt;p>該如何識別要限制的對象？&lt;br>
+最直覺是透過 IP，但是使用 IP 最大的風險是 如果是大客戶，他一個人的流量遠超過其他小客戶，對公司的價值顯然也是遠遠重要，如果用 IP 很容易有誤殺的情況，把有價值的用戶阻擋在外&lt;/p>
+&lt;p>其他的作法可以用 JWT Token / API Key 等個別用戶識別的方式，需要針對自家的業務場景去判斷&lt;/p>
+&lt;h3 id="how">How&lt;/h3>
+&lt;p>該使用怎樣的方式計算限制的方式？&lt;br>
+通常是在某個時間區段內，限制只能存取多少次的計算模式，有三種方式可以參考&lt;/p>
+&lt;h3 id="static-time-window---固定時間區段">static time window - 固定時間區段&lt;/h3>
+&lt;p>例如說每一分鐘為一個單位，這一分鐘內只能存取五次&lt;br>
+這樣的方式十分簡單，但可能會有短時間內超量的問題，例如說 0:59 存取 4 次，接著 1:01 存取4 次，分開在兩個時間區段都是合法，但是才隔兩秒就存取 8 次，這可能不會是希望的結果&lt;/p>
+&lt;p>實作方式，以目前每週 160 k 下載的 &lt;code>express-rate-limit&lt;/code> 中 redis 版本 &lt;a class="link" href="https://www.npmjs.com/package/rate-limit-redis" target="_blank" rel="noopener"
+>rate-limit-redis&lt;/a> 是以下做法&lt;/p>
+&lt;ol>
+&lt;li>先計算出該時間段的鍵值，例如 01:00 ~ 01:59 的鍵值都是 &lt;code>01&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">var&lt;/span> &lt;span class="nx">expiryMs&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">Math&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">round&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1000&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nx">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">expiry&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="2">
+&lt;li>增加 key 並更新 ttl 時間，incr 會回傳當下增加後的值，藉此判斷是否超過限制&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="nx">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">client&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">multi&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="nx">incr&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rdskey&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="nx">pttl&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">rdskey&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="nx">exec&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>因為有 ttl，所以不用擔心 key 的刪除，這個方法簡單直覺儲存成本也很低&lt;/p>
+&lt;p>為了嚴格限制&lt;code>任意時間區段內的最大存取數量&lt;/code>，參考以下文章提及兩種做法 &lt;a class="link" href="https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/" target="_blank" rel="noopener"
+>Better Rate Limiting With Redis Sorted Sets
+&lt;/a>&lt;/p>
+&lt;h3 id="token-bucket">token bucket&lt;/h3>
+&lt;p>每一個用戶都有一個對應的 bucket，只有 token 足夠時可以進行操作，每隔一段時間會回補 token 數量，好處是可以制定多種操作的 token 需要數量，像是更繁雜的操作需要消耗更多的 token ，更有彈性應對不同的限制方案&lt;/p>
+&lt;p>資料結構使用 Redis 的 &lt;code>Hash&lt;/code>，演算法大致如下&lt;/p>
+&lt;ol>
+&lt;li>用戶要操作的時候，如果此時沒有紀錄，先插入一筆 Hash &lt;code>user: 當下 的 timestamp =&amp;gt; token 初始化數量&lt;/code>&lt;/li>
+&lt;li>後續操作時，取出上一次操作的 timestamp，接著回補這一段時間需要補充的 Token 數量&lt;/li>
+&lt;li>接著扣除操作所需的 Token 數，查看是否有符合限制&lt;/li>
+&lt;/ol>
+&lt;p>需注意這種做法會有 &lt;code>Race Condition&lt;/code> 問題，如果一個用戶同時有兩個操作，在第三步驟檢查時，會誤以為自己都有足夠的 token，除非使用 &lt;code>Lua script&lt;/code>，Redis 才會將&lt;code>多個操作視為 atomic 避免 Race Condition&lt;/code>&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/BitMEX/node-redis-token-bucket-ratelimiter" target="_blank" rel="noopener"
+>node-redis-token-bucket-ratelimiter&lt;/a> 便是採用 Lua script 作法，讓我們來欣賞一下&lt;/p>
+&lt;ol>
+&lt;li>取得參數，並指定 &lt;code>redis.replicate_commands()&lt;/code>，這是在調用 &lt;code>$ redis eval&lt;/code> 時要產生隨機 IO 時需要提前執行的指令 &lt;a class="link" href="https://redis.io/commands/eval" target="_blank" rel="noopener"
+>Redis - EVAL script numkeys key&lt;/a>，這一篇有易懂的解釋 &lt;a class="link" href="http://mysql.taobao.org/monthly/2019/01/06/" target="_blank" rel="noopener"
+>Redis · 引擎特性 · Lua脚本新姿势&lt;/a>，基本上就是為了符合 Redis 在持久化以及副本資料時的功能，在 5.0 以後是默認選項； &lt;br>
+接著就是分別計算上一次更新時間 &lt;code>initialUpdateMS&lt;/code> / 殘留的 token 數 &lt;code>prevTokens&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-lua" data-lang="lua">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">-- valueKey timestampKey | limit intervalMS nowMS [amount]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">valueKey&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">KEYS&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="c1">-- &amp;#34;limit:1:V&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">timestampKey&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">KEYS&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="c1">-- &amp;#34;limit:1:T&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">limit&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">tonumber&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ARGV&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">])&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">intervalMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">tonumber&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ARGV&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">])&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">amount&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">tonumber&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ARGV&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">]),&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">force&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ARGV&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">4&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="s2">&amp;#34;true&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">lastUpdateMS&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">prevTokens&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">-- Use effects replication, not script replication;; this allows us to call &amp;#39;TIME&amp;#39; which is non-deterministic&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">redis.replicate_commands&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">time&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;TIME&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">nowMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.floor&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">time&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">1000&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">time&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="mi">1000&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">initialTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;GET&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">valueKey&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">initialUpdateMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kc">false&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">if&lt;/span> &lt;span class="n">initialTokens&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">false&lt;/span> &lt;span class="kr">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- If we found no record, we temporarily rewind the clock to refill&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- via addTokens below&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">prevTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">lastUpdateMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nowMS&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">intervalMS&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">prevTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">initialTokens&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">initialUpdateMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;GET&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">timestampKey&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">if&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">initialUpdateMS&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">false&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="kr">then&lt;/span> &lt;span class="c1">-- this is a corruption&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- 如果資料有問題，需要回推 lastUpdateMS 時間，也就是用現在時間回推殘存 Token 數量的回補時間&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">lastUpdateMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nowMS&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">prevTokens&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">limit&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">intervalMS&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">lastUpdateMS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">initialUpdateMS&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="2">
+&lt;li>接著計算上一次到現在需要回補的 Token &lt;code>addTokens&lt;/code> / 這一次運算配額夠不夠 &lt;code>netTokens&lt;/code> / 如果下一次要嘗試需要等多久的時間 &lt;code>retryDelta&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-lua" data-lang="lua">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">addTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.max&lt;/span>&lt;span class="p">(((&lt;/span>&lt;span class="n">nowMS&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">lastUpdateMS&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">intervalMS&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">limit&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">-- calculated token balance coming into this transaction&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">grossTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.min&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">prevTokens&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">addTokens&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">limit&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">-- token balance after trying this transaction&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">netTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">grossTokens&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">amount&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">-- time to fill enough to retry this amount&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">retryDelta&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">rejected&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kc">false&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">local&lt;/span> &lt;span class="n">forced&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kc">false&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">if&lt;/span> &lt;span class="n">netTokens&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="kr">then&lt;/span> &lt;span class="c1">-- we used more than we have&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">if&lt;/span> &lt;span class="n">force&lt;/span> &lt;span class="kr">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">forced&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">netTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="c1">-- drain the swamp&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">rejected&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">netTokens&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">grossTokens&lt;/span> &lt;span class="c1">-- rejection doesn&amp;#39;t eat tokens&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- == percentage of `intervalMS` required before you have `amount` tokens&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">retryDelta&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.ceil&lt;/span>&lt;span class="p">(((&lt;/span>&lt;span class="n">amount&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">netTokens&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">limit&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">intervalMS&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">else&lt;/span> &lt;span class="c1">-- polite transaction&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- nextNet == pretend we did this again...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">local&lt;/span> &lt;span class="n">nextNet&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">netTokens&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">amount&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">if&lt;/span> &lt;span class="n">nextNet&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="kr">then&lt;/span> &lt;span class="c1">-- ...we would need to wait to repeat&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- == percentage of `invervalMS` required before you would have `amount` tokens again&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">retryDelta&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">math.ceil&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">math.abs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nextNet&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">limit&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">intervalMS&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="3">
+&lt;li>如果成功操作 ( rejected == false )，則延長 key 的過期時間&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-lua" data-lang="lua">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">if&lt;/span> &lt;span class="n">rejected&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">false&lt;/span> &lt;span class="kr">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;PSETEX&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">valueKey&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">intervalMS&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">netTokens&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">if&lt;/span> &lt;span class="n">addTokens&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="ow">or&lt;/span> &lt;span class="n">initialUpdateMS&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">false&lt;/span> &lt;span class="kr">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- we filled some tokens, so update our timestamp&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;PSETEX&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">timestampKey&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">intervalMS&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nowMS&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">-- we didn&amp;#39;t fill any tokens, so just renew the timestamp so it survives with the value&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">redis.call&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;PEXPIRE&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">timestampKey&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">intervalMS&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">end&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="sliding-time-window---滑動時間區段">sliding time window - 滑動時間區段&lt;/h3>
+&lt;p>最後一個是使用 sorted set，可以使用 &lt;code>$ redis.multi&lt;/code> 將多個 sorted set 的指令串再一起 Atomic 執行所以能夠避免 Race Condition 狀況&lt;br>
+具體想法是&lt;/p>
+&lt;ol>
+&lt;li>用一個 sorted set 儲存所有的 timestamp&lt;/li>
+&lt;li>request 進來後，先用 &lt;code>ZREMRANGEBYSCORE&lt;/code> 捨棄 time window 以外的 key&lt;/li>
+&lt;li>取得 sorted set 剩餘的所有元素 &lt;code>ZRANGE(0, -1)&lt;/code>&lt;/li>
+&lt;li>加上這一次的操作 &lt;code>ZADD&lt;/code>，並延長 sorted set 的 ttl&lt;/li>
+&lt;li>接著算整個 sorted set 的元素量，就知道存取幾次了&lt;/li>
+&lt;/ol>
+&lt;p>需要特別注意，這邊如果第五步判斷失敗也會被計算在 limit 當中，因為第四步已經先加上去了，如果&lt;code>在第三步先判斷數量夠不夠再去更新 sorted set，中間的時間差就有可能發生 Race Condition&lt;/code>，所以要嚴格限制必須要這麼做，除非又要包成 lua script&lt;/p>
+&lt;p>這會導致一個風險，如果 Client 真的失控一直打，那他會無止盡的失敗，因為每一次的失敗操作都會被加入 sorted set 當中，但其實都沒有真的執行到&lt;/p>
+&lt;p>模組請參考 &lt;a class="link" href="https://github.com/peterkhayes/rolling-rate-limiter" target="_blank" rel="noopener"
+>rolling-rate-limiter&lt;/a>，程式碼在這&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-js" data-lang="js">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">const&lt;/span> &lt;span class="nx">batch&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">client&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">multi&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">batch&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">zremrangebyscore&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">clearBefore&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">addNewTimestamp&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">batch&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">zadd&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">String&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">now&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="nx">uuid&lt;/span>&lt;span class="p">());&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">batch&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">zrange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s1">&amp;#39;WITHSCORES&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">batch&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">expire&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ttl&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">return&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="nb">Promise&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="nx">resolve&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">reject&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">batch&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">exec&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">result&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="nx">reject&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 加完後才來計算是不是扣打足夠
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span> &lt;span class="kr">const&lt;/span> &lt;span class="nx">zRangeOutput&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">addNewTimestamp&lt;/span> &lt;span class="o">?&lt;/span> &lt;span class="nx">result&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="nx">result&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">])&lt;/span> &lt;span class="nx">as&lt;/span> &lt;span class="nb">Array&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="nx">unknown&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">const&lt;/span> &lt;span class="nx">zRangeResult&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">getZRangeResult&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">zRangeOutput&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kr">const&lt;/span> &lt;span class="nx">timestamps&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">extractTimestampsFromZRangeResult&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">zRangeResult&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">resolve&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">timestamps&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">});&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">});&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="結論">結論&lt;/h2>
+&lt;p>Rate Limit 看似簡單，但也有不少的眉角要去考量，之前一直都沒有客製 Redis 中 lua script 的部分，也是蠻有趣的&lt;/p></description></item><item><title>HTTPS不代表安全：Cloudflare SSL 研究從Server到Cloudflare</title><link>https://yuanchieh.page/posts/2018/2018-07-11-https%E4%B8%8D%E4%BB%A3%E8%A1%A8%E5%AE%89%E5%85%A8cloudflare-ssl-%E7%A0%94%E7%A9%B6%E5%BE%9Eserver%E5%88%B0cloudflare/</link><pubDate>Wed, 11 Jul 2018 01:37:07 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-07-11-https%E4%B8%8D%E4%BB%A3%E8%A1%A8%E5%AE%89%E5%85%A8cloudflare-ssl-%E7%A0%94%E7%A9%B6%E5%BE%9Eserver%E5%88%B0cloudflare/</guid><description>&lt;p>網頁瀏覽時出現HTTPS的綠色鎖看了令人放心，這似乎代表著我們在網站瀏覽的資料有受到「完整的加密保護」，不用擔心資料被偷窺與被調包等等MitM中間人攻擊的風險，但事實當然沒有這麼簡單。&lt;/p>
+&lt;p>在申請SSL憑證時是綁定域名申請，理論上 DNS解析域名後直接指向Server所在IP，也就是Client透過HTTPS在索取憑證、驗證憑證、與 Server共同生成對稱加密金鑰後，實際將資料加密傳輸到Server的整段網路過程是受到完整的保護。&lt;/p>
+&lt;p>但是現在很多網站為了效能上與安全性上的考量，採用了向 Cloudflare這樣的 DNS代管 / CDN服務；&lt;br>
+&lt;code>Client ← → Cloudflare ← → Server&lt;/code>&lt;/p>
+&lt;p>Cloudflare在全球各大洲部署多個資料中心，會自動將DNS / Cached資料散佈到多節點上，並提供多項優質服務，如&lt;/p>
+&lt;ol>
+&lt;li>從地理位置最近的節點回覆 Client所需資料，之前曾看過實測多家DNS/CDN服務商的資料，Cloudflare回應速度是最好的；&lt;/li>
+&lt;li>在Cloudflare後台觀察到網站有近八成的流量是命中Cache從 Cloudflare直接回覆 Client，降低Server 負擔與流量，再Server以流量計費的主機託管下節省很大的成本。&lt;/li>
+&lt;li>DDos防護與白/黑ip名單建立&lt;/li>
+&lt;/ol>
+&lt;p>但是採用 Cloudflare有些資安上的疑慮，也是此次筆記的內容&lt;br>
+主要紀錄&lt;br>
+1. 採用Cloudflare風險在哪&lt;br>
+2. 修正問題與實測&lt;/p>
+&lt;h3 id="採用cloudflare風險在哪">採用Cloudflare風險在哪&lt;/h3>
+&lt;h4 id="client--cloudflare">Client ←→ Cloudflare&lt;/h4>
+&lt;p>先前提到Cloudflare會擋在 Client與 Server之間，如果&lt;code>啟用CDN服務為了解析緩存資料&lt;/code>，Cloudflare 會需要在他這層直接解密，所以如果是用免費版 Cloudflare會提供 Universal (shared)的憑證，這是簽發於 Cloudflare機構底下；&lt;br>
+如果要用自己域名簽發的憑證，必須&lt;code>透過Cloudflare購買&lt;/code>或是&lt;code>上傳自己購買的憑證與私鑰&lt;/code> ，這兩項都必須採用付費方案；&lt;/p>
+&lt;p>但這樣看來 Cloudflare 就是渾然天成的 MitM中的中間人，但是我們選擇相信他，有看到一些謠言是說 Cloudflare背後有美國的 NSA國家安全局把持，所以資料可能有洩漏的疑慮，畢竟 Cloudflare可以看到所有解密後的資料。&lt;br>
+看到一些討論是半信半疑，技術性上也不是所有的流量都會導向美國的服務器，但還是有必要留個心眼，畢竟先前也是有 FBI要求 Apple 解鎖Iphone的經歷，國家機器再處理這種法律、資安、個資等議題確實蠻掙扎的。&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.theguardian.com/technology/2016/feb/22/tim-cook-apple-refusal-unlock-iphone-fbi-civil-liberties" target="_blank" rel="noopener"
+>&lt;strong>Tim Cook says Apple&amp;rsquo;s refusal to unlock iPhone for FBI is a &amp;lsquo;civil liberties&amp;rsquo; issue&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>(雖然Apple 在中國也服軟了 :/)&lt;/p>
+&lt;p>所以如果要有緩存機制且非常在意 Client → Server 必須全程走HTTPS且使用自家憑證不被任何人在中途解密資料，就適合自建Cache Server 不適合用Cloudflare。&lt;/p>
+&lt;h4 id="cloudflare-server">Cloudflare ←→ Server&lt;/h4>
+&lt;p>從Cloudflare到Server這段有不同層級的設定，可以於後台設定&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__by4l7dHy5wi__pWEzz0cl9w.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;ol>
+&lt;li>Off：&lt;br>
+全部走HTTP&lt;/li>
+&lt;li>Flexible：&lt;br>
+Client → Cloudflare 走HTTPS，而Cloudflare → Server 走HTTP&lt;/li>
+&lt;li>Full：&lt;br>
+Cloudflare → Server 走HTTPS，但是 Cloudflare不會驗證憑證。&lt;br>
+Server需要開啟443 port 才能處理。&lt;/li>
+&lt;li>Full(strict)：&lt;br>
+呈上，但是Cloudflare會向CA驗證憑證的正確性，這部分需要搭配設定 &lt;code>Origin Certificates&lt;/code> ，可以由 Cloudflare 產生或是自己產生後上傳。&lt;br>
+Cloudflare本身也是合格的CA，所以往好處想是上傳憑證是可以被信任的，但同樣的雞蛋都在同一個籃子裡本身就是個風險，算是一體兩面。&lt;/li>
+&lt;/ol>
+&lt;h3 id="修正問題與實測">修正問題與實測&lt;/h3>
+&lt;p>所以除了Client要有HTTPS保護，在Server這段也建議要開啟 Full以上的防護措施，Server部分用 Let’s Encrypt 免費簽署，並同時開啟 80 / 443 port，來調整對應Cloudflare的SSL保護措施。&lt;/p>
+&lt;h4 id="1-僅開啟-cloudflare-dns">1. 僅開啟 Cloudflare DNS：&lt;/h4>
+&lt;p>這時候打 &lt;a class="link" href="https://domain.com" target="_blank" rel="noopener"
+>https://domain.com&lt;/a> 會出現自己簽發的憑證，像我是用 Let’s Encrypt 簽署的憑證&lt;/p>
+&lt;h4 id="2-開啟-cloudflare-cdn服務">2. 開啟 Cloudflare CDN服務：&lt;/h4>
+&lt;p>這時候同樣的 &lt;a class="link" href="https://domain.com" target="_blank" rel="noopener"
+>https://domain.com&lt;/a> 會自動變成 Cloudflare Universal 憑證&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__DhAfWG__CN45Me0tMhpyb9Q.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>以上是 Client &amp;lt;&amp;ndash;&amp;gt; Cloudflare這段&lt;/p>
+&lt;p>以下用 &lt;code>&amp;gt; sudo tcpdump -nn -i eth0 'tcp and (not port 22)'&lt;/code> 查看封包，排除port 22 主要是避免 ssh 封包干擾觀察&lt;/p>
+&lt;h4 id="3-ssl-設為flexible">3. SSL 設為 Flexible&lt;/h4>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__Rg8Jz3FZZx8adrfbYt0heA.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>從 Cloudflare(用 whois 172.68.47.149查詢後確認) 到 Server是走 80 port&lt;/p>
+&lt;h4 id="4-ssl-設為-full--fullstrict">4. SSL 設為 Full / Full (strict)&lt;/h4>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__5MvJS8IszULHOhDNeGlKbw.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>後台設定切換後等個三、五秒就立即改走 port 443&lt;/p>
+&lt;h4 id="5-測試憑證檢查">5. 測試憑證檢查&lt;/h4>
+&lt;p>Full (strict)差別在於會檢查憑證是否為公開的第三方CA頒布的合法憑證，那就來確認一下檢查的機制是否OK。&lt;/p>
+&lt;p>a. 在 Full 狀態下改用其他網域的SSL憑證 =&amp;gt; 可以!&lt;br>
+b. 在 Full (strict) 狀態下改用其他網域的SSL憑證 =&amp;gt; 不行，會檢查&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/1__6JOG8bEc9kDeqexWERRBbA.jpeg"
+loading="lazy"
+>&lt;/p>
+&lt;p>如果是自簽憑證，記得要上傳 CSR到Cloudflare，不然一樣會出錯。&lt;/p>
+&lt;h3 id="結論">結論&lt;/h3>
+&lt;ol>
+&lt;li>僅使用 Cloudflare DNS服務，Client會看到自家提供的憑證&lt;/li>
+&lt;li>開啟 Cloudflare CDN服務，免費版轉為 Cloudflare Universal SSL憑證；&lt;br>
+如要替換為自己Domain簽署的憑證，需要付費方案&lt;/li>
+&lt;li>開啟 Cloudflare CDN，會讓 Cloudflare成為中間人，資料有被外露的疑慮&lt;/li>
+&lt;li>記得開啟 SSL 為 Full(strict)，保護 Cloudflare 到 Server這段&lt;/li>
+&lt;/ol></description></item><item><title>The Twelve-Factor App 閱讀筆記</title><link>https://yuanchieh.page/posts/2018/2018-05-19-the-twelve-factor-app-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</link><pubDate>Sat, 19 May 2018 07:02:08 +0000</pubDate><guid>https://yuanchieh.page/posts/2018/2018-05-19-the-twelve-factor-app-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/</guid><description>&lt;p>&lt;a class="link" href="https://12factor.net" target="_blank" rel="noopener"
+>&lt;strong>The Twelve-Factor App&lt;/strong>&lt;/a> 是由一群有豐富經驗的工程師，整理開發一個Web應用程式(或是所謂的SAAS software-as-a-service)開發方針，基於以下幾個方向&lt;/p>
+&lt;ol>
+&lt;li>設定明確，降低新人加入專案的上手成本&lt;/li>
+&lt;li>最大化可移植性&lt;/li>
+&lt;li>適合部署到雲端平台&lt;/li>
+&lt;li>降低開發與部署的差異性，增加持續部署的敏捷&lt;/li>
+&lt;li>容易擴展(scale up)&lt;/li>
+&lt;/ol>
+&lt;p>基於上述幾個要點，整理成12項要素，而符合這 12要素的應用程式則稱為&lt;strong>twelve-factor app (後文會採用此名詞)&lt;/strong>，瀏覽過後蠻有趣的，稍微摘要並提出自己在實踐上的想法(主要是Nodejs，作者看來比較愛用Python當範例)。&lt;/p>
+&lt;p>為避免歧義或英文水準不佳，有些關鍵字會中英夾雜，或是直接顯示英文單字。&lt;/p>
+&lt;h2 id="1-codebase">1. Codebase&lt;/h2>
+&lt;h4 id="用版本控制工具管理一份codebase但可以有多份部署-one-codebase-tracked-in-revision-control-manydeploys">用版本控制工具管理一份Codebase，但可以有多份部署 (One codebase tracked in revision control, many deploys)&lt;/h4>
+&lt;p>原始碼必須使用版本控制工具，如 &lt;a class="link" href="http://git-scm.com/" target="_blank" rel="noopener"
+>Git&lt;/a> / &lt;a class="link" href="http://subversion.apache.org/" target="_blank" rel="noopener"
+>Subversion&lt;/a> / &lt;a class="link" href="https://www.mercurial-scm.org/" target="_blank" rel="noopener"
+>Mercurial&lt;/a>，每份APP只能有一個Code Repo，但可以有一份Code Repo可以執行多份且版本不一樣的部署 Deploy；&lt;/p>
+&lt;h2 id="2-dependencies">2. Dependencies&lt;/h2>
+&lt;h4 id="命確定義與隔離相依explicitly-declare-and-isolate-dependencies">命確定義與隔離相依(Explicitly declare and isolate dependencies)&lt;/h4>
+&lt;p>許多語言程式都有對應的函式庫(library)管理工具，例如Ruby有Rubygems、Perl有CPAN、NodeJS有NPM(或Yarn)，在安裝上有系統層級或是被侷限於專案目錄下(又稱 bundling / Vendoring)&lt;/p>
+&lt;p>一個正確的應用程式「不應該依賴系統層級的函式庫」，應該要在宣告文件明確的宣告所有依賴的函式庫；&lt;br>
+並確保函式庫不會影響全域環境，並維持隔離。例如NPM在專案目錄下的 &lt;code>package.json&lt;/code> ，預設安裝也是在該專案目錄下的 &lt;code>node_modules&lt;/code> 中。&lt;/p>
+&lt;p>明確定義的好處是對新人友善，只要瀏覽宣告文件就可以得知所有相依的函式庫，而且通常函式庫管理工具都有自動安裝的指令，如 &lt;code>npm install&lt;/code>&lt;/p>
+&lt;p>另外專案也不隱式依賴系統工具，例如 &lt;code>curl&lt;/code> 、&lt;code>ImageMagick&lt;/code> 等，因爲即便這些工具在大多系統都存在，但不能保證應用程式運行的環境有安裝；&lt;br>
+如果需要，則考慮將系統工具也打包進應用程式中。&lt;/p>
+&lt;h2 id="3-config">3. Config&lt;/h2>
+&lt;h4 id="將設定儲存於環境中store-config-in-the-environment">將設定儲存於環境中(Store config in the environment)&lt;/h4>
+&lt;p>config是那些會依據部署環境而有所不同的資料，例如資料庫連線資料/ AmazonS3等外部服務的機敏資料 / hostname等，所以也不會放入版本控制工具追蹤。&lt;/p>
+&lt;p>必須注意，程式碼與設定檔「**必須嚴格分離」，**程式碼是所有部署都同一份，並且不應該包含任何機敏資料。&lt;/p>
+&lt;p>許多程式語言本身有偏好的設定文件格式，如 xml / yml / json 等，為了方便最好是使用儲存於環境變數中。&lt;/p>
+&lt;p>此外，環境變數應該是每個環境獨立於彼此，所以不需要像 Rails用 “production” / “test”/ “development” 在細拆定義環境變數。&lt;/p>
+&lt;p>&amp;gt;&amp;gt; 但這裏比較tricky的是公司專案 stage / prod都是跑在同一台機器上，沒辦法用環境變數，都是採用 config.js 當作設定文件&lt;/p>
+&lt;h2 id="4-backingservices">4. Backing services&lt;/h2>
+&lt;h4 id="將支援服務當作附加的資源treat-backing-services-as-attached-resources">將支援服務當作附加的資源(Treat backing services as attached resources)&lt;/h4>
+&lt;p>這裡的Backing services泛指應用程式相依的外部服務，例如資料庫、寄信服務商、快取資料庫等&lt;/p>
+&lt;p>&lt;strong>twelve-factor app&lt;/strong> 應該是可以在抽換外部支援服務而不需要更動程式碼，只需要改變設定檔並重啟而已；&lt;br>
+例如說將資料庫從本機端的MySQL替換成雲端 Amazon RDS。&lt;/p>
+&lt;h2 id="5-build-releaserun">5. Build, release, run&lt;/h2>
+&lt;h4 id="嚴格區分建制與執行步驟strictly-separate-build-and-runstages">嚴格區分建制與執行步驟(Strictly separate build and run stages)&lt;/h4>
+&lt;p>當原始碼要轉換成部署的程序時，會經過三個步驟&lt;br>
+1. 建置 build：&lt;br>
+ 將程式碼轉換成可執行的包裹(Bundle)，這步驟會抓取外部相依的函式庫並編譯二進制檔案等。&lt;br>
+2. 發布 release：&lt;br>
+將build好的可執行包裹，並結合該部署環境的設定檔&lt;br>
+3. 執行 run：&lt;br>
+執行release階段打包好的程式。&lt;/p>
+&lt;p>每份release都必須有特定的編號，不論是日期格式 &lt;code>2011–04–06–20:32:17&lt;/code> 抑或是遞增版好 &lt;code>v100&lt;/code> ，方便後續有問題可以回滾。&lt;br>
+此外當發布release後不能有任何更動，只能透過發布新的release。&lt;/p>
+&lt;p>&lt;code>建置階段&lt;/code>通常是當工程師覺得有新的程式碼更動需要部署，則主動觸發的，所以在建置階段可以執行相對複雜的指令與操作，當發生錯誤時還可以有工程師手動修復；&lt;br>
+但相對在&lt;code>執行階段&lt;/code>，可能是自動化執行如應用崩潰後自動重啟，所以在執行階段應該要越簡潔越好。&lt;/p>
+&lt;h2 id="6-processes">6. Processes&lt;/h2>
+&lt;h4 id="執行無狀態的單執行緒或多執行緒execute-the-app-as-one-or-more-stateless-processes">執行無狀態的單執行緒或多執行緒(Execute the app as one or more stateless processes)&lt;/h4>
+&lt;p>一個應用程式可能有單個或多個執行緒，&lt;strong>twelve-factor app&lt;/strong> 應該是&lt;code>stateless&lt;/code>且 &lt;code>share-nothing&lt;/code> ，需要長期保存的資料可以放在外部服務如資料庫或CDN中&lt;/p>
+&lt;p>程序的記憶體或是檔案系統只能當作暫時的操作空間，例如下載檔案、操作、接著將結果儲存於資料庫中，應用程式應該確保被暫存在快取與檔案系統的資料在未來不會被用上；&lt;br>
+因為在多執行緒下，未知的請求可能被不同的執行緒所執行，即使是單執行緒程式當系統崩潰時快取跟檔案系統的資料都可能消失。&lt;/p>
+&lt;p>有些應用程式會採用 &lt;code>sticky-session&lt;/code> 確保同一個用戶被同一個執行緒所服務，這是違反規範的。&lt;br>
+有時效性的暫存狀態資料(如session)可以放在像Redis / Memcached這類的資料庫中。&lt;/p>
+&lt;h2 id="7-portbinding">7. Port binding&lt;/h2>
+&lt;h4 id="透過綁定埠口對外開放服務export-services-via-portbinding">透過綁定埠口對外開放服務(Export services via port binding)&lt;/h4>
+&lt;p>應用程式有些時候被執行在其他容器中，例如 PHP服務可能執行於 &lt;a class="link" href="http://httpd.apache.org/" target="_blank" rel="noopener"
+>Apache HTTPD&lt;/a> / Java服務 執行於 &lt;a class="link" href="http://tomcat.apache.org/" target="_blank" rel="noopener"
+>Tomcat&lt;/a>下，但是 &lt;strong>twelve-factor app&lt;/strong> 應該是服務直接綁定埠口並處理請求。&lt;/p>
+&lt;p>這通常都有函示庫可以支援，例如 python的 &lt;a class="link" href="http://www.tornadoweb.org/" target="_blank" rel="noopener"
+>Tornado&lt;/a> / Ruby 的 &lt;a class="link" href="http://code.macournoyer.com/thin/" target="_blank" rel="noopener"
+>Thin&lt;/a> 等，這使得整份應用程式都是在 user-space執行，且全部包含在原始碼中。&lt;/p>
+&lt;p>HTTP只是其中一個可以綁定埠口的協定，其他像是 XMPP / Redis Protocol 等服務都需參照此規範。&lt;/p>
+&lt;h2 id="8-concurrency">8. Concurrency&lt;/h2>
+&lt;h4 id="透過執行緒模型擴展scale-out-via-the-processmodel">透過執行緒模型擴展(Scale out via the process model)&lt;/h4>
+&lt;p>應用程式在執行緒管理上有多種方式，例如 Apache 會在收到請求時開一隻新的子執行緒(Process)跑 php應用，而Java則是透過JVM先保留一大塊CPU/Memory資源接著透過內部分配線程(Thread)達到並行效果。&lt;/p>
+&lt;p>在 &lt;strong>twelve-factor app&lt;/strong> 中，執行緒是第一公民，開發者可以決定由哪一個執行緒跑任務，例如 HTTP請求執行在 Web執行緒上 / 背景服務則跑在 Worker執行緒上&lt;/p>
+&lt;p>看說明作者舉 &lt;a class="link" href="http://blog.daviddollar.org/2011/05/06/introducing-foreman.html" target="_blank" rel="noopener"
+>Foreman&lt;/a> 當做例子(下圖輔助說明)，這樣的好處是重要的任務可以分配較多的資源&lt;/p>
+&lt;p>&lt;img src="https://yuanchieh.page/post/img/0__jvIkj4Cf__DgPZRRt.png"
+loading="lazy"
+>&lt;/p>
+&lt;p>但這並不排除執行緒內部多工處理、VM內部處理線程分配、又或是像 非同步/事件觸發的NodeJS，但是單一VM能夠容量有限，應用程式須可拓展多個執行緒到多台實體主機上。&lt;/p>
+&lt;p>這樣的設計在需要水平擴展時會大放異彩，share-nothing / 可水平拆分的執行緒在增加更多並行(Concurrency)時十分地簡單。&lt;br>
+在 &lt;code>pm2&lt;/code> 同樣可以做到同樣的事情。&lt;/p>
+&lt;p>最後一段提到，&lt;strong>twelve-factor app&lt;/strong> &lt;a class="link" href="http://dustin.github.com/2010/02/28/running-processes.html" target="_blank" rel="noopener"
+>should never daemonize&lt;/a> or write PID files. Instead, rely on the operating system’s process manager (such as &lt;a class="link" href="https://www.freedesktop.org/wiki/Software/systemd/" target="_blank" rel="noopener"
+>systemd&lt;/a>, a distributed process manager on a cloud platform, or a tool like &lt;a class="link" href="http://blog.daviddollar.org/2011/05/06/introducing-foreman.html" target="_blank" rel="noopener"
+>Foreman&lt;/a> in development)&lt;/p>
+&lt;p>技術名詞太多直接貼原文，追蹤完相關內文連結大致上想要說明「應用程式應該管好開發應用程式就好，其餘的執行交給工具即可」&lt;br>
+也就是 &lt;code>KISS(Keep it simple, stupid)&lt;/code> 的設計理念。&lt;/p>
+&lt;p>daemon是處於背景、不予用戶互動的執行程式，其父進程為 init (在 linux 中為系統啟動後第一個進程，PID編號為1)，init會一直存在到電腦關機為止；&lt;br>
+當有任何父進程先行關閉而子進程仍然執行時，init會轉為這些子進程的父進程，所以常見啟動daemon作法也都是在父進程 fork出子進程後退出，此時子進程就是daemon process了。&lt;/p>
+&lt;p>參考 Nodejs Daemon 函式庫就是此作法，用 child_process.spawn 關閉 stdin 並重導 stdout / stderr 與其他設定，另開新的進程。&lt;/p>
+&lt;p>&lt;a class="link" href="https://github.com/indexzero/daemon.node/blob/master/index.js" target="_blank" rel="noopener"
+>&lt;strong>indexzero/daemon.node&lt;/strong>&lt;/a>&lt;/p>
+&lt;h2 id="9-disposability">9. Disposability&lt;/h2>
+&lt;h4 id="快速啟動優雅關閉增強程式可靠性-maximize-robustness-with-fast-startup-and-graceful-shutdown">快速啟動+優雅關閉=&amp;gt;增強程式可靠性 (Maximize robustness with fast startup and graceful shutdown)&lt;/h4>
+&lt;p>應用程式應該盡可能降低啟動時間，這樣才可以在快速擴展 / 修改設定時快速啟用服務；&lt;br>
+當應用程式收到&lt;a class="link" href="http://en.wikipedia.org/wiki/SIGTERM" target="_blank" rel="noopener"
+>&lt;strong>SIGTERM&lt;/strong>&lt;/a>訊號時，應當優雅的關閉，也就是停止處理新的請求並將現有的請求處理完成才退出。&lt;/p>
+&lt;p>應用程式需要處理非預警的關閉，例如硬體壞掉等，這時候最好有可靠的queueing backend 例如Beanstalkd，當應用程式終止或超時可以自動將任務重新返回 queue中。&lt;/p>
+&lt;h2 id="10-devprodparity">10. Dev/prod parity&lt;/h2>
+&lt;h4 id="盡可能保持環境一致-keep-development-staging-and-production-as-similar-as-possible">盡可能保持環境一致 (Keep development, staging, and production as similar as possible)&lt;/h4>
+&lt;p>因為一些歷史緣由，開發環境與正式環境可能有幾種差異存在&lt;br>
+1. 時間：開發環境可能持續開發了數天到數個月才同步到正式環境&lt;br>
+2. 人：開發工程師負責開發，而維運工程師部署到正式環境&lt;br>
+3. 工具：本地端可能用SQLite 而 正式環境則用 MySQL&lt;/p>
+&lt;p>&lt;strong>twelve-factor app&lt;/strong> 則是要縮短上面的差距&lt;br>
+1. 縮短時間：開發到部署在數小時甚至數分鐘之間&lt;br>
+2. 人：開發者應該緊密的參與正式環境部署&lt;br>
+3. 工具：盡可能用同樣的工具鍊&lt;/p>
+&lt;p>環境宣告工具如 &lt;a class="link" href="http://www.opscode.com/chef/" target="_blank" rel="noopener"
+>Chef&lt;/a> / &lt;a class="link" href="http://docs.puppetlabs.com/" target="_blank" rel="noopener"
+>Puppet&lt;/a> 結合輕量的虛擬化環境工具如 &lt;a class="link" href="https://www.docker.com/" target="_blank" rel="noopener"
+>Docker&lt;/a> / &lt;a class="link" href="http://vagrantup.com/" target="_blank" rel="noopener"
+>Vagrant&lt;/a> 可以大幅同步開發與正式環境。&lt;/p>
+&lt;h2 id="11-logs">11. Logs&lt;/h2>
+&lt;h4 id="用串流處理log-treat-logs-as-eventstreams">用串流處理Log( Treat logs as event streams)&lt;/h4>
+&lt;p>&lt;strong>twelve-factor app&lt;/strong> 本身不應該去管理或煩惱 Log應該要儲存在哪裡，執行中的程式應當直接輸出到 &lt;code>stdout&lt;/code> ，在本地開發上工程師可以直接在終端機介面看到所有的打印訊息；&lt;br>
+而在正式環境上，Log應該被執行環境處理，彙整所有的Log到不同的地方儲存或是到&lt;a class="link" href="http://hive.apache.org/" target="_blank" rel="noopener"
+>Hadoop/Hive&lt;/a> 做更進一步的資料處理，有開源工具可以使用如 &lt;a class="link" href="https://github.com/heroku/logplex" target="_blank" rel="noopener"
+>Logplex&lt;/a> / &lt;a class="link" href="https://github.com/fluent/fluentd" target="_blank" rel="noopener"
+>Fluentd&lt;/a>，值得注意是應用程式本身不知道Log其他設定。&lt;/p>
+&lt;p>在Nodejs開發中，&lt;code>pm2&lt;/code> 有提供基本的Log，但如果要更進階的處理就還是要用 &lt;code>bunyan&lt;/code> / &lt;code>winston&lt;/code> Log 函式庫，但這就會違反原則，因為變成是應用程式要自己處理Log的部分。&lt;br>
+除非自己另外開發一套直接接 stdout / stderr 的串流工具(好像可以試試看?!)。&lt;/p>
+&lt;h2 id="12-admin-processes">12. Admin processes&lt;/h2>
+&lt;h4 id="執行一次性管理任務-run-adminmanagement-tasks-as-one-off-processes">執行一次性管理任務 (Run admin/management tasks as one-off processes)&lt;/h4>
+&lt;p>一次性的管理任務如 資料庫Schema更動 / 特定任務腳本 / 使用REPL執行任意的程式碼等，這些一次性的管理任務應當一同放入版本控制，並與應用程式使用相同的工具鍊與設定檔。&lt;/p>
+&lt;p>==========&lt;/p>
+&lt;p>以上只是個人的濃縮總結，有興趣可以看原資料網站。&lt;/p></description></item></channel></rss>

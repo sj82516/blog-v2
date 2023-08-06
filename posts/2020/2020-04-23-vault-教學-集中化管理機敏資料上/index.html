@@ -1,0 +1,229 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="初步介紹 Vault 的基本功能，包含 Secrets 管理 / Authentication / Authorization 在 Vault 當中的實踐"><meta name=keywords content="Infrastucure as Code,Hashicorp,技術教學,Vault"><title>Vault 教學-集中化管理機敏資料(上)</title><link rel=canonical href=https://yuanchieh.page/posts/2020/2020-04-23-vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99%E4%B8%8A/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Vault 教學-集中化管理機敏資料(上)"><meta property="og:description" content="初步介紹 Vault 的基本功能，包含 Secrets 管理 / Authentication / Authorization 在 Vault 當中的實踐"><meta property="og:url" content="https://yuanchieh.page/posts/2020/2020-04-23-vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99%E4%B8%8A/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2020-04-23T20:21:40+00:00"><meta property="article:modified_time" content="2020-04-23T20:21:40+00:00"><meta name=twitter:title content="Vault 教學-集中化管理機敏資料(上)"><meta name=twitter:description content="初步介紹 Vault 的基本功能，包含 Secrets 管理 / Authentication / Authorization 在 Vault 當中的實踐"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#vault-初探>Vault 初探</a><ol><li><a href=#啟動測試環境的-vault-server>啟動測試環境的 Vault server</a></li><li><a href=#取得新增更新刪除-secret>取得/新增/更新/刪除 secret</a></li><li><a href=#啟用-secret-並設定-path>啟用 Secret 並設定 path</a></li><li><a href=#啟動-aws-secret-engine-取得動態-accesskey--accesssecret>啟動 AWS Secret Engine 取得動態 AccessKey / AccessSecret</a></li><li><a href=#authentication--authorization>Authentication & Authorization</a><ol><li><a href=#token>Token</a></li></ol></li></ol></li><li><a href=#設定-policy>設定 Policy</a><ol><li><ol><li><a href=#1-path>1. path</a></li><li><a href=#2-capabilities>2. capabilities</a></li><li><a href=#3-allowed_parameters--denied_parameters--required_parameters>3. allowed_parameters & denied_parameters & required_parameters</a></li><li><a href=#4-min_wrapping_ttl--max_wrapping_ttl>4. min_wrapping_ttl & max_wrapping_ttl</a></li></ol></li><li><a href=#多重-policy-與衝突>多重 Policy 與衝突</a></li><li><a href=#改變-policy>改變 Policy</a></li></ol></li><li><a href=#統整>統整</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E9%9B%B2%E7%AB%AF%E8%88%87%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B/>雲端與系統架構</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2020/2020-04-23-vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99%E4%B8%8A/>Vault 教學-集中化管理機敏資料(上)</a></h2><h3 class=article-subtitle>初步介紹 Vault 的基本功能，包含 Secrets 管理 / Authentication / Authorization 在 Vault 當中的實踐</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Apr 23, 2020</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>6 minute read</time></div></footer></div></header><section class=article-content><div class=video-wrapper><iframe loading=lazy src=https://www.youtube.com/embed/VYfl-DpZ5wM allowfullscreen title="YouTube Video"></iframe></div><p>內容摘錄自影片介紹，要討論 Vault 的功能之前，先退一步回來看最一般的機敏資料的定義與管理方式</p><p>機敏資料主要分成 <code>驗證(Authentication)</code> 與 <code>授權(Authorization)</code>，一者表明身份一者決定操作的權限，可能是 DB 的權限 / 第三方服務的 API Token / 用來加解密的對稱金鑰等等，這些資料可能被放在原始碼當中 / config 文件 / 環境變數 / 版本控制等等四散各地，之前 Github 有提出許多開發者都誤上傳機敏資料；<br>另一方面時間一久沒有人知道到底發出去哪些 key 又或是誰有在用，糟糕的是可能一組 key 有多個人使用</p><p>Vault 提出三個層級的解決方案<br><strong><code>1. 集中化管理</code></strong><br>搭建 Vault Server 集中管理所有的機敏資料，在 Vault Server 中確保所有的機敏資料都是<code>被加密儲存</code>，同時 Client 來跟 Server 要機敏資料時<code>傳輸過程也是加密的</code>，安全性大幅提升；<br>且有 Vault 管理，可以定期 Rotate，並隨時查看目前的機敏資料使用狀況<br><strong><code>2.動態生成</code></strong><br>透過動態生成方式，每一個 Client 來要即使權限需求相同，也動態生成不同的 key，如果有異常操作，就能很清楚是哪一個 Client 有問題，接著直接 revoke 掉就行了；<br>如果大家都共用一把 key，就查不出是誰也不能直接 revoke，造成安全上的漏洞<br><strong><code>3.Encrpyt as Service</code></strong><br>API Server 設計時，我們常需要加解密資料，所以會需要金鑰與實作加解密演算法，但是一方面金鑰外流到 API Server 上多一層風險，再者如果加解密演算法有漏洞又是另一個風險；<br>所以 Vault Server 本身也提供加解密 API，讓金鑰與演算法的保障都留在 Vault Server 上，大幅降低風險。</p><p>架構上，Vault 拆成幾個模組增加相容性<br><img src=/post/img/20200423/vault.png loading=lazy></p><ol><li>Authentication<br>基於人員的驗證，可以透過第三方的架構如 AWS/LDAP，或是K8S</li><li>Audit<br>將所有的操作都記錄下來，可以存放在 system logs 或是其他儲存方式</li><li>Secret<br>機敏資料的型態，可能是 Key-Value，也可能是第三方服務如 Database / AWS 等</li><li>Storage<br>機敏資料的儲放位置</li></ol><p>以下教學將初步探索 Vault 功能為主，只適用於學習與測試環境使用!<br>下一篇實作篇，以 AWS 為主，動態 Launch API Server 時主動索取機敏資料，被配與動態 MongoDB 金鑰與 AWS Role</p><h2 id=vault-初探>Vault 初探</h2><p><a class=link href=https://learn.hashicorp.com/vault/getting-started/install target=_blank rel=noopener>Vault 官方教學</a> 是一個互動式的教學，蠻簡單明瞭的，以下是整理的筆記，僅適用於學習，完全不建議用在正式環境!</p><p>先到 <a class=link href=https://www.vaultproject.io/downloads target=_blank rel=noopener>官方載點</a>下載並安裝，設定好路徑之後可以安裝 auto complete <code>$vault -autocomplete-install</code>，vault 會偵測 shell 安裝對應的插件</p><h3 id=啟動測試環境的-vault-server>啟動測試環境的 Vault server</h3><p><code>$ vault server -dev</code> 接著會在 terminal 打印出 Root Token: 的字樣，此時 vault server 會跑在前景；<br>開啟另一個 terminal tab，將其輸出至環境變數等等會使用上 <code>export VAULT_DEV_ROOT_TOKEN_ID="{替換 Root Token}"</code>，接著指定 vault server url <code>$export VAULT_ADDR='http://127.0.0.1:8200'</code>；<br>透過 <code>$ vault status</code> 檢查是否指定正確</p><h3 id=取得新增更新刪除-secret>取得/新增/更新/刪除 secret</h3><p>先前提到 Secret 有很多種，從最簡單的 key value 開始，Vault 通過以下指令設定</p><ol><li><code>vault kv put secret/{path} {key}={vaule} {key2}={value2}</code></li><li><code>vault kv get -format=json secret/{path}</code><br>format 是選擇性回指定回傳格式</li><li><code>vault kv delete secret/{path}</code></li></ol><p>可以把 Vault Server 儲存密碼的方式想成 RESTful API Server，指定資源的路徑，採用最長匹配方式，<code>secret</code> 是預設的前綴，後面的path 用 / 分隔，接著的 kv 可以設定多組，put 同時代表新增與更新；</p><h3 id=啟用-secret-並設定-path>啟用 Secret 並設定 path</h3><p>預設用 dev 啟動後 <code>secret/</code> 路徑會對應到 KV 儲存方式，可以透過 <code>$vault secrets list</code> 查看，接著如果我們想要自訂其他的 Secret，或是指定新的路徑儲放 KV，可以透過 <code>$vault secrets enable -path={path} {secret engine}</code> 例如 <code>$vault secrets enable -path=kv kv</code> 就能指定 kv/ 為新的 key-value 儲存路徑</p><p>接著下 <code>$vault kv put kv/hello foo=bar</code> 可以得到相同的結果，透過 <code>$vault secrets list</code> 可以看出來多了一組設定</p><p>如果不要用了，可以透過 <code>$vault secrets disable {path}/</code> 如 <code>$vault secrets disable kv/</code> 刪除，注意底下儲存的密碼也都會一並消失</p><h3 id=啟動-aws-secret-engine-取得動態-accesskey--accesssecret>啟動 AWS Secret Engine 取得動態 AccessKey / AccessSecret</h3><p>先前提到 Vault 一大特色是支援多種 Secret，而且 Secret 可以是動態生成的，每一個 Client 來索取都能要到獨立的 Secret</p><p>透過 aws secret engine，可以指定 Role 與權限並給予動態 secret，首先讓我們啟動 secret <code>$vault secrets enable -path=aws aws</code>，接著設定 aws 帳號</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault write aws/config/root <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    <span class=nv>access_key</span><span class=o>=</span><span class=si>${</span><span class=nv>AWS</span><span class=p> Access Key</span><span class=si>}</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    <span class=nv>secret_key</span><span class=o>=</span><span class=si>${</span><span class=nv>AWS</span><span class=p> Secret key</span><span class=si>}</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    <span class=nv>region</span><span class=o>=</span><span class=si>${</span><span class=nv>AWS</span><span class=p> Region</span><span class=si>}</span>
+</span></span></code></pre></td></tr></table></div></div><blockquote><p>絕對不建議在生產環境如此使用，因為 shell command 會被記錄在 log 中</p></blockquote><p>後續的操作，Vault 就會用這組帳密去管理 IAM</p><p>接著創建角色</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault write aws/roles/my-role <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>        <span class=nv>credential_type</span><span class=o>=</span>iam_user <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>        <span class=nv>policy_document</span><span class=o>=</span>-<span class=s>&lt;&lt;EOF
+</span></span></span><span class=line><span class=cl><span class=s>{
+</span></span></span><span class=line><span class=cl><span class=s>  &#34;Version&#34;: &#34;2012-10-17&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>  &#34;Statement&#34;: [
+</span></span></span><span class=line><span class=cl><span class=s>    {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Sid&#34;: &#34;Stmt1426528957000&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Effect&#34;: &#34;Allow&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Action&#34;: [
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;ec2:*&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      ],
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Resource&#34;: [
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;*&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      ]
+</span></span></span><span class=line><span class=cl><span class=s>    }
+</span></span></span><span class=line><span class=cl><span class=s>  ]
+</span></span></span><span class=line><span class=cl><span class=s>}
+</span></span></span><span class=line><span class=cl><span class=s>EOF</span>
+</span></span></code></pre></td></tr></table></div></div><p>這裡給予了 ec2 全部的權限</p><p>接著要產生 Secret 通過 <code>$vault read aws/creds/my-role</code>，此時就會回傳一組新的 role，每次呼叫都會回傳獨立的 Secret (為什麼用 read 代表創建動作就不確定設計的原理了 :thinking_face)，從 IAM Console 可以看到被創建的用戶
+<img src=/post/img/20200423/vault_aws_user.png loading=lazy></p><p>如果要 revoke 的話，通過 <code>$vault lease revoke aws/creds/my-role/{lease id}</code> 即可</p><p>剛剛想要查找有沒有指令可以條列出所有的 credentials，但看來是沒有這項指令，如果當初沒有記得 lease id 的話，就要去 IAM Console 手動刪除了</p><p>所有的指令可以從這邊看到 <a class=link href=https://www.vaultproject.io/api-docs/secret/aws target=_blank rel=noopener>AWS Secret 文件</a>，或是用 <code>$vault path-help aws</code> 查看，path-help 可以指定不同的路徑層次，例如 <code>$vault path-help aws/config/lease</code></p><h3 id=authentication--authorization>Authentication & Authorization</h3><p>現在我們知道要如何建立與管理金鑰，但重點回到<code>誰能來要金鑰以及權限劃分</code>，Authentication 部分 Vault 可以用 token / AppRule / Github / AWS IAM / LDAP 等等，Authorization 部分可以制定 Policy，限縮用戶能夠操作的 Secret 權限</p><h4 id=token>Token</h4><p>Token 驗證機制是 Vault 核心、不能被關閉的驗證功能，像我們一開始啟動 Vault Server 後會產生一個 root token，接著會用 root token 去制定 Policy，並產生多組 Token，文件提到如果<code>設定完就應該 revoke root token</code>，最好是有 root token 時大家一起盯著螢幕操作後就 revoke，後續有需要可以在動態生成</p><ol><li>$vault operator init</li><li>$vault operator generate-root</li><li>用 root token 生成其他 root token</li></ol><p>在 Vault 中，Token 管理是階層化的，用母 Token 去生成的 Token 會自動變成子 Token，為了管理方便，如果母 Token 被 Revoke 那麼以下<code>所有的子 Token 會全數被 Revoke</code>，如果希望 Token 不受母 Token 影響，可以用設定為 Orphan Token，跳脫階層獨立管理</p><p>除了 Root Token，其餘的 Token 都有 TTL，TTL 設定有幾個地方</p><ol><li>Vault Server 啟動時的 Config</li><li>透過 mount tuning 去更改</li><li>根據母 Token 的Policy</li></ol><p>在有些長駐的程式中，需要長時間持有 Token 可以設定為 <code>Periodic</code>，指定更新週期只要在這期間內去 renew 就能繼續使用 Token，同時可以指定 TTL 或是設為永不失效，等 TTL 到了會自動 revoke</p><p>Token 建立後會回傳 id / accessor / policy 等資訊，<code>accessor</code> 可以用來操作 token 相關的指令例如 renew / revoke / 反查 token id 等等，不太確定為什麼不直接用 token id 而是要多產生另一組 accessor 代號，但目前看到要條列出所有 token 只能透過列出 accessors 再去反查 token</p><p>以上的 Token 是指 <code>Service Token</code>，也就是預設最常使用的 Token 形式；另外還有 Batch Token 用在 Vault 操作上，暫時沒有看到用處就先略過</p><p>接著實際操作看看</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>// 透過 root 生成的 token，ttl 預設為無過期
+</span></span><span class=line><span class=cl>$ vault token create
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>----- 開啟另一個 shell，試著用剛剛的 token 登入
+</span></span><span class=line><span class=cl>$ <span class=nb>export</span> <span class=nv>VAULT_ADDR</span><span class=o>=</span><span class=s1>&#39;http://127.0.0.1:8200&#39;</span>
+</span></span><span class=line><span class=cl>$ vault login <span class=o>{</span>token<span class=o>}</span>
+</span></span><span class=line><span class=cl>------
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>// 刪除剛才的 token
+</span></span><span class=line><span class=cl>$ vault token revoke <span class=o>{</span>token<span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>// 新增一個 ttl 為 1h 的 token
+</span></span><span class=line><span class=cl>$ vault token create -ttl<span class=o>=</span><span class=s2>&#34;1h&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p>其他的部分，覺得透過 api 下指令比較方便，東西也比較全面，可以參考<a class=link href=https://www.vaultproject.io/api/auth/token target=_blank rel=noopener>文件</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>// 查看所有的 accessors
+</span></span><span class=line><span class=cl>$ curl <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --header <span class=s2>&#34;X-Vault-Token: {token}&#34;</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --request LIST <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    http://127.0.0.1:8200/v1/auth/token/accessors
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>// 查看各別 accessor
+</span></span><span class=line><span class=cl>$ curl <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --header <span class=s2>&#34;X-Vault-Token: {token}&#34;</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --request POST <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --data <span class=s1>&#39;{&#34;accessor&#34;: &#34;{accessor id}&#34;}&#39;</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    http://127.0.0.1:8200/v1/auth/token/lookup-self
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>// 透過 accessor revoke token
+</span></span><span class=line><span class=cl>$ curl <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --header <span class=s2>&#34;X-Vault-Token: {token}&#34;</span> <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --request POST <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --data  <span class=s1>&#39;{&#34;accessor&#34;: &#34;{accessor token}&#34;}&#39;</span><span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    http://127.0.0.1:8200/v1/auth/token/revoke-accessor
+</span></span></code></pre></td></tr></table></div></div><h2 id=設定-policy>設定 Policy</h2><p>接著就是設定 Policy 部分，限制不同 Token 能夠操作 Secret 的權限，Vault 撰寫 policy 的格式是採用 hcl，也就是 HashiCorp 自己內部的 Config 描述語言，在路徑下建立檔案 <code>my-policy.hcl</code> 並貼上以下內容</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>path <span class=s2>&#34;kv/foo&#34;</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>  <span class=nv>capabilities</span> <span class=o>=</span> <span class=o>[</span> <span class=s2>&#34;create&#34;</span>, <span class=s2>&#34;update&#34;</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>path <span class=s2>&#34;secret/data/foo&#34;</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>  <span class=nv>capabilities</span> <span class=o>=</span> <span class=o>[</span> <span class=s2>&#34;create&#34;</span>, <span class=s2>&#34;update&#34;</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>上述文件的意思是這個 Policy 只能操作 secret/foo 的新&更新，其他的操作都一率被禁止，<code>/data/</code> 指的是預設 Key Value 的 Secret 路徑，如果是另外啟動的如 <code>$vault secrets enable -path=kv kv</code>，則可以不用加 /data 變成 <code>kv/foo</code> 即可</p><p>接著實際操作</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault policy write my-policy my-policy.hcl
+</span></span><span class=line><span class=cl>$ vault token create -policy<span class=o>=</span>my-policy
+</span></span></code></pre></td></tr></table></div></div><p>可以看到 token 的 policy 窩了自定義的 my-policy</p><p>接著開另一個 shell 登入</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault login <span class=o>{</span>token<span class=o>}</span>
+</span></span><span class=line><span class=cl>$ vault kv put secret/foo <span class=nv>bar</span><span class=o>=</span>baz
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>// permission denied
+</span></span><span class=line><span class=cl>$ vault kv <span class=nb>read</span> secret/foo
+</span></span><span class=line><span class=cl>$ vault kv put secret/foo/bar <span class=nv>bar</span><span class=o>=</span>baz
+</span></span></code></pre></td></tr></table></div></div><p>後來發現 $vault login 會影響所有的 shell，這點在測試要稍加留意</p><p>Vault Policy 設定可以很彈性，主要有幾項關鍵字</p><h4 id=1-path>1. path</h4><p>路徑選擇，可以用 <code>*</code> 代表以下所有路徑 / <code>+</code> 代表此路徑匹配任何字元等方式，如果有多組 path，Vault 採取最長匹配的原則</p><h4 id=2-capabilities>2. capabilities</h4><p>權限選擇，有 <code>[read, create, update, delete, list, sudo, deny]</code>，文件提到 Vault 沒有很仔細區分 create/update 的使用場景，所以要給就一起給；<br>sudo 指的是受 root 保護的權限 / deny 是禁止任何操作包含 sudo 也不行</p><h4 id=3-allowed_parameters--denied_parameters--required_parameters>3. allowed_parameters & denied_parameters & required_parameters</h4><p>針對參數的設定，可以條列允許/不允許/必備的參數，如果沒有特別設定，則代表不受任何限制</p><h4 id=4-min_wrapping_ttl--max_wrapping_ttl>4. min_wrapping_ttl & max_wrapping_ttl</h4><p>產生子 Token 的最長與最短 TTL</p><p>以下是綜合範例</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>path <span class=s2>&#34;secret/foo&#34;</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>  <span class=nv>capabilities</span> <span class=o>=</span> <span class=o>[</span><span class=s2>&#34;create&#34;</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=nv>allowed_parameters</span> <span class=o>=</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;foo&#34;</span> <span class=o>=</span> <span class=o>[]</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;bar&#34;</span> <span class=o>=</span> <span class=o>[</span><span class=s2>&#34;zip&#34;</span>, <span class=s2>&#34;zap&#34;</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=o>}</span>
+</span></span><span class=line><span class=cl>  <span class=nv>min_wrapping_ttl</span> <span class=o>=</span> <span class=s2>&#34;1s&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=nv>max_wrapping_ttl</span> <span class=o>=</span> <span class=s2>&#34;90s&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>path <span class=s2>&#34;secret/bar/*&#34;</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>  <span class=nv>capabilities</span> <span class=o>=</span> <span class=o>[</span><span class=s2>&#34;create&#34;</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=nv>required_parameters</span> <span class=o>=</span> <span class=o>[</span><span class=s2>&#34;bar&#34;</span>, <span class=s2>&#34;baz&#34;</span><span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>path <span class=s2>&#34;secret/baz/+/data-*&#34;</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>  <span class=nv>capabilities</span> <span class=o>=</span> <span class=o>[</span><span class=s2>&#34;create&#34;</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=nv>denied_parameters</span> <span class=o>=</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;deny-*&#34;</span> <span class=o>=</span> <span class=o>[]</span>
+</span></span><span class=line><span class=cl>  <span class=o>}</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>針對 secret/foo，在創建時只允許參數 foo / bar，其中 foo 的 value 不受限，但是 bar 只能是 zip 或是 zap</p><p>第二條是指 secret/bar 底下的任意路徑適用，包含 secret/bar/baz 和 secret/bar/baz/foo&mldr;. 等等，並且必須包含 bar, baz 這兩個參數</p><p>第三條是路徑會匹配如 secret/baz/foo/data-bar，且不允許 deny- 開頭的 key</p><h3 id=多重-policy-與衝突>多重 Policy 與衝突</h3><p>在 Token 創建時可以同時綁定多組 Policy，不免讓人好奇如果兩組 Policy 對同一路徑產生衝突時的狀況，實測發現是 capacities 相同路徑下會給予最綜合的權限，而不是按照順序覆蓋之類的</p><p>可以用 <code>$vault token capabilities {token} {path}</code> 查詢</p><h3 id=改變-policy>改變 Policy</h3><p>當改變 Policy 時，原本已經建立好的 Token 不會動態套用，需要刪除重建，而新增/更新 Policy 的方式用 <code>$ vault policy write {policy_name} my-policy.hcl</code>即可</p><h2 id=統整>統整</h2><p>僅僅介紹基本功能就花了不少篇幅，涵蓋了基本的 Secrets / Auth 的功能介紹與操作</p><ol><li>啟動 dev server，關掉資料則全部消失</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault server --dev
+</span></span></code></pre></td></tr></table></div></div><ol start=2><li>登入與設定路徑</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault login <span class=o>{</span>token<span class=o>}</span>
+</span></span><span class=line><span class=cl>$ <span class=nb>export</span> <span class=nv>VAULT_ADDR</span><span class=o>=</span><span class=s1>&#39;http://127.0.0.1:8200&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=3><li>Secret Engine 是與路徑匹配，secret/data 是預設 Key Store Secret Engine，可以另外開啟新的路徑</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault secrets <span class=nb>enable</span> -path<span class=o>=</span>kv kv
+</span></span><span class=line><span class=cl>// 條列
+</span></span><span class=line><span class=cl>$ vault secrets list -detailed
+</span></span><span class=line><span class=cl>$ vault secrets disable <span class=o>{</span>path<span class=o>}</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=4><li>新增&更新/取得／刪除 Token</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault kv put kv/foo <span class=nv>foo</span><span class=o>=</span><span class=s2>&#34;123&#34;</span>
+</span></span><span class=line><span class=cl>$ vault kv get kv/foo
+</span></span><span class=line><span class=cl>$ vault kv delete kv/foo
+</span></span></code></pre></td></tr></table></div></div><ol start=5><li>Authentication</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault token create -ttl<span class=o>=</span><span class=s2>&#34;1h&#34;</span> -policy<span class=o>=</span><span class=s2>&#34;my_policy&#34;</span>
+</span></span><span class=line><span class=cl>$ vault token revoke <span class=o>{</span>token id<span class=o>}</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=6><li>Authorization<br>另外用 hcl 檔儲存 Policy，並匯入設定中</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>$ vault policy write my-policy my-policy.hcl
+</span></span><span class=line><span class=cl>$ vault token capabilities <span class=o>{</span>token<span class=o>}</span> <span class=o>{</span>path<span class=o>}</span>
+</span></span><span class=line><span class=cl>$ vault policy <span class=nb>read</span> my-policy
+</span></span><span class=line><span class=cl>$ vault policy list
+</span></span><span class=line><span class=cl>$ vault policy delete my-policy  
+</span></span></code></pre></td></tr></table></div></div><p>想不到初步介紹就花這麼大的篇幅，下一篇要實作結合 AWS 與搭配 API Server 的流程</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2021/2021-01-21-%E5%A6%82%E4%BD%95%E6%89%93%E9%80%A0%E5%AE%89%E5%85%A8%E7%9A%84-production-ready-node.js-docker-image/><div class=article-details><h2 class=article-title>如何打造安全的 production ready Node.js Docker Image</h2></div></a></article><article><a href=/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/><div class=article-details><h2 class=article-title>Coturn Server 架設教學 - on AWS</h2></div></a></article><article><a href=/posts/2020/2020-04-15-packer%E6%95%99%E5%AD%B8-%E6%89%93%E9%80%A0-image%E8%88%87%E5%AF%A6%E9%9A%9B%E4%BD%BF%E7%94%A8%E7%B6%93%E9%A9%97/><div class=article-details><h2 class=article-title>Packer教學-打造 Image與實際使用經驗</h2></div></a></article><article><a href=/posts/2020/2020-04-12-vagrant-%E6%95%99%E5%AD%B8-%E5%BE%9E%E6%9C%AC%E5%9C%B0%E7%AB%AF%E9%96%8B%E7%99%BC%E5%88%B0-aws-%E9%83%A8%E7%BD%B2/><div class=article-details><h2 class=article-title>Vagrant 教學- 從本地端開發到 AWS 部署</h2></div></a></article><article><a href=/posts/2020/2020-04-12-infrusture-as-code-%E6%8C%91%E6%88%B0%E8%B3%BD-hashicorp-%E5%B7%A5%E5%85%B7%E9%8F%88%E5%85%A8%E6%95%99%E5%AD%B8/><div class=article-details><h2 class=article-title>Infrusture as Code 挑戰賽 - Hashicorp 工具鏈全教學</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

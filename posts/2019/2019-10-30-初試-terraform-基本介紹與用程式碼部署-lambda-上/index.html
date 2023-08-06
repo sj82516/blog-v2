@@ -1,0 +1,350 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Terraform 提供跨雲平台的 Infrastructure as code 方案，用 DSL 編寫檔案管理雲端架構"><meta name=keywords content="cloud,terraform"><title>初試 Terraform - 基本介紹與用程式碼部署 Lambda (上)</title><link rel=canonical href=https://yuanchieh.page/posts/2019/2019-10-30-%E5%88%9D%E8%A9%A6-terraform-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%B4%B9%E8%88%87%E7%94%A8%E7%A8%8B%E5%BC%8F%E7%A2%BC%E9%83%A8%E7%BD%B2-lambda-%E4%B8%8A/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="初試 Terraform - 基本介紹與用程式碼部署 Lambda (上)"><meta property="og:description" content="Terraform 提供跨雲平台的 Infrastructure as code 方案，用 DSL 編寫檔案管理雲端架構"><meta property="og:url" content="https://yuanchieh.page/posts/2019/2019-10-30-%E5%88%9D%E8%A9%A6-terraform-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%B4%B9%E8%88%87%E7%94%A8%E7%A8%8B%E5%BC%8F%E7%A2%BC%E9%83%A8%E7%BD%B2-lambda-%E4%B8%8A/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2019-10-30T00:21:40+00:00"><meta property="article:modified_time" content="2019-10-30T00:21:40+00:00"><meta name=twitter:title content="初試 Terraform - 基本介紹與用程式碼部署 Lambda (上)"><meta name=twitter:description content="Terraform 提供跨雲平台的 Infrastructure as code 方案，用 DSL 編寫檔案管理雲端架構"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><ol><li><a href=#provider>Provider</a></li><li><a href=#resource>Resource</a></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E9%9B%B2%E7%AB%AF%E8%88%87%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B/>雲端與系統架構</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2019/2019-10-30-%E5%88%9D%E8%A9%A6-terraform-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%B4%B9%E8%88%87%E7%94%A8%E7%A8%8B%E5%BC%8F%E7%A2%BC%E9%83%A8%E7%BD%B2-lambda-%E4%B8%8A/>初試 Terraform - 基本介紹與用程式碼部署 Lambda (上)</a></h2><h3 class=article-subtitle>Terraform 提供跨雲平台的 Infrastructure as code 方案，用 DSL 編寫檔案管理雲端架構</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Oct 30, 2019</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><h1 id=介紹>介紹</h1><p>Terraform 在 Github 上有一萬九千多顆星星(截自發文日)的開源專案，由 HashiCorp 這間專注於 DevOps 工具開發的公司所維護，主要透過 DSL 編寫定義檔，管理跨雲端架構，讓架構也可以程式碼化，近一步更好的<code>協作</code>、<code>版本控制</code>等好處，達到 Infrastructure as code 的目標。</p><p>Terraform 可以達到以下幾件事：</p><ol><li><strong>架構代碼化</strong><br>Terraform 採用宣告式程式語言(declarative language)的 DSL，但同樣提供基礎的程式語言該有的功能，例如變數、輸入輸出、模組化等，其中模組化也支援加載外部模組，不用擔心違反 DRY，內建一些函示也都很好用；
+當你有多個環境要部署時，可以用同樣的架構但是不同的機器規格與參數，管理上很方便</li><li><strong>跨平台服務</strong><br>Azure / GCP / AWS / Heroku 都可以，其他的工具包山包海，可以參考文件 <a class=link href=https://www.terraform.io/docs/providers/index.html target=_blank rel=noopener>Providers</a></li><li><strong>自動管理架構升級</strong><br>架構異動時，Terraform 會自動更新或替換正確的資源，同時也可以一鍵刪除</li><li><strong>團隊協作</strong><br>提供多樣的解決方案，可以用官方的 Terraform Cloud 或 AWS S3 等，在團隊內共同管理</li><li><strong>與現有架構整合</strong><br>Terraform 提供兩種方式與既有架構整合，一是維持唯讀型態只存取資源(例如讀 AWS arn 綁定到 Lambda 上)、二是 Import 資源一並由 Terraform 管理(增加、刪除、修改)</li><li><strong>DX 很好</strong><br>Developer Experience 還不賴，官方的文件、教學，以及整體的設計上都很友善，錯誤也會很直接顯示哪一行的哪一部分語法錯誤，學習上 Debug 上都很容易，HashiCorp 員工有分享這是他們在 0.12 很大的修正，讓用戶更快找出錯誤是他們重視的一環</li></ol><p>這次目標跟上次的 CDK 研究一樣，部署一個每五分鐘執行的 Lambda，並分佈到多個區域，CDK 教學連結 <a class=link href=https://yuanchieh.page/post/2019-01-27_aws-cdk-infrastructore-as-code/ target=_blank rel=noopener>AWS-CDK教學 — Infrastructore As Code 用程式碼管理架構</a></p><h1 id=事前準備>事前準備</h1><p>請先安裝 Terraform，並設定好 AWS configuration，也可以先玩過官方教學 <a class=link href=https://learn.hashicorp.com/terraform/getting-started/intro target=_blank rel=noopener>Terraform getting started</a>；
+另一個很棒的參考資料 <a class=link href=https://blog.gruntwork.io/an-introduction-to-terraform-f17df9c6d180 target=_blank rel=noopener>An Introduction to Terraform</a>，系列文超仔細也超實用，比官方文件還推薦，作者也有出書，有機會應該會入手</p><h1 id=部署單區域的-lambda-與-iam-role>部署單區域的 Lambda 與 IAM Role</h1><p>創建一個檔案，先命名為 <code>main.tf</code> ，在 Terraform 中檔案分成 <code>root module</code> 與 <code>module</code>，沒有特別宣告是 module 則為 root module，目錄下可以有多個 root module，檔案名稱沒有進入點問題，只要結尾是 <code>.tf</code> 即可</p><p>首先第一步，先部署單一區域的 Lambda，與建立對應需要的 IAM Role，以下程式碼主要做幾件事</p><ol><li>宣告 aws 部署的區域</li><li>建立新的 IAM role 命名為 iam_for_lambda，並給予調用 lambda 的權限</li><li>建立 IAM Policy 命名為 lambda_logging，給予 Cloudwatch log 權限</li><li>將 IAM Policy 賦予 IAM role，lambda_logging 給 iam_for_lambda</li><li>等等 Lambda 會用到一些 node_modules，建立 Lambda layer 命名為 lambda-layer_fetch</li><li>建立 Lambda function aws_lambda_function，綁定 lambda-layer_fetch 與執行角色 iam_for_lambda</li></ol><p>寫完介紹，剛好一步對照一塊程式碼，如果對 AWS 有點熟悉的人應該可以很快理解語法，尤其是變數命名跟後台設定很雷同，所以上手相當輕鬆</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=c1># 指定後續資源的提供者是哪個平台的哪個區域
+</span></span></span><span class=line><span class=cl><span class=c1># provider 沒有指定 alias 代表為預設 provider
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>provider</span> <span class=s2>&#34;aws&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  profile</span> <span class=o>=</span> <span class=s2>&#34;default&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  region</span>  <span class=o>=</span> <span class=s2>&#34;us-east-1&#34;</span>
+</span></span><span class=line><span class=cl>}<span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1># 建立 IAM role，取名為 iam_for_lambda
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>resource</span> <span class=s2>&#34;aws_iam_role&#34; &#34;iam_for_lambda&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  name</span> <span class=o>=</span> <span class=s2>&#34;iam_for_lambda&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  assume_role_policy</span> <span class=o>=</span> <span class=err>&lt;&lt;</span><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>{
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Version&#34;: &#34;2012-10-17&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Statement&#34;</span><span class=err>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    {
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Action&#34;: &#34;sts:AssumeRole&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Principal&#34;</span><span class=err>:</span> {
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;Service&#34;: &#34;lambda.amazonaws.com&#34;</span>
+</span></span><span class=line><span class=cl>      }<span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Effect&#34;: &#34;Allow&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Sid&#34;: &#34;&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>}<span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1># 建立 IAM Policy，主要給 Cloudwatch Log 權限
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>resource</span> <span class=s2>&#34;aws_iam_policy&#34; &#34;lambda_logging&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  name</span>        <span class=o>=</span> <span class=s2>&#34;lambda_logging&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  path</span>        <span class=o>=</span> <span class=s2>&#34;/&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  description</span> <span class=o>=</span> <span class=s2>&#34;IAM policy for logging from a lambda&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  policy</span> <span class=o>=</span> <span class=err>&lt;&lt;</span><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>{
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Version&#34;: &#34;2012-10-17&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Statement&#34;</span><span class=err>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    {
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Action&#34;</span><span class=err>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;logs:CreateLogGroup&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;logs:CreateLogStream&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;logs:PutLogEvents&#34;</span>
+</span></span><span class=line><span class=cl>      <span class=p>],</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Resource&#34;: &#34;arn:aws:logs:*:*:*&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Effect&#34;: &#34;Allow&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_iam_role_policy_attachment&#34; &#34;lambda_logs&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  role</span>       <span class=o>=</span> <span class=s2>&#34;${aws_iam_role.iam_for_lambda.name}&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  policy_arn</span> <span class=o>=</span> <span class=s2>&#34;${aws_iam_policy.lambda_logging.arn}&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_lambda_layer_version&#34; &#34;lambda-layer_fetch&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  filename</span>   <span class=o>=</span> <span class=s2>&#34;./lambda_layer_payload.zip&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  layer_name</span> <span class=o>=</span> <span class=s2>&#34;lambda_layer_name&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  source_code_hash</span>    <span class=o>=</span> <span class=s2>&#34;${filebase64sha256(&#34;lambda_layer_payload.zip&#34;)}&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  compatible_runtimes</span> <span class=o>=</span> <span class=p>[</span><span class=s2>&#34;nodejs10.x&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_lambda_function&#34; &#34;lambda_main&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  function_name</span> <span class=o>=</span> <span class=s2>&#34;global-api-lantency-test&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  filename</span>      <span class=o>=</span> <span class=s2>&#34;./lambda_payload.zip&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  handler</span>       <span class=o>=</span> <span class=s2>&#34;index.handler&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  runtime</span>       <span class=o>=</span> <span class=s2>&#34;nodejs10.x&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  role</span>          <span class=o>=</span> <span class=s2>&#34;${aws_iam_role.iam_for_lambda.arn}&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  source_code_hash</span> <span class=o>=</span> <span class=s2>&#34;${filebase64sha256(&#34;lambda_payload.zip&#34;)}&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  layers</span> <span class=o>=</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;${aws_lambda_layer_version.lambda-layer_fetch.arn}&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl><span class=n>  publish</span> <span class=o>=</span> <span class=kt>true</span>
+</span></span><span class=line><span class=cl>  <span class=k>environment</span> {
+</span></span><span class=line><span class=cl><span class=n>    variables</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>      REGION</span>    <span class=o>=</span> <span class=s2>&#34;us-east-1&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>      SLACK_URL</span> <span class=o>=</span> <span class=s2>&#34;https://hooks.slack.com/services/.....&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=provider>Provider</h3><p>指定資源是套用在哪個平台，目前是指定在 us-east-1 AWS 上，如果沒有指定 <code>alias</code> 則代表是預設的 provider</p><h3 id=resource>Resource</h3><p>命名的方式是</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>resource</span> <span class=k>資源類型</span> <span class=k>資源名稱</span> {
+</span></span><span class=line><span class=cl>    <span class=k>資源參數</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>資源參數對應資源類型，可以從文件中找範例與定義的方式，資源的定義依賴於 Provider 平台的不同，可以指定 <code>provider</code>，不指定則用預設</p><p>除了個別的資源定義外，像有些資源會相依，例如 Lambda 要綁定特定的 IAM Role，注意到這邊的寫法是</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_lambda_function&#34; &#34;lambda_main&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  role</span>          <span class=o>=</span> <span class=s2>&#34;${aws_iam_role.iam_for_lambda.arn}&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=p>....</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>要引用其他資源的參數，需要用<code>"${資源類型.資源名稱.arn}"</code>，arn 是 AWS 用來識別資源的全域 ID，透過這樣的方式就能夠綁定資源，這邊我指定要用 Lambda 的 Execution Role 是 iam_for_lambda 這個 Role。<br>另外為了效率，定義的資源會並行建立，但有些資源有相依性，Terraform 會自動處理相依性，所以上述的資源理論上要 Policy > Role > Lambda Layer > Lambda，但我們不用宣告 Terraform 會自行處理；
+但有時候相依性不明顯或是有特殊需求，可以顯示宣告 <code>depends_on</code>。</p><p>Lambda Function 建立完成後，如果只是要單純更改 Lambda 內容而不調整架構，可以宣告</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_lambda_function&#34; &#34;lambda_main&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  source_code_hash</span> <span class=o>=</span> <span class=s2>&#34;${filebase64sha256(&#34;lambda_payload.zip&#34;)}&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>source_code_hash</code> 是指說如果 hash 值改變就更新 Lambda 內容，而 <code>filebase64sha256()</code> 是 Terraform 的內建函示，自動用 sha 256 算出檔案 hash 值並用 base64 編碼</p><p>題外話，Lambda 的 zip file 記得解壓縮後不要有額外的資料夾，不然會失敗，正確應該要是</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>--- lambda.zip
+</span></span><span class=line><span class=cl>  |--- index.js
+</span></span></code></pre></td></tr></table></div></div><h1 id=部署架構>部署架構</h1><p>編寫好架構，此時要調用 Terraform CLI 來部署架構
+首先初始化環境與載入需要的執行資源</p><blockquote><p>$ terraform init</p></blockquote><p>一開始 Terraform 並不知道建立的 Provider 是誰，直到初始化才會下載對應的 Library，放在專案路徑底下的 <code>.terraform</code> 資料夾下</p><p>成功後，就可以部署架構了</p><blockquote><p>$ terraform apply</p></blockquote><p>此時 Terraform 會列出更動的資源，<code>+</code> 代表需要新建的資源、<code>-</code>代表會被刪除的資源、<code>~</code>代表會被更新的資源，注意資源更新可是刪除舊的資源部署新的資源，依照各家 provider 的 API 而有所不同，需要特別留意
+如果確認就輸入 &ldquo;yes&rdquo;，等 Terraform 幫忙部署</p><p>這樣就完成了，後續有什麼調整就重複 <code>$ terraform apply</code> 步驟，可以到 AWS 後台確認資源的建立狀況</p><h1 id=加上-cloudwatch>加上 Cloudwatch</h1><p>這一段雷同，補上 cloudwatch event rule / cloudwatch event targe，最後別忘了要加綁定 lambda permission 不然觸發 Lambda 會失敗</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=c1># add cloudwatch event
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>resource</span> <span class=s2>&#34;aws_cloudwatch_event_rule&#34; &#34;every_five_minutes&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  name</span>        <span class=o>=</span> <span class=s2>&#34;routine-api-request&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  description</span> <span class=o>=</span> <span class=s2>&#34;Routinely call global api lantency test&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  schedule_expression</span> <span class=o>=</span> <span class=s2>&#34;rate(5 minutes)&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_cloudwatch_event_target&#34; &#34;api_request&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  rule</span>      <span class=o>=</span> <span class=s2>&#34;${aws_cloudwatch_event_rule.every_five_minutes.name}&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  target_id</span> <span class=o>=</span> <span class=s2>&#34;CallApiRequest&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  arn</span>       <span class=o>=</span> <span class=s2>&#34;${aws_lambda_function.lambda_main.arn}&#34;</span>
+</span></span><span class=line><span class=cl>}<span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1># 
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>resource</span> <span class=s2>&#34;aws_lambda_permission&#34; &#34;allow_cloudwatch_to_call_check_api&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  statement_id</span>  <span class=o>=</span> <span class=s2>&#34;AllowExecutionFromCloudWatch&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  action</span>        <span class=o>=</span> <span class=s2>&#34;lambda:InvokeFunction&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  function_name</span> <span class=o>=</span> <span class=s2>&#34;${aws_lambda_function.lambda_main.function_name}&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  principal</span>     <span class=o>=</span> <span class=s2>&#34;events.amazonaws.com&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  source_arn</span>    <span class=o>=</span> <span class=s2>&#34;${aws_cloudwatch_event_rule.every_five_minutes.arn}&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><h1 id=import-現有的-iam-role>Import 現有的 IAM Role</h1><p>回過頭說一下之前採用 AWS CDK 的最大問題，當初研究時沒有看到 AWS CDK 與現有架構的整合，這導致公司要採用需要很大的決心，或是只能用在測試或新的環境建設，沒有辦法 graceful 轉移，這點我覺得對於要導入新技術來說，有點麻煩，尤其是架構這麼重要的地方；</p><p>另一點是角色的權限管理，公司都會有針對不同的職位給予不同的權限，AWS CDK 預設就要 CreateRole 等權限，基本上很難直接要到這麼高的權限，也是當初要在公司專案嘗試 AWS CDK 最大失敗的原因</p><p>Terraform 現行支援 <code>import</code> 既有的資源，但是資源內容要自己填寫，未來宣稱會支援自動載入內容；<br><code>existed_role</code> 是我預先在 AWS 創建的 IAM Role，權限跟上面的 <code>iam_for_lambda</code> 一樣，記得要先在設定檔宣告，接著執行指令就完成了，之後 <code>terraform destroy</code> 也會一並刪除 (需要留意)</p><blockquote><p>$ terraform import aws_iam_role.existed_role existed_role</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=c1># existed iam role
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>resource</span> <span class=s2>&#34;aws_iam_role&#34; &#34;existed_role&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  name</span> <span class=o>=</span> <span class=s2>&#34;existed_role&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  assume_role_policy</span> <span class=o>=</span> <span class=err>&lt;&lt;</span><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>{
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Version&#34;: &#34;2012-10-17&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;Statement&#34;</span><span class=err>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    {
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Action&#34;: &#34;sts:AssumeRole&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Principal&#34;</span><span class=err>:</span> {
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;Service&#34;: &#34;lambda.amazonaws.com&#34;</span>
+</span></span><span class=line><span class=cl>      }<span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Effect&#34;: &#34;Allow&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;Sid&#34;: &#34;&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl><span class=k>EOF</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><h1 id=variables---抽離參數>Variables - 抽離參數</h1><p>目前的參數都是寫死的，例如說部署的區域、Lambda 名稱等，Terraform 支援 variable 定義，可以有以下幾種類型</p><ol><li>string</li><li>boolean</li><li>number</li><li>set</li><li>map</li><li>object (等同於 map，但會蓋過 map)</li><li>tuple</li></ol><p>如果要在參數使用變數的話，必須要先在資源檔 <code>.tf</code> 宣告</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>variable</span> <span class=s2>&#34;image_id&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>    type</span>        <span class=o>=</span> <span class=k>string</span>
+</span></span><span class=line><span class=cl><span class=n>    default</span> <span class=o>=</span> <span class=s2>&#34;default 值&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>    description</span> <span class=o>=</span> <span class=s2>&#34;The id of the machine image (AMI) to use for the server.&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>type 必填，但是 default 跟 description 不用，當沒有 default 且後續變數沒有賦值的話，在 <code>>$terraform apply</code> 時會中斷要求輸入</p><p>在資源定義檔上，可以採用 <code>var.變數名稱</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>provider</span> <span class=s2>&#34;aws&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  profile</span> <span class=o>=</span> <span class=s2>&#34;default&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  region</span>  <span class=o>=</span> <span class=k>var</span><span class=p>.</span><span class=k>image_id</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>接著，透過以下幾種方式賦值給 variable</p><ol><li>環境變數<div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=n>$export TF_VAR_image_id</span><span class=o>=</span><span class=k>ami</span><span class=err>-</span><span class=k>abc123</span>
+</span></span><span class=line><span class=cl><span class=n>$export TF_VAR_availability_zone_names</span><span class=o>=</span><span class=err>&#39;</span><span class=p>[</span><span class=s2>&#34;us-west-1b&#34;,&#34;us-west-1d&#34;</span><span class=p>]</span><span class=err>&#39;</span>    
+</span></span></code></pre></td></tr></table></div></div></li><li><code>terraform.tfvars</code> 檔案中<div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=n>image_id</span> <span class=o>=</span> <span class=s2>&#34;ami-abc123&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>availability_zone_names</span><span class=o>=</span><span class=p>[</span><span class=s2>&#34;us-west-1b&#34;,&#34;us-west-1d&#34;</span><span class=p>]</span>
+</span></span></code></pre></td></tr></table></div></div></li><li><code>terraform.tfvars.json</code> 檔案中<div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>     <span class=nt>&#34;image_id&#34;</span><span class=p>:</span> <span class=s2>&#34;ami-abc123&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>     <span class=nt>&#34;availability_zone_names&#34;</span><span class=p>:</span> <span class=p>[</span><span class=s2>&#34;us-west-1a&#34;</span><span class=p>,</span> <span class=s2>&#34;us-west-1c&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl> <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div></li><li><code>*.auto.tfvars</code> 或是 <code>*.auto.tfvars.json</code>，順序按照檔名</li><li>在 CLI 執行時指定 <code>-var</code> <code>-var-file</code><blockquote><p>$terraform apply -var=&ldquo;image_id=ami-abc123&rdquo;</p></blockquote></li></ol><p>如果有同樣的變數名稱，按照上面的規則順序後者蓋過前者，例如 <code>-var</code> 會蓋過其他檔案的宣告</p><h1 id=output---輸出參數>Output - 輸出參數</h1><p>對於 root module 來說，設定 output 會在 <code>> $terraform apply</code> 時打印，例如說 EC2 Instance 的 public DNS等；
+對 module 來說，Output 等同於 function 的 return value，決定哪些資源讓外部讀取</p><p>在範例程式的目錄下有獨立的 <code>output.tf</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HCL data-lang=HCL><span class=line><span class=cl><span class=k>output</span> <span class=s2>&#34;lambda-arn&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>    value</span> <span class=o>=</span> <span class=k>aws_lambda_function</span><span class=p>.</span><span class=k>lambda_main</span><span class=p>.</span><span class=k>arn</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>output</span> <span class=k>輸出參數名餐</span> {
+</span></span><span class=line><span class=cl><span class=n>    value</span> <span class=o>=</span> <span class=k>資源類別</span><span class=p>.</span><span class=k>資源命名</span><span class=p>.</span><span class=k>資源屬性</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>會在 apply 成功後打印出來</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Outputs:
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>lambda-arn = arn:aws:lambda:us-east-1:.....
+</span></span></code></pre></td></tr></table></div></div><h1 id=state---terraform-如何掌管架構的更動>State - Terraform 如何掌管架構的更動</h1><p>當架構異動的時候，Terraform 如何知道前後架構的差異呢？
+每次在執行 <code>$ terraform plan</code> 時，專案目錄底下有 <code>terraform.tfstate</code> 檔案，用 JSON 描述架構中的所有資源，每當下次執行 <code>$ terraform plan</code> 時，Terraform 會根據 tfstate 中的資源 ID 取得最新的資訊，接著與描述檔做 diff 決定哪部分資源要更新</p><p>當我們要跨團隊協作時，就需要把 terraform 描述檔 + terraform.tfstate 與團隊共享，此時會有有三個要素</p><ol><li><strong>共享檔案與版本控制</strong><br>檔案共享是最基本的協作必備條件，同時將程式碼做版本控制也是很必要的功能</li><li><strong>Lock 機制</strong><br>當共享了之後，Lock 就變成是必須考量的因素，避免團隊同時多人同步修改，造成前後衝突的狀況</li><li><strong>獨立不同的 state 狀態</strong><br>在實際應用上，可能會有 development / staging / production 不同環境，希望共用程式碼建立雷同的架構，但又因為環境不同希望有不同的配置，例如機器大小或 VPC 等，此時就需要考量如何獨立不同環境</li></ol><p>在跨同團隊協作很容易想到 <code>git</code> ，但嚴格來說 git 只能滿足第一點，所以在 Terraform 可以指定不同的 state 管理方式，除了官方的 Terraform Cloud，可以採用 <code>AWS S3 + DynamoDB</code> 達到上述的條件，並附帶版本控制，再之後會更詳細的描述操作流程，詳情可以參考 <a class=link href=https://blog.gruntwork.io/how-to-manage-terraform-state-28f5697e68fa target=_blank rel=noopener>How to manage Terraform state</a></p><h1 id=結語>結語</h1><p>就這樣完成了單區域的 Lambda 部署與最基本的 Terraform 學習，以下是這次教學的程式碼
+<a class=link href=https://github.com/sj82516/terraform-investigation/commit/9106731fcb895c4aa31a1b95670d627fa60e4a4a target=_blank rel=noopener>terraform-investigation</a></p><p><a class=link href=https://yuanchieh.page/post/2019-11-04_try-terraform-2/ target=_blank rel=noopener>下一篇</a>將整個架構模組化，並一鍵部署多個區域</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2021/2021-01-21-%E5%A6%82%E4%BD%95%E6%89%93%E9%80%A0%E5%AE%89%E5%85%A8%E7%9A%84-production-ready-node.js-docker-image/><div class=article-details><h2 class=article-title>如何打造安全的 production ready Node.js Docker Image</h2></div></a></article><article><a href=/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/><div class=article-details><h2 class=article-title>Coturn Server 架設教學 - on AWS</h2></div></a></article><article><a href=/posts/2020/2020-04-23-vault-%E6%95%99%E5%AD%B8-%E9%9B%86%E4%B8%AD%E5%8C%96%E7%AE%A1%E7%90%86%E6%A9%9F%E6%95%8F%E8%B3%87%E6%96%99%E4%B8%8A/><div class=article-details><h2 class=article-title>Vault 教學-集中化管理機敏資料(上)</h2></div></a></article><article><a href=/posts/2020/2020-04-15-packer%E6%95%99%E5%AD%B8-%E6%89%93%E9%80%A0-image%E8%88%87%E5%AF%A6%E9%9A%9B%E4%BD%BF%E7%94%A8%E7%B6%93%E9%A9%97/><div class=article-details><h2 class=article-title>Packer教學-打造 Image與實際使用經驗</h2></div></a></article><article><a href=/posts/2020/2020-04-12-vagrant-%E6%95%99%E5%AD%B8-%E5%BE%9E%E6%9C%AC%E5%9C%B0%E7%AB%AF%E9%96%8B%E7%99%BC%E5%88%B0-aws-%E9%83%A8%E7%BD%B2/><div class=article-details><h2 class=article-title>Vagrant 教學- 從本地端開發到 AWS 部署</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,436 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="整理 Segment Tree 與 Binary Indexed Tree 解題整理"><meta name=keywords content="leetcode"><title>【算法】Segment Tree 與 Binary Indexed Tree 解題整理</title><link rel=canonical href=https://yuanchieh.page/posts/2022/2022-05-23-%E7%AE%97%E6%B3%95segment-tree-%E8%88%87-binary-indexed-tree-%E8%A7%A3%E9%A1%8C%E6%95%B4%E7%90%86/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="【算法】Segment Tree 與 Binary Indexed Tree 解題整理"><meta property="og:description" content="整理 Segment Tree 與 Binary Indexed Tree 解題整理"><meta property="og:url" content="https://yuanchieh.page/posts/2022/2022-05-23-%E7%AE%97%E6%B3%95segment-tree-%E8%88%87-binary-indexed-tree-%E8%A7%A3%E9%A1%8C%E6%95%B4%E7%90%86/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2022-05-23T01:21:40+00:00"><meta property="article:modified_time" content="2022-05-23T01:21:40+00:00"><meta name=twitter:title content="【算法】Segment Tree 與 Binary Indexed Tree 解題整理"><meta name=twitter:description content="整理 Segment Tree 與 Binary Indexed Tree 解題整理"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#segment-tree>Segment Tree</a><ol><li><a href=#307-range-sum-query---mutable-完整解法>307. Range Sum Query - Mutable 完整解法</a></li></ol></li><li><a href=#binary-index-tree>Binary Index Tree</a><ol><li><a href=#小結bit-vs-segment-tree>小結：BIT vs Segment Tree</a><ol><li><a href=#兩者差異>兩者差異</a></li></ol></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/algorithm/>Algorithm</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2022/2022-05-23-%E7%AE%97%E6%B3%95segment-tree-%E8%88%87-binary-indexed-tree-%E8%A7%A3%E9%A1%8C%E6%95%B4%E7%90%86/>【算法】Segment Tree 與 Binary Indexed Tree 解題整理</a></h2><h3 class=article-subtitle>整理 Segment Tree 與 Binary Indexed Tree 解題整理</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>May 23, 2022</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>6 minute read</time></div></footer></div></header><section class=article-content><p>當需要在某一陣列中，求某一段區間的數值和或是最小值，如果是靜態資料，也就是陣列內容不會再改變，我們可以用 <code>prefix sum</code> 在 constant time 取得結果</p><p>但如果陣列的值會改變，就需要每次都重新計算 prefix sum，此時的時間複雜度會是 O(N)，有沒有更快的方法呢？</p><p>這邊有兩個相似的樹狀結構 <code>Segment Tree / Binary Indexed Tree</code> (又稱 Fenwick Tree) 可以用 <code>O(logN)</code> 解決動態區間和的問題，其中 Segment Tree 可以更廣泛解決區間極值的問題</p><p>相關題目</p><ol><li><a class=link href=https://leetcode.com/problems/range-sum-query-mutable/ target=_blank rel=noopener>307. Range Sum Query - Mutable</a></li><li><a class=link href=https://leetcode.com/problems/range-sum-query-2d-mutable/ target=_blank rel=noopener>308. Range Sum Query 2D - Mutable</a></li><li><a class=link href=https://leetcode.com/problems/count-of-smaller-numbers-after-self/ target=_blank rel=noopener>315. Count of Smaller Numbers After Self</a></li><li><a class=link href=https://leetcode.com/problems/count-of-range-sum/ target=_blank rel=noopener>327. Count of Range Sum</a></li></ol><h2 id=segment-tree>Segment Tree</h2><p>教學影片：<a class=link href="https://www.youtube.com/watch?v=xztU7lmDLv8" target=_blank rel=noopener>Segment Tree Data Structure - Min Max Queries</a></p><p>Segment Tree 與 BIT 的概念雷同，原本我用 prefix sum 遇到更新時要用 O(n) 整個重建，但如果我把<code>區間切小，每次更新只要影響到部分區間</code>，對應的讀取要篩選符合的區間讀取，妥協後 <code>讀取與更新都控制在 log(N)</code>，但區間該怎麼切以及如何實作呢？ 這就是 Segment Tree 與 BIT 不同之處</p><p>Segment Tree 用陣列儲存區間值，需要<code>兩倍額外記憶體空間</code>，原陣列放在新陣列的最後，接著往前跟新區間 (parent = idx/2)，如下圖 (從影片截圖而來)<br><img src=/post/2022/img/0522/segment_tree.png loading=lazy><br>所以區間是 2 -> 4 -> 8 這樣往上疊加</p><p>初始化程式碼為</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=k>class</span> <span class=nc>SegmentTree</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>SegmentTree</span><span class=p>(</span><span class=k>const</span> <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>offset_</span> <span class=o>=</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=n>nodes_</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>offset_</span> <span class=o>*</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 先把原陣列放在最後
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>offset_</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>]</span> <span class=o>=</span> <span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// parent = 左 child + 右 child
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=n>offset_</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span><span class=o>--</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>*</span> <span class=mi>2</span><span class=p>]</span> <span class=o>+</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>*</span> <span class=mi>2</span> <span class=o>+</span> <span class=mi>1</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>update</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 因為有移動，所以要加上 offset_
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=kt>int</span> <span class=n>nodeIdx</span> <span class=o>=</span> <span class=n>index</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>diff</span> <span class=o>=</span> <span class=n>val</span> <span class=o>-</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeIdx</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 更新時要更新全部的 parent
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>while</span> <span class=p>(</span><span class=n>nodeIdx</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeIdx</span><span class=p>]</span> <span class=o>+=</span> <span class=n>diff</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodeIdx</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>nodes_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span></code></pre></td></tr></table></div></div><p>透過 <code>O(N)</code> 即可完成初始化，我們將原陣列放在最後，並往上疊加出多個區間，Update 需要 <code>O(logN)</code>，因為要往前把相關的區間都要更新一次</p><p>接著重點是 range query，傳入 left / right (閉區間) 要在 <code>O(logN)</code> 解決，重點，</p><ul><li>如果我們查找的範圍會涵蓋完整區間，往上找區間值</li><li>反之，則取得當下的值，並往下一個區間邁進
+<img src=/post/2022/img/0522/segment_tree_explain.png loading=lazy></li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=kt>int</span> <span class=nf>sumRange</span><span class=p>(</span><span class=kt>int</span> <span class=n>left</span><span class=p>,</span> <span class=kt>int</span> <span class=n>right</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>nodeLeftIndex</span> <span class=o>=</span> <span class=n>left</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>nodeRightIndex</span> <span class=o>=</span> <span class=n>right</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>count</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>while</span> <span class=p>(</span><span class=n>nodeLeftIndex</span> <span class=o>&lt;=</span> <span class=n>nodeRightIndex</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 如果是左指針，且指到區間右側，當下取值
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>if</span> <span class=p>((</span><span class=n>nodeLeftIndex</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span> <span class=o>==</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>count</span> <span class=o>+=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeLeftIndex</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodeLeftIndex</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 如果是右指針，且指到區間左側，當下取值
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>if</span> <span class=p>((</span><span class=n>nodeRightIndex</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>count</span> <span class=o>+=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeRightIndex</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodeRightIndex</span><span class=o>--</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=n>nodeLeftIndex</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>nodeRightIndex</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span> 
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>如果想要查詢整段區間的指標移動，我們可以觀察出一個重點</p><blockquote><p>偶數 index 都在區間的左側 / 奇數 index 是在區間的右側</p></blockquote><p>因為我們是用 left / right 去找區間和，所以我們要找<code>left 往右找與 right 往左找的共同區間</code>，總共分成 4 種情況考慮</p><ol><li>left 指向偶數：<br>代表我們會<code>拿整個區間</code>，因為區間的左側是偶數，當目前 left 就指向偶數，代表要取出整個區間</li><li>left 指向奇數：<br>代表我們<code>不可以拿區間當作代表，因為奇數是區間的右側</code>，再往下就到另一個區間，所以我們要直接取值</li><li>right 指向偶數：<br>right 跟 left 邏輯剛好相反，我們<code>只能拿 right 往左的區間，因為偶數是 parent 左側</code>，再往下移就到下個區間，所以要拿當前值</li><li>right 指向奇數：<br>因為<code>奇數是區間的右側</code>，代表我們可以拿整個區間為當前值</li></ol><p>以上圖為例</p><ol><li>左指針指向 -2，此時是區間的右側，符合條件 2，拿完 -2 往下一個區間走 / 右指針只在區間右側符合條件4，往上一個區間</li><li>左指針持續指向區間左側符合條件1、右指針指向區間右側符合條件4，一路往上指到同一個區塊，直接拿完整段區間 (8~-5)</li></ol><p>影片參考資料是左閉右開的計算方式，但這樣我覺得再取出區間和比較不好做，所以參考 leetcode 解答調整成目前的閉區間算法</p><h3 id=307-range-sum-query---mutable-完整解法>307. Range Sum Query - Mutable 完整解法</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=k>class</span> <span class=nc>SegmentTree</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>SegmentTree</span><span class=p>(</span><span class=k>const</span> <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>offset_</span> <span class=o>=</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=n>nodes_</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>offset_</span> <span class=o>*</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>offset_</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>]</span> <span class=o>=</span> <span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=n>offset_</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span><span class=o>--</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>*</span> <span class=mi>2</span><span class=p>]</span> <span class=o>+</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>i</span> <span class=o>*</span> <span class=mi>2</span> <span class=o>+</span> <span class=mi>1</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>update</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>nodeIdx</span> <span class=o>=</span> <span class=n>index</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>diff</span> <span class=o>=</span> <span class=n>val</span> <span class=o>-</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeIdx</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(</span><span class=n>nodeIdx</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeIdx</span><span class=p>]</span> <span class=o>+=</span> <span class=n>diff</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodeIdx</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>sumRange</span><span class=p>(</span><span class=kt>int</span> <span class=n>left</span><span class=p>,</span> <span class=kt>int</span> <span class=n>right</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>nodeLeftIndex</span> <span class=o>=</span> <span class=n>left</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>nodeRightIndex</span> <span class=o>=</span> <span class=n>right</span> <span class=o>+</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>count</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(</span><span class=n>nodeLeftIndex</span> <span class=o>&lt;=</span> <span class=n>nodeRightIndex</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>((</span><span class=n>nodeLeftIndex</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span> <span class=o>==</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>count</span> <span class=o>+=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeLeftIndex</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>                <span class=n>nodeLeftIndex</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>((</span><span class=n>nodeRightIndex</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>count</span> <span class=o>+=</span> <span class=n>nodes_</span><span class=p>[</span><span class=n>nodeRightIndex</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>                <span class=n>nodeRightIndex</span><span class=o>--</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=n>nodeLeftIndex</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>nodeRightIndex</span> <span class=o>/=</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> 
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>offset_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>nodes_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>NumArray</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>NumArray</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>tree_</span> <span class=o>=</span> <span class=k>new</span> <span class=n>SegmentTree</span><span class=p>(</span><span class=n>nums</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>update</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>tree_</span><span class=o>-&gt;</span><span class=n>update</span><span class=p>(</span><span class=n>index</span><span class=p>,</span> <span class=n>val</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>sumRange</span><span class=p>(</span><span class=kt>int</span> <span class=n>left</span><span class=p>,</span> <span class=kt>int</span> <span class=n>right</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>tree_</span><span class=o>-&gt;</span><span class=n>sumRange</span><span class=p>(</span><span class=n>left</span><span class=p>,</span> <span class=n>right</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>SegmentTree</span><span class=o>*</span> <span class=n>tree_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>/**
+</span></span></span><span class=line><span class=cl><span class=cm> * Your NumArray object will be instantiated and called as such:
+</span></span></span><span class=line><span class=cl><span class=cm> * NumArray* obj = new NumArray(nums);
+</span></span></span><span class=line><span class=cl><span class=cm> * obj-&gt;update(index,val);
+</span></span></span><span class=line><span class=cl><span class=cm> * int param_2 = obj-&gt;sumRange(left,right);
+</span></span></span><span class=line><span class=cl><span class=cm> */</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=binary-index-tree>Binary Index Tree</h2><p>1994 年的論文 <a class=link href="https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=B6DEEDCB6E5C3DE95856CE6E24EB8C53?doi=10.1.1.14.8917&amp;rep=rep1&amp;type=pdf" target=_blank rel=noopener>A New Data Structure for Cumulative
+Frequency Tables</a> / 我覺得講得很好的影片 <a class=link href="https://www.youtube.com/watch?v=uSFzHCZ4E-8" target=_blank rel=noopener>Fenwick Tree (Binary Index Tree) - Quick Tutorial and Source Code Explanation</a></p><p><img src=/post/2022/img/0522/bit.png loading=lazy>
+這張圖是從論文截圖而來，實作技巧非常巧妙，他利用 <code>Last Significant Bit (LSB) 來決定區間的範圍</code>，如果 LSB 是 xxx1，則只儲存當前一個數，如果 LSB 是 xx10，則儲存當前兩個數，以此類推，所以可以看到 <code>1, 3 等只會儲存當前 1 個數、8 會儲存往前 8 個數</code></p><p><img src=/post/2022/img/0522/bit_update.png loading=lazy>
+所以更新時會需要更新所有相關區間，上面這張圖是代表當你更新 index i 時，需要往上調整的 bit index，例如更新 idx 1 時，因為 bit[2]、bit[4]、bit[8] 都有包含 idx 1，所以都要一併更新</p><p>實作方面非常簡單，透過 <code>2 補數 i & -i 即可取得 LSB</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=c1>// 1: 0001
+</span></span></span><span class=line><span class=cl><span class=c1>//-1: 1111
+</span></span></span><span class=line><span class=cl><span class=c1>// 1 &amp; -1 =&gt; 0001
+</span></span></span><span class=line><span class=cl><span class=c1>// 6: 0110
+</span></span></span><span class=line><span class=cl><span class=c1>//-6: 1010
+</span></span></span><span class=line><span class=cl><span class=c1>// 6 &amp; -6 =&gt; 0010
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kt>int</span> <span class=nf>getParent</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>i</span> <span class=o>+</span> <span class=p>(</span><span class=n>i</span> <span class=o>&amp;</span> <span class=o>-</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>讓我們看查詢會變得如何：
+<img src=/post/2022/img/0522/bit_iterate.png loading=lazy>
+圖片表達如果你要某個 prefix sum，你必須往前輪詢的 index，例如要找 idx 1~9 的 prefix sum，則需要 <code>bit[9] + bit[8]</code>，搭配上一張圖 bit[9] 只有儲存 idx 9 這個元素，而 bit[8] 儲存了 idx 1-8 個元素</p><p>實作方面同樣透過 2 補數，只是變成往下減</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=kt>int</span> <span class=nf>getNextInterval</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>i</span> <span class=o>-</span> <span class=p>(</span><span class=n>i</span> <span class=o>&amp;</span> <span class=o>-</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>整體實作</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c++ data-lang=c++><span class=line><span class=cl><span class=k>class</span> <span class=nc>BIT</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>BIT</span><span class=p>(</span><span class=k>const</span> <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>size</span> <span class=o>=</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// index 從 1 開始比較好計算
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=n>bit_</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>size</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>arr_</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>size</span><span class=p>,</span> <span class=mi>0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1>// 初始化只要往下一個 parent 加
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// 後面 iterate 會疊上去
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>size</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=kt>int</span> <span class=n>bitIdx</span> <span class=o>=</span> <span class=n>i</span> <span class=o>+</span> <span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>bit_</span><span class=p>[</span><span class=n>bitIdx</span><span class=p>]</span> <span class=o>+=</span> <span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=n>arr_</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=kt>int</span> <span class=n>parent</span> <span class=o>=</span> <span class=n>getParent</span><span class=p>(</span><span class=n>bitIdx</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>parent</span> <span class=o>&lt;</span> <span class=n>bit_</span><span class=p>.</span><span class=n>size</span><span class=p>())</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>bit_</span><span class=p>[</span><span class=n>parent</span><span class=p>]</span> <span class=o>+=</span> <span class=n>bit_</span><span class=p>[</span><span class=n>bitIdx</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>update</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>diff</span> <span class=o>=</span> <span class=n>val</span> <span class=o>-</span> <span class=n>arr_</span><span class=p>[</span><span class=n>index</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=n>arr_</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span> <span class=n>val</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>index</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 更新記得要全部包含的區間都更新
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>while</span> <span class=p>(</span><span class=n>index</span> <span class=o>&lt;</span> <span class=n>bit_</span><span class=p>.</span><span class=n>size</span><span class=p>())</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>bit_</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>+=</span> <span class=n>diff</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>index</span> <span class=o>=</span> <span class=n>getParent</span><span class=p>(</span><span class=n>index</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>prefixSum</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>count</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>index</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 取值要往前推
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>while</span> <span class=p>(</span><span class=n>index</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>count</span> <span class=o>+=</span> <span class=n>bit_</span><span class=p>[</span><span class=n>index</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>            <span class=n>index</span> <span class=o>=</span> <span class=n>getNextInterval</span><span class=p>(</span><span class=n>index</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>bit_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>std</span><span class=o>::</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>arr_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>getParent</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>i</span> <span class=o>+</span> <span class=p>(</span><span class=n>i</span> <span class=o>&amp;</span> <span class=o>-</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>getNextInterval</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>i</span> <span class=o>-</span> <span class=p>(</span><span class=n>i</span> <span class=o>&amp;</span> <span class=o>-</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>NumArray</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>NumArray</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>tree_</span> <span class=o>=</span> <span class=k>new</span> <span class=n>BIT</span><span class=p>(</span><span class=n>nums</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>void</span> <span class=nf>update</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>tree_</span><span class=o>-&gt;</span><span class=n>update</span><span class=p>(</span><span class=n>index</span><span class=p>,</span> <span class=n>val</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=nf>sumRange</span><span class=p>(</span><span class=kt>int</span> <span class=n>left</span><span class=p>,</span> <span class=kt>int</span> <span class=n>right</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>tree_</span><span class=o>-&gt;</span><span class=n>prefixSum</span><span class=p>(</span><span class=n>right</span><span class=p>)</span> <span class=o>-</span> <span class=n>tree_</span><span class=o>-&gt;</span><span class=n>prefixSum</span><span class=p>(</span><span class=n>left</span> <span class=o>-</span> <span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>BIT</span><span class=o>*</span> <span class=n>tree_</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=小結bit-vs-segment-tree>小結：BIT vs Segment Tree</h3><p>整理一下兩者</p><div class=table-wrapper><table><thead><tr><th>比較</th><th></th><th></th></tr></thead><tbody><tr><td>操作</td><td>Segment Tree</td><td>Binary Index Tree</td></tr><tr><td>記憶體空間</td><td>2 * n</td><td>n</td></tr><tr><td>初始化</td><td>O(n)</td><td>O(n)</td></tr><tr><td>查詢</td><td>O(logN)</td><td>O(logN)</td></tr><tr><td>更新</td><td>O(logN)</td><td>O(logN)</td></tr></tbody></table></div><p>此外，使用上兩者有共同侷限 <code>新增 / 移除元素需要重新初始化</code></p><h4 id=兩者差異>兩者差異</h4><p>兩者都可以解決 #307 這道題目，但看似相同但還是有差異之處，簡單來說 <code>Segment Tree 用途更廣，BIT 只能解決 Prefix Sum 計算</code></p><p>例如 Segment Tree 還可以解決<code>區間最小值/區間最大值</code>，而 BIT 是做不到的，為什麼？</p><p>因為 BIT 並不是儲存每一個值，而是在初始化就以區間的形式保存，如果是<code>加法這種 invertible 算法</code>，意即我區間儲存 (a+b), 我可以透過 (a+b) - a 還原 b 的值；<br>但求極值是 non invertable，如果要用 BIT 求極值，那麼在區間計算時就用儲存極值，這樣更新時就會出錯</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>原陣列：[3, 2]
+</span></span><span class=line><span class=cl>BIT: [, 3, 3(保存區間極值)]
+</span></span><span class=line><span class=cl>update (0, 1)
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>BIT: [, 1, ?] =&gt; 無法計算
+</span></span></code></pre></td></tr></table></div></div><p>所以 BIT 用途比較侷限，但優點是記憶體空間小，而且 bitwise 的計算速度會快更多</p><p>有一篇論文寫可以用兩個 BIT 實作區間極值的查詢，結果還是比 Segment Tree 快上許多，可以參考看看 <a class=link href="https://www.researchgate.net/profile/Mircea-Dima/publication/282222122_Efficient_Range_Minimum_Queries_using_Binary_Indexed_Trees/links/5d5ba500299bf1b97cf7961a/Efficient-Range-Minimum-Queries-using-Binary-Indexed-Trees.pdf?origin=publication_detail" target=_blank rel=noopener>Efficient Range Minimum Queries - using Binary Indexed Trees</a></p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2022/2022-06-01-%E5%88%B7%E9%A1%8C%E9%95%B7%E7%9F%A5%E8%AD%98mercle-tree-%E8%AD%98%E5%88%A5%E5%AD%90%E6%A8%B9%E7%9B%B8%E5%90%8C%E8%88%87%E5%90%A6/><div class=article-details><h2 class=article-title>【刷題長知識】Mercle tree 識別子樹相同與否</h2></div></a></article><article><a href=/posts/2020/2020-12-01-uuid-%E5%8E%9F%E7%90%86%E8%88%87%E5%AF%A6%E4%BD%9C%E5%88%86%E6%9E%90-%E8%A9%B2%E5%A6%82%E4%BD%95%E6%8C%91%E9%81%B8%E9%81%A9%E5%90%88%E7%9A%84-uuid-%E7%89%88%E6%9C%AC/><div class=article-details><h2 class=article-title>UUID 原理與實作分析 - 該如何挑選適合的 UUID 版本</h2></div></a></article><article><a href=/posts/2020/2020-11-17-sketch-data-structure-bloom-filter-%E4%BB%8B%E7%B4%B9%E8%88%87%E5%AF%A6%E4%BD%9C/><div class=article-details><h2 class=article-title>Sketch Data Structure - Bloom Filter 介紹與實作</h2></div></a></article><article><a href=/posts/2020/2020-11-03-raft-%E6%BC%94%E7%AE%97%E6%B3%95%E4%BB%8B%E7%B4%B9%E8%88%87in-search-of-an-understandable-consensus-algorithm%E6%91%98%E8%A6%81/><div class=article-details><h2 class=article-title>Raft 演算法介紹與《In Search of an Understandable Consensus Algorithm》摘要</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

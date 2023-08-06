@@ -1,0 +1,229 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="分享如何在 Golang 中針對 http server 寫測試，包含單元測試 / 如何針對有外部相依性的物件做 Stub / Mock，以及最後針對 http handler 的 http request 測試"><title>Golang Test - 單元測試、Mock與http handler 測試</title><link rel=canonical href=https://yuanchieh.page/posts/2021/2021-03-18-golang-test/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="Golang Test - 單元測試、Mock與http handler 測試"><meta property="og:description" content="分享如何在 Golang 中針對 http server 寫測試，包含單元測試 / 如何針對有外部相依性的物件做 Stub / Mock，以及最後針對 http handler 的 http request 測試"><meta property="og:url" content="https://yuanchieh.page/posts/2021/2021-03-18-golang-test/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2021-03-18T08:21:40+00:00"><meta property="article:modified_time" content="2021-03-18T08:21:40+00:00"><meta name=twitter:title content="Golang Test - 單元測試、Mock與http handler 測試"><meta name=twitter:description content="分享如何在 Golang 中針對 http server 寫測試，包含單元測試 / 如何針對有外部相依性的物件做 Stub / Mock，以及最後針對 http handler 的 http request 測試"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#單元測試>單元測試</a></li><li><a href=#stubmock>Stub/Mock</a><ol><li><a href=#如何造假-timenow-等系統相依的函式>如何造假 Time.Now 等系統相依的函式</a></li></ol></li><li><a href=#針對-http-handler-做檢查>針對 HTTP Handler 做檢查</a></li><li><a href=#結語>結語</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80/>程式語言</a>
+<a href=/categories/golang/>Golang</a>
+<a href=/categories/%E6%B8%AC%E8%A9%A6/>測試</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2021/2021-03-18-golang-test/>Golang Test - 單元測試、Mock與http handler 測試</a></h2><h3 class=article-subtitle>分享如何在 Golang 中針對 http server 寫測試，包含單元測試 / 如何針對有外部相依性的物件做 Stub / Mock，以及最後針對 http handler 的 http request 測試</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Mar 18, 2021</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><p>上過 91 老師的 TDD 後，開始注重程式語言支援的測試框架，<code>編寫測試代碼與寫出容易寫測試的代碼</code>是很重要的一件事，好測試的代碼通常好維護，因為通常代表有更低的耦合性、物件依賴關係明確等，說是「通常」也代表不是這麼絕對；但反之 <code>不容易寫測試的代碼</code>往往都是有奇怪 smell 的</p><p>關於測試案例的種類請參考 91 老師的 <a class=link href=https://dotblogs.com.tw/hatelove/2012/11/29/learning-tdd-in-30-days-day7-unit-testing-stub-mock-and-fake-object-introduction target=_blank rel=noopener>Unit Test - Stub, Mock, Fake 簡介</a></p><p>以下將分享如何在 Golang 中編寫</p><ul><li>單元測試</li><li>如何 Stub/Mock 外部相依</li><li>如何針對 http handler 做 http request 假請求檢查</li></ul><p>自己開始真正寫 Golang 也是這幾個禮拜，有一些命名、寫法不正確，煩請指教，但針對測試的本身應該是沒什麼問題的<br>目前採用 <code>Ginkgo</code> + <code>gomock</code> + <code>httptest</code> 組合的測試工具</p><p>以下我們將寫一個簡單的匯率兌換表，用戶輸入既有的幣別 / 欲兌換的幣別 / 數量，Server 回傳兌換後的數量，程式碼於此 <a class=link href=https://github.com/sj82516/golang-exchange-currency target=_blank rel=noopener>golang-exchange-currency</a></p><p>以下是程式碼結構</p><ul><li>main.go: 啟動 http server</li><li>src/exchange_currency_model.go: 模擬去資料庫讀取匯率兌換表</li><li>src/currency_exchange_handler.go: http handler，處理 request 與 response</li></ul><h2 id=單元測試>單元測試</h2><p>首先要決定測試框架，這部分評估過 <code>原生的testing</code>、<code>Testify</code>，最後選擇了 <a class=link href=https://onsi.github.io/ginkgo/#getting-ginkgo target=_blank rel=noopener><code>Ginkgo</code></a>，最大原因是熟悉原本 Nodejs的 <code>Decribe / It</code> 組織 test case 的方式，以及有方便的 BeforeEach 可以抽出重複測試行為的部分，例如在每個測試案例之前都先 new 好 object<br>這些在 testing / Testify 都要額外的功夫處理</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=p>.</span> <span class=s>&#34;github.com/onsi/ginkgo&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=p>.</span> <span class=s>&#34;github.com/onsi/gomega&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=nx>_</span> <span class=p>=</span> <span class=nf>Describe</span><span class=p>(</span><span class=s>&#34;currency exchange&#34;</span><span class=p>,</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>c</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>CurrencyExchangeHandler</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>	<span class=o>...</span><span class=p>.</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nf>BeforeEach</span><span class=p>(</span><span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>c</span> <span class=p>=</span> <span class=nf>NewCurrencyExchangeHandler</span><span class=p>(</span><span class=nx>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nf>It</span><span class=p>(</span><span class=s>&#34;should get 0 if amount is 0&#34;</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>done</span> <span class=nx>Done</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=o>...</span><span class=p>.</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Expect</span><span class=p>(</span><span class=nx>c</span><span class=p>.</span><span class=nf>Exchange</span><span class=p>(</span><span class=s>&#34;US&#34;</span><span class=p>,</span> <span class=s>&#34;TW&#34;</span><span class=p>,</span> <span class=mi>0</span><span class=p>)).</span><span class=nf>To</span><span class=p>(</span><span class=nf>Equal</span><span class=p>(</span><span class=mi>0</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>		<span class=nb>close</span><span class=p>(</span><span class=nx>done</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl>    <span class=o>...</span><span class=p>.</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=stubmock>Stub/Mock</h2><p><code>Stub</code> 專注於測試物件本身，只是把外部相依的方法塞一個設定值回傳；<br><code>Mock</code> 則延伸 Stub，除了塞回傳值外，而外檢查被呼叫物件的傳入值 / 呼叫次數 / 狀態改變等非測試物件本身的狀態</p><p>在 Golang 中，使用 <a class=link href=https://github.com/golang/mock target=_blank rel=noopener><code>gomock</code></a> 真的是超級方便，可以直接針對檔案產出對應的 mock 檔 exchange_price_model_mock.go，這邊要注意 mock 是針對 interface 產生，所以如果你的檔案中沒有 interface，mock 檔出來就會是空的</p><p>所以我在 exchange_price_model.go 中有定義</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>type</span> <span class=nx>IExchangePriceModel</span> <span class=kd>interface</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nf>GetExchangeRate</span><span class=p>(</span><span class=kt>string</span><span class=p>,</span> <span class=kt>string</span><span class=p>,</span> <span class=kd>chan</span><span class=o>&lt;-</span> <span class=nx>ExchangeRateResult</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>接著執行 <code>mockgen -source={要 mock 的檔案} -destination={輸出位置} -package={package 名稱}</code>，例如 <code>$ mockgen -source=exchange_price_model.go -destination=exchange_price_model_mock.go -package=src</code>，mockgen 是 gomock 用來產生 mock 檔案的 binary 執行工具</p><p>之後測試案例採用 <code>NewMockIExchangePriceModel</code> 這個由 mockgen 產生的 struct 即可</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>var</span> <span class=nx>_</span> <span class=p>=</span> <span class=nf>Describe</span><span class=p>(</span><span class=s>&#34;currency exchange&#34;</span><span class=p>,</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>c</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>CurrencyExchangeHandler</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>		<span class=nx>mockCtrl</span> <span class=o>*</span><span class=nx>gomock</span><span class=p>.</span><span class=nx>Controller</span>
+</span></span><span class=line><span class=cl>		<span class=nx>e</span>        <span class=o>*</span><span class=nx>MockIExchangePriceModel</span>
+</span></span><span class=line><span class=cl>	<span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nf>BeforeEach</span><span class=p>(</span><span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>mockCtrl</span> <span class=p>=</span> <span class=nx>gomock</span><span class=p>.</span><span class=nf>NewController</span><span class=p>(</span><span class=nf>GinkgoT</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>		<span class=nx>e</span> <span class=p>=</span> <span class=nf>NewMockIExchangePriceModel</span><span class=p>(</span><span class=nx>mockCtrl</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=nx>c</span> <span class=p>=</span> <span class=nf>NewCurrencyExchangeHandler</span><span class=p>(</span><span class=nx>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nf>It</span><span class=p>(</span><span class=s>&#34;should get 0 if amount is 0&#34;</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>done</span> <span class=nx>Done</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>e</span><span class=p>.</span><span class=nf>EXPECT</span><span class=p>().</span><span class=nf>GetExchangeRate</span><span class=p>(</span><span class=s>&#34;US&#34;</span><span class=p>,</span> <span class=s>&#34;TW&#34;</span><span class=p>,</span> <span class=nx>gomock</span><span class=p>.</span><span class=nf>Any</span><span class=p>()).</span><span class=nf>Do</span><span class=p>(</span><span class=kd>func</span><span class=p>(</span><span class=nx>from</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>to</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>ch</span> <span class=kd>chan</span><span class=o>&lt;-</span> <span class=nx>ExchangeRateResult</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>ch</span> <span class=o>&lt;-</span> <span class=nx>ExchangeRateResult</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>				<span class=nx>IsExists</span><span class=p>:</span>     <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>				<span class=nx>ExchangeRate</span><span class=p>:</span> <span class=mi>40</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=p>})</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Expect</span><span class=p>(</span><span class=nx>c</span><span class=p>.</span><span class=nf>Exchange</span><span class=p>(</span><span class=s>&#34;US&#34;</span><span class=p>,</span> <span class=s>&#34;TW&#34;</span><span class=p>,</span> <span class=mi>0</span><span class=p>)).</span><span class=nf>To</span><span class=p>(</span><span class=nf>Equal</span><span class=p>(</span><span class=mi>0</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>		<span class=nb>close</span><span class=p>(</span><span class=nx>done</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=o>...</span><span class=p>.</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>編寫 mock 的方式如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nx>e</span><span class=p>.</span><span class=nf>EXPECT</span><span class=p>().</span><span class=nf>Method</span><span class=p>(</span><span class=s>&#34;預期 method 要收到的參數&#34;</span><span class=p>).</span><span class=nf>Do</span><span class=p>(</span><span class=kd>func</span><span class=p>(</span><span class=s>&#34;實際執行時收到的參數&#34;</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>做任何造假</span>
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><p>等於是寫一次連<code>預期輸入</code>、<code>造假輸出</code>都一並做完，如果要方便可以 <code>.Return()</code> 直接寫回傳內容，但因為涉及 channel 要傳遞資料，所以我選擇 .Do() 並塞入造假的資料回傳 channel</p><p>如果不在意預期輸入，可以都用 <code>gomock.Any()</code> 跳過檢查</p><h3 id=如何造假-timenow-等系統相依的函式>如何造假 Time.Now 等系統相依的函式</h3><p>搜尋了一下這類問題，建議是把有外部相依都抽到另一個 Object 去，然後透過依賴注入的方式傳進去，才能夠造假</p><p>例如</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ObjectA</span> <span class=p>{}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>ObjectA</span><span class=p>)</span> <span class=nf>MethodA</span><span class=p>(){</span>
+</span></span><span class=line><span class=cl>    <span class=nx>a</span><span class=p>.</span><span class=nf>MethodB</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>ObjectA</span><span class=p>)</span> <span class=nf>MethodB</span><span class=p>(){</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>Time</span><span class=p>.</span><span class=nf>Now</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>這樣是無法測試的，要拆解成</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=kd>interface</span> <span class=nx>IObjectB</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>MethodB</span> <span class=kd>func</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ObjectA</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ObjB</span> <span class=nx>IObjectB</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>ObjectA</span><span class=p>)</span> <span class=nf>MethodA</span><span class=p>(){</span>
+</span></span><span class=line><span class=cl>    <span class=nx>a</span><span class=p>.</span><span class=nx>ObjB</span><span class=p>.</span><span class=nf>MethodB</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在使用 Interface 替換過程，要注意 *Type 跟 Type 的差異，如果發現以下錯誤訊息請參考 <a class=link href=https://stackoverflow.com/questions/40823315/x-does-not-implement-y-method-has-a-pointer-receiver target=_blank rel=noopener>X does not implement Y (… method has a pointer receiver)</a><br>從問答中回去文件看，可以注意到以下內容
+<a class=link href=https://golang.org/ref/spec#Method_sets target=_blank rel=noopener>Method sets ¶</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>The method <span class=nb>set</span> of any other <span class=nb>type</span> T consists of all methods declared with receiver <span class=nb>type</span> T. The method <span class=nb>set</span> of the corresponding pointer <span class=nb>type</span> *T is the <span class=nb>set</span> of all methods declared with receiver *T or T <span class=o>(</span>that is, it also contains the method <span class=nb>set</span> of T<span class=o>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>這一段也就是說</p><ul><li>如果 method 宣告的 reciever 是 non pointer type <code>func (t T) method</code>，則 T / *T 都有包含此 method</li><li>但如果 method 宣告的 reciever 是 pointer type，則只有 *T 包含此 method</li></ul><p>延伸至 embedded struct</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>- If S contains an embedded field T, the method sets of S and *S both include promoted methods with receiver T. The method <span class=nb>set</span> of *S also includes promoted methods with receiver *T.   
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>- If S contains an embedded field *T, the method sets of S and *S both include promoted methods with receiver T or *T.
+</span></span></code></pre></td></tr></table></div></div><p>如果是</p><ul><li>S 是 non pointer，且 T 也是 non pointer，則包含了 T non pointer type methods</li><li>S 是 non pointer + T 是 pointer / 只要 S 是 pointer type，則包含了 T non pointer / pointer type methods</li></ul><p>詳見程式碼，我把 struct 有的 method 都列出來，可以清楚看到以上的規則 <a class=link href=https://play.golang.org/p/jkYrqF4KyIf target=_blank rel=noopener>Go playground</a></p><p>另外抽出依賴再注入，如果忘記初始化會有記憶體存取失敗的錯誤 <code>http: panic serving runtime error: invalid memory address or nil pointer dereference</code>，看到錯誤記得去檢查</p><h2 id=針對-http-handler-做檢查>針對 HTTP Handler 做檢查</h2><p>透過單元測試與 Stub/Mock，可以檢查完商業邏輯的部份，但如果想更確定 server 是否有正確處理 http request，包含是否回傳預期的錯誤結果，可以再進一步針對 http handler 做測試</p><p>這邊採用 core library 包含 <code>net/http/httptest</code> 測試，完整教學可以參考 <a class=link href=https://blog.questionable.services/article/testing-http-handlers-go/ target=_blank rel=noopener>Testing Your (HTTP) Handlers in Go</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=line><span class=cl><span class=nf>It</span><span class=p>(</span><span class=s>&#34;test ServeHttp integration&#34;</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>done</span> <span class=nx>Done</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>e</span><span class=p>.</span><span class=nf>EXPECT</span><span class=p>().</span><span class=nf>GetExchangeRate</span><span class=p>(</span><span class=nx>gomock</span><span class=p>.</span><span class=nf>Any</span><span class=p>(),</span> <span class=nx>gomock</span><span class=p>.</span><span class=nf>Any</span><span class=p>(),</span> <span class=nx>gomock</span><span class=p>.</span><span class=nf>Any</span><span class=p>()).</span><span class=nf>Do</span><span class=p>(</span><span class=kd>func</span><span class=p>(</span><span class=nx>from</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>to</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>ch</span> <span class=kd>chan</span><span class=o>&lt;-</span> <span class=nx>ExchangeRateResult</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>ch</span> <span class=o>&lt;-</span> <span class=nx>ExchangeRateResult</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=nx>IsExists</span><span class=p>:</span>     <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nx>ExchangeRate</span><span class=p>:</span> <span class=mi>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=nb>close</span><span class=p>(</span><span class=nx>ch</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>req</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>http</span><span class=p>.</span><span class=nf>NewRequest</span><span class=p>(</span><span class=s>&#34;GET&#34;</span><span class=p>,</span> <span class=s>&#34;/exchange-currency&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>query</span> <span class=o>:=</span> <span class=nx>req</span><span class=p>.</span><span class=nx>URL</span><span class=p>.</span><span class=nf>Query</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=nx>query</span><span class=p>.</span><span class=nf>Add</span><span class=p>(</span><span class=s>&#34;from&#34;</span><span class=p>,</span> <span class=s>&#34;US&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>query</span><span class=p>.</span><span class=nf>Add</span><span class=p>(</span><span class=s>&#34;to&#34;</span><span class=p>,</span> <span class=s>&#34;TW&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>query</span><span class=p>.</span><span class=nf>Add</span><span class=p>(</span><span class=s>&#34;amount&#34;</span><span class=p>,</span> <span class=s>&#34;10&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>req</span><span class=p>.</span><span class=nx>URL</span><span class=p>.</span><span class=nx>RawQuery</span> <span class=p>=</span> <span class=nx>query</span><span class=p>.</span><span class=nf>Encode</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>rr</span> <span class=o>:=</span> <span class=nx>httptest</span><span class=p>.</span><span class=nf>NewRecorder</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=nx>e</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>ExchangePriceModel</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>c</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>CurrencyExchangeHandler</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>E</span><span class=p>:</span> <span class=nx>e</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>handler</span> <span class=o>:=</span> <span class=nx>http</span><span class=p>.</span><span class=nf>HandlerFunc</span><span class=p>(</span><span class=nx>c</span><span class=p>.</span><span class=nx>ServeHTTP</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>handler</span><span class=p>.</span><span class=nf>ServeHTTP</span><span class=p>(</span><span class=nx>rr</span><span class=p>,</span> <span class=nx>req</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nf>Expect</span><span class=p>(</span><span class=nx>rr</span><span class=p>.</span><span class=nx>Code</span><span class=p>).</span><span class=nf>To</span><span class=p>(</span><span class=nf>Equal</span><span class=p>(</span><span class=mi>200</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>var</span> <span class=nx>body</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>Amount</span> <span class=kt>int</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>_</span> <span class=p>=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Unmarshal</span><span class=p>(</span><span class=nx>rr</span><span class=p>.</span><span class=nx>Body</span><span class=p>.</span><span class=nf>Bytes</span><span class=p>(),</span> <span class=o>&amp;</span><span class=nx>body</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nf>Expect</span><span class=p>(</span><span class=nx>body</span><span class=p>.</span><span class=nx>Amount</span><span class=p>).</span><span class=nf>To</span><span class=p>(</span><span class=nf>Equal</span><span class=p>(</span><span class=mi>300</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nb>close</span><span class=p>(</span><span class=nx>done</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>})</span>
+</span></span></code></pre></td></tr></table></div></div><p>以上基本就是造假 / 初始化 handler / 初始化 http request / 透過 <code>handler.ServeHTTP(rr, req)</code> 模擬 http handler 處理過程 / 檢查 response</p><p>基本上 Context / Cookie 等都可以處理，處理起來相當方便</p><h2 id=結語>結語</h2><p>從動態語言過來，最不習慣的就是要一直去想物件之間的相依，包含要處理 mock 時要拆出 interface 與外部物件，而不能針對某一個 object 的某一個 method 造假</p><p>但整體上，Golang 的測試算方便且好上手，~找不到偷懶不寫測試的理由了~</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2021/2021-03-07-%E5%BE%9E-nodejs-%E5%88%B0-golang-concurrency-%E5%AF%A6%E4%BD%9C%E6%AF%94%E8%BC%83/><div class=article-details><h2 class=article-title>從 Nodejs 到 Golang: Concurrency 實作比較</h2></div></a></article><article><a href=/posts/2023/2023-04-27-%E6%8E%A2%E8%A8%8E-golang-%E5%AF%A6%E4%BD%9C%E9%A1%9E%E4%BC%BC%E7%B9%BC%E6%89%BF%E7%9A%84%E4%B8%8D%E5%90%8C%E5%81%9A%E6%B3%95/><div class=article-details><h2 class=article-title>探討 Golang 實作類似繼承的不同做法</h2></div></a></article><article><a href=/posts/2021/2021-09-05-%E4%BD%BF%E7%94%A8-inversifyjs-%E9%81%94%E5%88%B0-iversion-of-control-%E6%8E%A7%E5%88%B6%E5%8F%8D%E8%BD%89/><div class=article-details><h2 class=article-title>使用 InversifyJS 達到 Iversion of Control 控制反轉</h2></div></a></article><article><a href=/posts/2021/2021-07-10-nodejs-/-ruby-/-golang-%E5%A5%97%E4%BB%B6%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86%E5%B7%AE%E7%95%B0%E6%AF%94%E5%B0%8D-npm-%E8%88%87-bundler/><div class=article-details><h2 class=article-title>Nodejs / Ruby / Golang 套件版本管理差異：比對 NPM 與 Bundler</h2></div></a></article><article><a href=/posts/2021/2021-06-26-jmeter-%E4%BD%BF%E7%94%A8%E6%95%99%E5%AD%B8-+-%E8%87%AA%E5%AE%9A%E7%BE%A9%E8%AE%8A%E6%95%B8%E4%BD%BF%E7%94%A8/><div class=article-details><h2 class=article-title>壓測工具：JMeter 使用教學 + 自定義變數使用</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

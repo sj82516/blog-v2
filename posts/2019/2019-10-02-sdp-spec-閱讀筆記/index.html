@@ -1,0 +1,202 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="SDP 被應用於多種媒體串流協定中，主要是用來協議雙方所支援的媒體通訊格式"><meta name=keywords content="javascript,book review"><title>SDP Spec 閱讀筆記</title><link rel=canonical href=https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="SDP Spec 閱讀筆記"><meta property="og:description" content="SDP 被應用於多種媒體串流協定中，主要是用來協議雙方所支援的媒體通訊格式"><meta property="og:url" content="https://yuanchieh.page/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2019-10-02T00:21:40+00:00"><meta property="article:modified_time" content="2019-10-02T00:21:40+00:00"><meta name=twitter:title content="SDP Spec 閱讀筆記"><meta name=twitter:description content="SDP 被應用於多種媒體串流協定中，主要是用來協議雙方所支援的媒體通訊格式"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#媒體與傳輸資訊>媒體與傳輸資訊</a></li><li><a href=#時間資訊>時間資訊</a></li><li><a href=#私人會話>私人會話</a></li><li><a href=#其他>其他</a></li></ol><ol><li><ol><li><a href=#協定版本-v>協定版本 (v=)</a></li><li><a href=#來源-o>來源 (o=)</a></li><li><a href=#session-名稱-s>Session 名稱 (s=)</a></li><li><a href=#session-資訊-i>Session 資訊 (i=)</a></li><li><a href=#uri-u>URI (u=)</a></li><li><a href=#email-及電話號碼-e--p>Email 及電話號碼 (e= , p=)</a></li><li><a href=#連線資訊-c>連線資訊 (“c=“)</a></li><li><a href=#頻寬-b>頻寬 (b=)</a></li><li><a href=#timing-t>Timing (t=)</a></li><li><a href=#重複次數-r>重複次數 (r=)</a></li><li><a href=#時區-z>時區 (z=)</a></li><li><a href=#加密金鑰-k>加密金鑰 (k=)</a></li><li><a href=#屬性-a>屬性 (a=)</a></li><li><a href=#media-description-m>media description (m=)</a></li></ol></li></ol><ol><li><a href=#安全考量>安全考量</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E7%B6%B2%E8%B7%AF%E8%88%87%E5%8D%94%E5%AE%9A/>網路與協定</a>
+<a href=/categories/webrtc/>WebRTC</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2019/2019-10-02-sdp-spec-%E9%96%B1%E8%AE%80%E7%AD%86%E8%A8%98/>SDP Spec 閱讀筆記</a></h2><h3 class=article-subtitle>SDP 被應用於多種媒體串流協定中，主要是用來協議雙方所支援的媒體通訊格式</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Oct 02, 2019</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>5 minute read</time></div></footer></div></header><section class=article-content><h1 id=介紹>介紹</h1><p>SDP 是一種標準化的資訊傳達方式，用來表達多媒體的內容、傳輸的位址及其他傳遞所需的 metadata，主要應用場景於多媒體傳輸的前置溝通，例如說視訊會議、VoIP(Voice over IP) 通話、影音串流等會話(Session)
+在規範中並沒有定義 SDP 該怎麼被傳輸，可以自由選用 HTTP / XMPP / RTSP / Email 等傳輸協定等</p><p># 名詞定義</p><ol><li>Conference:
+兩個以上的用戶正在相互通信的集合</li><li>Session:
+有一個發送者，一個接收者，兩者間建立一條多媒體串流的通道，資料由發送者寄發到接收者</li><li>Session Description：
+讓其他人可以成功加入 Conference 的資訊</li></ol><h1 id=要求與建議>要求與建議</h1><p>SDP 主要功用為傳遞多媒體會話中多媒體串流的資訊，溝通會話的存在 / 及讓其他非參與者知道如何加入此會話(主要用於廣播 multicast)，內容大概分成幾個</p><ol><li>名稱跟目的</li><li>會話有效的時間</li><li>會話中涵蓋的多媒體</li><li>要如何接收串流的資訊 (如 位址、Port、格式等)</li><li>會話需要的帶寬資訊</li><li>個人的聯絡資料</li></ol><h2 id=媒體與傳輸資訊>媒體與傳輸資訊</h2><p>這部分包含了</p><ol><li>媒體形式 (影片、聲音等)</li><li>傳輸協定 (RTP/UDP/IP等)</li><li>媒體格式 (H. 264/MPEG等)</li></ol><p>另外還會包含位址與埠口的資訊，SDP 傳輸形式包含單播(unicast)跟多播(multicast)，多播則包含多播的群組位址，單播則是單一台的位址</p><h2 id=時間資訊>時間資訊</h2><ol><li>任意數量的開始與結束時間組合</li><li>週期性表示 (如每週三早上十點一小時)
+時間表示是全球統一格式，不包含時區或是日光節約時間</li></ol><h2 id=私人會話>私人會話</h2><p>SDP 本身不涉及 public 或 private session，如果需要加密或是限定，則在傳輸時自行決定</p><h2 id=其他>其他</h2><p>SDP 本身就應該夾帶足夠的資訊讓參與者知道是否該加入 session，但如果有其他額外資訊要夾帶，可以放在另外的 URI 中；</p><h1 id=sdp-spec>SDP Spec</h1><p>文字編碼上，SDP 採用 ISO 10646 字符集並用 UTF-8 編碼方式，但是在屬性/欄位上採用 UTF-8 的子集合 US-ASCII，只有在文字欄位可以使用完整的 ISO 10646 字符集</p><p>SDP 是由這樣格式的文字組成</p><blockquote><p>&lt;type>=&lt;value></p></blockquote><p>type 必須是單一個大小寫區分的字元；
+value 則是相對應有結構的文字，多個值可以用空白分隔；
+切記在 = 兩側不可以有空白</p><p>SDP 中包含了 session-level 區段與多個 media-level 區段，session-level 區段以 <code>v=</code> 開始，其屬性套用在所有的 media 區段上，但如果 media 區段有相同屬性則會被覆蓋；
+而 media-level 則是 <code>m=</code>開始直到下一個 media level 區段開始</p><p>在 SDP 定義的順序很重要，主要是幫助更快的錯誤偵測與容易實作 parser</p><p>有些欄位是必填有些是選擇性，但重點是一定要按照順序，選擇性欄位以 * 註記，屬性欄位大致介紹含義，不會完整介紹</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>Session description
+</span></span><span class=line><span class=cl>    v=  (protocol version)
+</span></span><span class=line><span class=cl>    o=  (originator and session identifier)
+</span></span><span class=line><span class=cl>    s=  (session name)
+</span></span><span class=line><span class=cl>    i=* (session information)
+</span></span><span class=line><span class=cl>    u=* (URI of description)
+</span></span><span class=line><span class=cl>    e=* (email address)
+</span></span><span class=line><span class=cl>    p=* (phone number)
+</span></span><span class=line><span class=cl>    c=* (connection information -- not required if included in
+</span></span><span class=line><span class=cl>        all media)
+</span></span><span class=line><span class=cl>    b=* (zero or more bandwidth information lines)
+</span></span><span class=line><span class=cl>    One or more time descriptions (&#34;t=&#34; and &#34;r=&#34; lines; see below)
+</span></span><span class=line><span class=cl>    z=* (time zone adjustments)
+</span></span><span class=line><span class=cl>    k=* (encryption key)
+</span></span><span class=line><span class=cl>    a=* (zero or more session attribute lines)
+</span></span><span class=line><span class=cl>    Zero or more media descriptions
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Time description
+</span></span><span class=line><span class=cl>    t=  (time the session is active)
+</span></span><span class=line><span class=cl>    r=* (zero or more repeat times)
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Media description, if present
+</span></span><span class=line><span class=cl>    m=  (media name and transport address)
+</span></span><span class=line><span class=cl>    i=* (media title)
+</span></span><span class=line><span class=cl>    c=* (connection information -- optional if included at
+</span></span><span class=line><span class=cl>        session level)
+</span></span><span class=line><span class=cl>    b=* (zero or more bandwidth information lines)
+</span></span><span class=line><span class=cl>    k=* (encryption key)
+</span></span><span class=line><span class=cl>    a=* (zero or more media attribute lines
+</span></span></code></pre></td></tr></table></div></div><p>a= 屬性機制主要是擴展 SDP，由各個使用 SDP 的協定去使用
+有些屬性有制式的含義，有些則基於應用程式的解讀，例如</p><p>有些定義在 Session-level 的屬性如 連線相關 c= 或是屬性相關 a= 會套用在 Session 底下所以的 Media，除非被特別指定覆寫</p><p>如以下範例，所有的 media 都會被冠上 recvonly 的屬性</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>v= 0
+</span></span><span class=line><span class=cl>o=jdoe 2890844526 2890842807 IN IP4 10.47.16.5
+</span></span><span class=line><span class=cl>s=SDP Seminar
+</span></span><span class=line><span class=cl>i=A Seminar on the session description protocol
+</span></span><span class=line><span class=cl>u=http://www.example.com/seminars/sdp.pdf
+</span></span><span class=line><span class=cl>e=j.doe@example.com (Jane Doe)
+</span></span><span class=line><span class=cl>c=IN IP4 224.2.17.12/127
+</span></span><span class=line><span class=cl>t=2873397496 2873404696
+</span></span><span class=line><span class=cl>a=recvonly
+</span></span><span class=line><span class=cl>m=audio 49170 RTP/AVP 0
+</span></span><span class=line><span class=cl>m=video 51372 RTP/AVP 99
+</span></span><span class=line><span class=cl>a=rtpmap:99 h263-1998/900000
+</span></span></code></pre></td></tr></table></div></div><p>文字欄位如 session 名稱和資訊等可以是包含任意位元組的字串除了以下 0x00 Nul 、 0x0a (new line) 、 0x0d (carriage return) ；
+字串以 CRLF(0x0d0a) 當作斷行，但 parser 也應該將 newline 視為斷行的標誌；
+如果沒有 a=charset 屬性指定字符集，則預設為 ISO-10646 字符集搭配 UTF-8 編碼方式</p><p>如果是包含 domain name，則必須確保符合 ASCII Compatible Encoding (ACE)，也就是要經過編碼跳脫字元，因為有些 SDP 相關協定定義早於國際化 domain name，所以不能直接用 UTF-8 表示</p><p>欄位介紹</p><h3 id=協定版本-v>協定版本 (v=)</h3><p>沒有其他版本號，就是 v=0</p><h3 id=來源-o>來源 (o=)</h3><p>描述Session 的發起者資料</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>o=<span class=p>&lt;</span><span class=nt>username</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>sess-id</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>sess-version</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>nettype</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>addrtype</span><span class=p>&gt;&lt;</span><span class=nt>unicast-address</span><span class=p>&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><ol><li>sess-id：數字組成的字串，由<username> <sess-id><sess-version><nettype>四者組成的字串必須是全域唯一的 (globally unique)，sess-id 的產生可自行定義，但建議採用 NTP 格式的 timestamp 保證唯一性</li><li>sess-version：此 Session 描述的版號，在改變 SDP 內容時確保版號是遞增的，同樣建議用 NTP 格式 timestamp</li><li>nettype：採用網路類型</li><li>addrtype：指定 address 的類型，例如 IP4 / IP6 等</li><li>unicast-address：
+創建 session 機器的位址，可以是 domain name 或是 IP 表示法，不可使用 local ip 因為不確定對方是否在 local 範圍內</li></ol><p>如果有隱私問題， username / unicast-address 可以被混淆，只要不影響全域唯一性</p><h3 id=session-名稱-s>Session 名稱 (s=)</h3><p>文字欄位，表示 Session 名稱，每份 Session description 中只能有一個，不能為空值且必須採用 ISO-10646 字元 (除非有另外指定字符集)，如果沒有要特別指定 Session 名稱，可以用空白代替如 (s= )</p><h3 id=session-資訊-i>Session 資訊 (i=)</h3><p>文字欄位，每份 session description 中每個 session 最多只能有一個，每個 media 最多也只能宣告一個；
+這資訊主要是寫給人類閱讀的，用來表示 session 或是 media stream 的用處</p><h3 id=uri-u>URI (u=)</h3><p>選擇性欄位，用來表示關於Session額外資訊的位址連結，最多只能有一個，必須放置在 media 欄位之前</p><h3 id=email-及電話號碼-e--p>Email 及電話號碼 (e= , p=)</h3><p>聯絡人的 email 跟電話號碼</p><h3 id=連線資訊-c>連線資訊 (“c=“)</h3><p><code>c=&lt;nettype> &lt;addrtype> &lt;connection-address></code>
+一份 session description 必須包含一個或是 media description 至少一個</p><ol><li>nettype：
+採用網路類型，IN 表示 internet，但未來可能有其他的支援</li><li>addrtype：
+位址類型，可以是非 IP 家族的</li><li>connection address：
+依據位址類型，顯示不同的格式</li></ol><p>如果是應用在多播的場景下，IPv4 需要在網址後加上 TTL，而 IPv6 沒有 TTL 的概念
+在階層式的編碼下，資料串流可能被依照不同頻寬拆分成不同的來源，可以在位址加上來源數量，IP 位置會以連續的方式呈現
+例如說</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>c=IN IP4 224.2.1.1/127/3
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>這等同於在 media description 中如此表示
+</span></span><span class=line><span class=cl>c=IN IP4 224.2.1.1/127
+</span></span><span class=line><span class=cl>c=IN IP4 224.2.1.2/127
+</span></span><span class=line><span class=cl>c=IN IP4 224.2.1.3/127
+</span></span></code></pre></td></tr></table></div></div><h3 id=頻寬-b>頻寬 (b=)</h3><p>顯示預計使用的頻寬，根據不同的 bwtype 有不同含意
+<code>b=&lt;bwtype>:&lt;bandwidth></code></p><ol><li>CT：conference total
+全部 Conference 帶寬上限，可能一個 Conference 包含多個 session，則建議所有 session 使用的帶寬加總合</li><li>AS：application specifivc</li></ol><h3 id=timing-t>Timing (t=)</h3><p><code>t=&lt;start-time> &lt;stop-time></code>
+表示 Session 的開始結束時間
+如果沒有指定 stop-time，則 Session 為 unbounded，表示在 start-time 之後 Session 一直保持活躍
+如果連 start-time 也沒指定，則表示 Session 是永久存在</p><p>建議不要採用 unbounded Session，因為 client 不知道 Session 何時結束，也不知道如何排程</p><h3 id=重複次數-r>重複次數 (r=)</h3><p><code>r=&lt;repeat interval> &lt;active duration> &lt;offsets from start-time></code>
+這會搭配 t 做使用，例如說一個節目是每次播放一小時，於週一 10am 開播，接著每週二 11am 每週播放持續三個月，則表示法為</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>t=3034423619 3042462419
+</span></span><span class=line><span class=cl>r=604800 3600 0 90000
+</span></span><span class=line><span class=cl>// 或這樣表示
+</span></span><span class=line><span class=cl>r=7d 1h 0 25h
+</span></span></code></pre></td></tr></table></div></div><p>3034423619 是開始時間，也就是某週一 10am
+3042462419 是結束時間，也就是開播三個月後的週二 11am</p><p>7d 是播放間隔，所以是 7天的秒數
+1h 是播放的時長
+0 25h 是距離 start time 的時間間隔，也就是(週二 11am - 週一 10am)</p><p>如果是以月或年重複的播放，則不能使用 r 表示，需要改用多個的 t 表示播放時間</p><h3 id=時區-z>時區 (z=)</h3><p>這欄位會影響 t 跟 r
+<code>z=&lt;adjustment time> &lt;offset> &lt;adjustment time> &lt;offset> ....</code>
+如果是一個重複播放的 Session，可能會遇到日光節約日，所以要主動減去一小時，又因為不同的國家與地區對於日光節約日的計算不同，所以保留表示的彈性，如
+<code>z=2882844526 -1h 2898848070 0</code>
+在重複播放時間是 2882844526 要減去一小時，但是在 2898848070 就恢復正常</p><h3 id=加密金鑰-k>加密金鑰 (k=)</h3><p>如果 SDP 是在已安全以及可被信任的方式傳遞下，可以考慮傳遞加密的金鑰(加密 media stream 而非 session description 本身)，這個欄位不傳達加密的演算法、金鑰類型等，這些全留給採用 SDP的協定去規範</p><p>目前支援以下幾種定義</p><ol><li><code>k=clear:&lt;encryption key></code>：key 沒有改變過</li><li><code>k=base64:&lt;encoded encryption key></code>：用 base64 將 key 編碼</li><li><code>k=uri:&lt;URI to obtain key></code>：指名去 URI 拿 key，通常 URI 會走安全通道，例如 HTTPS 等</li><li><code>k=prompt</code>：雖然 Session 有加密但是 session description 沒有提供 key，用戶要額外去索取</li></ol><p>再次強調 SDP 本身要是在安全的情況下才能加 k 欄位</p><h3 id=屬性-a>屬性 (a=)</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>      a=<span class=p>&lt;</span><span class=nt>attribute</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>      a=<span class=p>&lt;</span><span class=nt>attribute</span><span class=p>&gt;</span>:<span class=p>&lt;</span><span class=nt>value</span><span class=p>&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>屬性值主要用來擴展 SDP，可以用在 session level 補充對 conference 的資訊，也可放在 media level 傳遞 media stream 的資訊，在 SDP 會有若干的屬性值宣告</p><p>屬性值有兩種宣告方式</p><ol><li>Flag概念 (a=<flag>)，例如 a=recvonly</li><li>鍵值 (a=<attribute>:<value>)，如 a=orient:landscape</li></ol><p>至於如何處理與定義屬性值，有些屬性有定義的含義，其餘則應用程式可以彈性處理</p><h3 id=media-description-m>media description (m=)</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>      m=<span class=p>&lt;</span><span class=nt>media</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>port</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>proto</span><span class=p>&gt;</span> <span class=p>&lt;</span><span class=nt>fmt</span><span class=p>&gt;</span> ...
+</span></span></code></pre></td></tr></table></div></div><p>一份 session description 中可能含有多個 media description，每一份 media description 從 <code>m=</code> 開始直到下一個 <code>m=</code>或是 session description 結束</p><ol><li>media
+類別，可以是 audio / video / text 等</li><li>port
+串流從哪個 port 發送，這會根據 connection infomation (c=) 而決定，對於某些傳輸協定，如 rtp 會使用兩個 port (RTP+RTCP)，所以宣告時會是 <code>m=video 49170/2 RTP/AVP 31</code>，表示 RTP 使用 49170 / RTCP 使用 49171；
+如果 c 指定多個 IP 位置，則 port 成一對一映射關係，如</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>c=IN IP4 224.2.1.1/127/2
+</span></span><span class=line><span class=cl>m=video 49170/2 RTP/AVP 31
+</span></span></code></pre></td></tr></table></div></div><pre><code>則因為 RTP 一次使用兩個 port，這表示 224.2.1.1 使用 49170、49171，224.2.1.2 使用 49172、49173
+</code></pre><ol start=3><li>proto
+指定傳輸協定，常用的有 udp 、 RTP/AVP、RTP/SAVP 等</li><li>fmt
+媒體格式，會跟著 <proto>的定義，如果 <proto>是 udp 則 <fmt>需要指定 audio / video / text / application / message 一者</li></ol><h1 id=sdp-attributes>SDP Attributes</h1><ol><li>a=cat:<category>
+用逗點分隔，用來過濾 category</li><li>a=keywds:<keywords>
+類似於 cat 屬性，透過關鍵字篩選想要的 session</li><li>a=tool:<name and version of tool>
+表示用來創建 session 工具的名稱與版號</li><li>a=ptime:<packet time>
+用 ms 表示一個封包中媒體的總時長</li><li>a=maxptime:<maximum packet time>
+用 ms 表示一個封包中媒體的總時長上限</li><li>a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
+搭配 media type(m=)宣告，補充RTP所採用的編碼方式，雖然 RTP 檔案本身就會包含 payload 格式，但是常見做法是透過參數設定動態改變
+例如說 <code>u-law PCM coded single-channel audio sampled at 8 kHz</code>，他的 encode 方式固定只有一種，所以不需要另外宣告rtpmap</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-md data-lang=md><span class=line><span class=cl>m=audio 49232 RTP/AVP 0
+</span></span><span class=line><span class=cl>```bash 
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    但如果是 <span class=sb>`16-bit linear encoded stereo audio sampled at 16 kHz`</span>，希望用 RTP/AVP payload 格式 98 的話，就必須另外宣告解碼方式
+</span></span><span class=line><span class=cl>    
+</span></span></code></pre></td></tr></table></div></div><p>m=audio 49232 RTP/AVP 98
+a=rtpmap:98 L16/16000/2</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>    rtpmap 可以針對 payload 格式做映射，如
+</span></span><span class=line><span class=cl>```md
+</span></span><span class=line><span class=cl>m=audio 49230 RTP/AVP 96 97 98
+</span></span><span class=line><span class=cl>a=rtpmap:96 L8/8000
+</span></span><span class=line><span class=cl>a=rtpmap:97 L16/8000
+</span></span><span class=line><span class=cl>a=rtpmap:98 L16/11025/2
+</span></span></code></pre></td></tr></table></div></div><pre><code>參數對應的參數可以參考 [RTP Profile for Audio and Video Conferences with Minimal Control](https://tools.ietf.org/html/rfc3551)
+</code></pre><ol start=7><li>a=recvonly
+表明單純接收</li><li>a=sendrecv
+可以接收與發送，此為預設值</li><li>a=sendonly
+單純發送</li><li>a=inactive
+不接收也不發送媒體，基於 RTP 系統的即使是 inactive 也要持續發送 RTCP</li><li>a=orient:<orientation>
+用於白板或是介紹的工具，可以指定 portrait / landscape / seascape(上下顛倒的 landscape)</li><li>a=framerate:<frame rate>
+video frame rate 最大值，只有 medial level 的 video 類型需要</li><li>a=sdplang:<language tag>
+SDP 資訊採用的語言，如果有多種語言建議每種語言都拆成獨立的 session description</li><li>a=fmtp:<format> <format specific parameters>用來傳達某些特定格式，且這些特定格式不需要是 SDP 所能理解的</li></ol><h2 id=安全考量>安全考量</h2><p>SDP 常用於 offer/answer 模型的 SIP 中，用來溝通單播的會話機制，當採用這樣的模式時，要記得考量協定本身的安全性</p><p>SDP 只是用來描述多媒體會話的內容，接收方要注意 session description 是否通過可信任的管道與來自可信任的來源，否則網路傳輸過程可能遭遇攻擊，必須要自己承擔安全上的風險</p><p>常用的傳輸方式是 SAP，SAP 本身提供加密與驗證機制；
+不過有些情況下無法採用，例如接收者事前不知道發送者的時候，此時就要特別小心 parse，並注意權限的管控(僅開放有限的軟體可以操作)</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2020/2020-09-22-rfc-5389-stun-%E5%8D%94%E5%AE%9A%E4%BB%8B%E7%B4%B9/><div class=article-details><h2 class=article-title>RFC 5389 - STUN 協定介紹</h2></div></a></article><article><a href=/posts/2022/2022-02-02-%E7%AD%86%E8%A8%98cloudflare-%E5%84%AA%E5%8C%96%E5%B0%81%E5%8C%85%E6%8E%A5%E6%94%B6%E7%9A%84%E9%81%8E%E7%A8%8B/><div class=article-details><h2 class=article-title>筆記：CloudFlare 優化封包接收的過程</h2></div></a></article><article><a href=/posts/2021/2021-05-30-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-webrtc/><div class=article-details><h2 class=article-title>深入理解 WebRTC</h2></div></a></article><article><a href=/posts/2020/2020-09-21-coturn-server-%E6%9E%B6%E8%A8%AD%E6%95%99%E5%AD%B8-on-aws/><div class=article-details><h2 class=article-title>Coturn Server 架設教學 - on AWS</h2></div></a></article><article><a href=/posts/2020/2020-02-29-dns-over-https-%E5%88%86%E4%BA%AB/><div class=article-details><h2 class=article-title>DNS over HTTPs 分享</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

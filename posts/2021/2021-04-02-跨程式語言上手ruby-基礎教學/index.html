@@ -1,0 +1,930 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="跨程式語言上手系列，用最短的時間上手 Ruby，包含基礎語法 / testing / api server / module 等"><title>【跨程式語言上手】Ruby 基礎教學</title><link rel=canonical href=https://yuanchieh.page/posts/2021/2021-04-02-%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8Bruby-%E5%9F%BA%E7%A4%8E%E6%95%99%E5%AD%B8/><link rel=stylesheet href=/scss/style.min.ff300df33b80e2ac49809c825614392ed1c7b27591d65d3c4043602cd162e25f.css><meta property="og:title" content="【跨程式語言上手】Ruby 基礎教學"><meta property="og:description" content="跨程式語言上手系列，用最短的時間上手 Ruby，包含基礎語法 / testing / api server / module 等"><meta property="og:url" content="https://yuanchieh.page/posts/2021/2021-04-02-%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8Bruby-%E5%9F%BA%E7%A4%8E%E6%95%99%E5%AD%B8/"><meta property="og:site_name" content="Yuanchieh"><meta property="og:type" content="article"><meta property="article:section" content="Post"><meta property="article:published_time" content="2021-04-02T08:21:40+00:00"><meta property="article:modified_time" content="2021-04-02T08:21:40+00:00"><meta name=twitter:title content="【跨程式語言上手】Ruby 基礎教學"><meta name=twitter:description content="跨程式語言上手系列，用最短的時間上手 Ruby，包含基礎語法 / testing / api server / module 等"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82837682-4","auto"),ga("send","pageview"))</script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-82837682-4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-82837682-4")</script></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src="https://avatars0.githubusercontent.com/u/6858460?s=460&amp;v=4" width=300 height=300 class=site-logo loading=lazy alt=Avatar></a></figure><div class=site-meta><h1 class=site-name><a href=/>Yuanchieh</a></h1><h2 class=site-description>生命是長期而持續的累積</h2></div></header><ol class=social-menu><li><a href=https://github.com/sj82516 target=_blank title=GitHub rel=me><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg><span>Home</span></a></li><li><a href=/archives/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>Archives</span></a></li><li><a href=/search/><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg><span>Search</span></a></li><div class=menu-bottom-section><li id=dark-mode-toggle><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg><span>Dark Mode</span></li></div></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#1-ruby-設計理念與起源>1. Ruby 設計理念與起源</a><ol><li><a href=#ruby-is-designed-to-make-programmers-happy>Ruby is designed to make programmers happy</a></li><li><a href=#seeing-everything-as-an-object>Seeing Everything as an Object</a></li><li><a href=#透過匿名函式支援-functional-programming-style>透過匿名函式支援 Functional Programming Style</a></li><li><a href=#如何安裝>如何安裝</a><ol><li><a href=#套件管理>套件管理</a></li></ol></li></ol></li><li><a href=#基礎語法>基礎語法</a><ol><li><a href=#變數宣告>變數宣告</a><ol><li><a href=#命名規則>命名規則</a></li><li><a href=#symbols>Symbols</a></li><li><a href=#hash>Hash</a></li></ol></li><li><a href=#ruby-中幾乎都是物件有內建很多便利的方法>Ruby 中幾乎都是物件，有內建很多便利的方法</a><ol><li><a href=#陣列>陣列</a></li></ol></li><li><a href=#loop--control-flow>loop / control flow</a><ol><li><a href=#條件式>條件式</a></li><li><a href=#switch-case>switch case</a></li><li><a href=#迴圈>迴圈</a></li><li><a href=#error-handling>Error handling</a></li></ol></li><li><a href=#function>Function</a></li><li><a href=#class>Class</a></li><li><a href=#匿名函式-block--proc--lambda>匿名函式 block / Proc / lambda</a><ol><li><a href=#有趣的語法-symbol>有趣的語法 <code>&:symbol</code></a></li></ol></li><li><a href=#concurrency--parallelism>Concurrency & Parallelism</a></li></ol></li><li><a href=#module>Module</a><ol><li><a href=#程式碼拆分檔案>程式碼拆分檔案</a></li></ol></li><li><a href=#testing>Testing</a><ol><li><a href=#unit-test>Unit Test</a></li><li><a href=#stub--mock--spy>Stub / Mock / Spy</a></li></ol></li><li><a href=#http-request--api-server>HTTP Request & API Server</a><ol><li><a href=#api-server>API Server</a></li><li><a href=#http-request>HTTP Request</a></li></ol></li><li><a href=#結語>結語</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80/>程式語言</a>
+<a href=/categories/ruby/>Ruby</a>
+<a href=/categories/%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8B/>跨程式語言上手</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/posts/2021/2021-04-02-%E8%B7%A8%E7%A8%8B%E5%BC%8F%E8%AA%9E%E8%A8%80%E4%B8%8A%E6%89%8Bruby-%E5%9F%BA%E7%A4%8E%E6%95%99%E5%AD%B8/>【跨程式語言上手】Ruby 基礎教學</a></h2><h3 class=article-subtitle>跨程式語言上手系列，用最短的時間上手 Ruby，包含基礎語法 / testing / api server / module 等</h3></div><footer class=article-time><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg><time class=article-time--published>Apr 02, 2021</time></div><div><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg><time class=article-time--reading>13 minute read</time></div></footer></div></header><section class=article-content><p>【跨程式語言上手】系列第一篇，最近換工作學習了 Golang / Ruby，可以說是設計理念處於對立面的程式語言，在學習中不斷拿兩者比較，找到很多有趣的地方<br>在這樣的過程中，慢慢找出自己上手新程式語言的 pattern，也就是逐步填補自我疑問的過程，像是「怎麼宣告變數？」「怎麼寫測試？」「api server / http request 怎麼發？」「併發或效能怎麼處理？」等等共通的疑惑點</p><p>坊間有很多善心人士的教學，但往往都缺一點我想了解的資訊，例如 Google 搜尋「Ruby 教學」的中文素材，跑出這幾個很棒的教學</p><ol><li>高見龍大大的 <a class=link href=https://railsbook.tw/ target=_blank rel=noopener>為你自己學 Ruby on Rails</a></li><li><a class=link href=https://ihower.tw/rails/ruby.html target=_blank rel=noopener>Ruby on Rails 實戰聖經</a></li><li>Ruby 官網的 <a class=link href=https://www.ruby-lang.org/zh_tw/documentation/quickstart/3/ target=_blank rel=noopener>二十分鐘 Ruby 體驗</a></li></ol><p>Ruby 教學會被綁在 Rails 教學中或許是 Ruby 生態特有的現象，但普遍程式語言教學也都缺少</p><ol><li>Testing：包含 Testing Framework / Unit Test / Mock、Stub</li><li>Module：Core Module / Local Module 怎麼載入</li><li>Concurrency：底層如何處理併發/平行運算</li><li>程式語言多用於後端，所以我會在意寫 api server / http request 的感覺是怎樣</li></ol><p>可以說這幾點都是比較進階/偏科的議題，但對我的工作很重要，也是這系列的起源，<code>我想要重新寫一份對我自己來說完整的程式語言教學</code>，過程中會拿我已經熟悉的程式語言如 Javascript 跟一點點的 Golang 做對比</p><blockquote><p>目標會著重於有經驗的程式設計師，已經熟練任一程式語言，想要快速上手或是品味另一門語言的人</p></blockquote><p>以下內容會包含</p><ol><li>Ruby 設計理念與起源</li><li>基礎語法</li><li>模組</li><li>測試</li><li>Http / API 相關</li><li>其他補充</li></ol><p>內容大量參考上附的參考資料，並融入自己的淺見，會隨著使用時間的拉長持續修改，有什麼不同的意見歡迎留言分享</p><h2 id=1-ruby-設計理念與起源>1. Ruby 設計理念與起源</h2><p>Ruby 是一門 Dynamic Language，運行在 Ruby Virtual Machine 上，本身是弱型別但沒有 JS 中隱式的轉型 (ex. 1 + &ldquo;23&rdquo;)，在 3.0 加入 Type safety 工具 <code>TypeProf</code> 幫助檢查型別問題</p><p>透過範例簡單看一下 Ruby 幾個特別的設計理念</p><h3 id=ruby-is-designed-to-make-programmers-happy>Ruby is designed to make programmers happy</h3><p>出自於 <a class=link href=https://www.artima.com/articles/the-philosophy-of-ruby target=_blank rel=noopener>The Philosophy of Ruby A Conversation with Yukihiro Matsumoto, Part I</a>，Ruby 給予開發者很高的自由度</p><ol><li>定義 symbol 在 Ruby 的框架下產生自己的 DSL，例如 <a class=link href=http://sinatrarb.com/ target=_blank rel=noopener>sinatra</a> 這個 web framework，看範例會以為根本不是 ruby 寫的</li><li>支援 Meta programming 可以在 Runtime 改變類別行為</li><li>可以複寫任意的方法，包含原生類別</li><li>同一種功能可以有非常多種寫法，光是迴圈可以用 while / for in / each / until / begin while 等</li></ol><h3 id=seeing-everything-as-an-object>Seeing Everything as an Object</h3><p>在 Ruby 的世界中，幾乎每一個變數都是物件，包含 <code>1+2</code> 也可以寫成 <code>1.+(2)</code>，1 本身是 <code>Integer 類別</code>裡頭有 + 這個方法<br>這讓 Ruby 很適合 OOP，也帶來很多的彈性，像是在 operator overwrite</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>Integer</span>
+</span></span><span class=line><span class=cl>  <span class=k>alias</span> <span class=ss>:plus</span> <span class=ss>:+</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>+</span> <span class=p>(</span><span class=n>other</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=nb>self</span><span class=o>.</span><span class=n>to_s</span> <span class=o>+</span> <span class=s2>&#34; is adding &#34;</span> <span class=o>+</span> <span class=n>other</span><span class=o>.</span><span class=n>to_s</span>
+</span></span><span class=line><span class=cl>    <span class=nb>self</span><span class=o>.</span><span class=n>plus</span> <span class=n>other</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=mi>1</span> <span class=o>+</span> <span class=mi>2</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 輸出結果</span>
+</span></span><span class=line><span class=cl><span class=c1># 1 is adding 2</span>
+</span></span><span class=line><span class=cl><span class=c1># 3</span>
+</span></span></code></pre></td></tr></table></div></div><p>Integer 是預設類別，Ruby 遇到類別重複宣告時會<code>合併</code>，接著我們在 Integer 宣告 plus 是原本 + 的別名，接著覆寫 <code>+</code> 先打印出 is adding 字串在回傳，在 Ruby 中預設 function 最後一行即使不顯式宣告也會 return</p><h3 id=透過匿名函式支援-functional-programming-style>透過匿名函式支援 Functional Programming Style</h3><p>在 Ruby 世界中，不像 Javascript / Golang 把 function 視為一等公民</p><blockquote><p>在程式語言中，所謂的一等公民條件是</p><ol><li>可以傳入 function 當作參數</li><li>可以被 function 當作 return 值</li><li>可以被儲存於資料結構中使用</li></ol></blockquote><p>但是 Ruby 也還是匿名函式的語法，大致如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>def</span> <span class=nf>sum</span><span class=p>(</span><span class=n>x</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>total</span> <span class=o>=</span> <span class=n>x</span>
+</span></span><span class=line><span class=cl>  <span class=nb>proc</span> <span class=p>{</span> <span class=o>|</span><span class=n>y</span><span class=o>|</span> <span class=n>x</span> <span class=o>+=</span> <span class=n>y</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>sum_five</span> <span class=o>=</span> <span class=n>sum</span> <span class=mi>5</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>sum_five</span><span class=o>.</span><span class=n>call</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>sum_five</span><span class=o>.</span><span class=n>call</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>sum_five</span><span class=o>.</span><span class=n>call</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>後續會有更詳細補充，但至少 Ruby 世界中也是可以做到 functional programming 的</p><p>綜合以上，Ruby 是一門彈性很大、很自由的語言，這是一把雙面刃，對於新手可能也不是這麼友善，畢竟有太多語法跟關鍵字要去熟悉</p><h3 id=如何安裝>如何安裝</h3><p>可以從官網下載安裝 <a class=link href=https://www.ruby-lang.org/en/documentation/installation/ target=_blank rel=noopener>Installing Ruby</a>，或是先安裝 Ruby 版本管理工具如 <a class=link href=http://rvm.io/ target=_blank rel=noopener>RVM</a></p><h4 id=套件管理>套件管理</h4><p>安裝完 ruby 後，也同時安裝了 <code>gem</code>，gem 是 ruby 套件管理工具，可以安裝或發佈自己的套件</p><blockquote><p>gem 我一開始理解成 npm，但 npm 層級高了一些，例如 gem 並沒有做到版本控制的功能，gem + bundle 比較是 npm 的組合</p></blockquote><p>詳細可參考 <a class=link href=https://medium.com/@bag571ivy3470/ruby-%E7%9A%84-rvm-vs-gem-vs-bundle-%E7%9A%84%E5%B7%AE%E5%88%A5-fc9ab20a920 target=_blank rel=noopener>Ruby 的 Rvm VS Gem VS Bundler 的差別</a></p><h2 id=基礎語法>基礎語法</h2><h3 id=變數宣告>變數宣告</h3><ol><li>不用宣告型別</li><li>變數可以改變型別</li><li>但是沒有隱式的型別轉換</li><li>變數的 <code>scope 只有當前的 context</code>，但要注意匿名函式會讀取當前的 context，並不會一直往上查找，除非用全域變數 <code>$</code> 開頭</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=mi>123</span>
+</span></span><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=s2>&#34;123&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=mi>123</span> <span class=o>+</span> <span class=s2>&#34;123&#34;</span> <span class=c1># 拋錯 TypeError (String can&#39;t be coerced into Integer)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>sum</span> <span class=o>=</span> <span class=mi>5</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>func</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=n>sum</span> <span class=c1># 拋錯</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=mi>1</span><span class=o>.</span><span class=n>upto</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span> <span class=p>{</span> <span class=o>|</span><span class=n>i</span><span class=o>|</span> <span class=n>sum</span> <span class=o>+=</span> <span class=n>i</span> <span class=p>}</span> <span class=c1># 這樣是可以的，因為 block 是用宣告當前的 context</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=vg>$sum</span> <span class=o>=</span> <span class=mi>5</span> <span class=c1># 全域變數可以</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>func</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=vg>$sum</span> 
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=命名規則>命名規則</h4><ol><li>變數名稱常用蛇形命名法</li><li>變數全大寫代表<code>常數</code>，但是常數被改會有 warning 不會有錯誤</li><li>Class/Module 名稱開頭大寫</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>naming_convetion</span> <span class=o>=</span> <span class=mi>123</span>
+</span></span><span class=line><span class=cl><span class=no>FIVE</span> <span class=o>=</span> <span class=mi>5</span>
+</span></span><span class=line><span class=cl><span class=no>FIVE</span> <span class=o>=</span> <span class=mi>4</span> <span class=c1>#  warning: already initialized constant X</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=symbols>Symbols</h4><p>建立唯一且不可變的物件，用 <code>:</code> 開頭，重複宣告都會指向同一份記憶體位置 (<code>透過 object_id 識別</code>)，而字串每一次宣告都會在記憶體產生新的一份 String Object，如果是要單純用來識別 Symbol 效能會比 String 好上很多喔</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>hello</span> <span class=o>=</span> <span class=ss>:hello</span>
+</span></span><span class=line><span class=cl><span class=n>world</span> <span class=o>=</span> <span class=ss>:hello</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>hello</span> <span class=o>==</span> <span class=n>world</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>hello</span><span class=o>.</span><span class=n>object_id</span> <span class=o>==</span> <span class=n>world</span><span class=o>.</span><span class=n>object_id</span> <span class=c1>#true</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>hello</span> <span class=o>=</span> <span class=s2>&#34;hello&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>world</span> <span class=o>=</span> <span class=s2>&#34;hello&#34;</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>hello</span> <span class=o>==</span> <span class=n>world</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>hello</span><span class=o>.</span><span class=n>object_id</span> <span class=o>==</span> <span class=n>world</span><span class=o>.</span><span class=n>object_id</span> <span class=c1>#false</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=hash>Hash</h4><p>Ruby 有 Hash，可以用 <code>=> 或 :</code> 分隔 key value，但是兩者有很大的差異</p><ol><li>=> 非常的自由，key 值可以是任意的值</li><li>: 的 key 只能是 symbol，如果放字串會直接轉成 symbol<br>要非常小心 <code>string 跟 symbol</code> 是不同的，實作上很容易踩到這個坑</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>a</span> <span class=o>=</span> <span class=p>{</span> <span class=s2>&#34;123&#34;</span><span class=p>:</span> <span class=s2>&#34;123&#34;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=n>b</span> <span class=o>=</span> <span class=p>{</span> <span class=s2>&#34;123&#34;</span> <span class=o>=&gt;</span> <span class=s2>&#34;123&#34;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>a</span><span class=o>[</span><span class=s2>&#34;123&#34;</span><span class=o>]</span> <span class=c1># nil</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>a</span><span class=o>[</span><span class=ss>:&#34;123&#34;</span><span class=o>]</span> <span class=c1># &#34;123&#34;</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>b</span><span class=o>[</span><span class=s2>&#34;123&#34;</span><span class=o>]</span> <span class=c1># &#34;123&#34;</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>b</span><span class=o>[</span><span class=ss>:&#34;123&#34;</span><span class=o>]</span> <span class=c1># nil</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=ruby-中幾乎都是物件有內建很多便利的方法>Ruby 中幾乎都是物件，有內建很多便利的方法</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>x</span><span class=o>.</span><span class=n>methods</span> <span class=c1># 列出所有 Integer 包含的 method</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>x</span><span class=o>.</span><span class=n>odd?</span> <span class=c1># 是不是偶數</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>x</span><span class=o>.</span><span class=n>class</span> <span class=c1># 類別</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>x</span><span class=o>.</span><span class=n>to_s</span> <span class=c1># 轉成字串</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=陣列>陣列</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>arr</span> <span class=o>=</span> <span class=o>[</span><span class=mi>1</span><span class=p>,</span><span class=mi>2</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span><span class=mi>4</span><span class=p>,</span><span class=mi>5</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>arr</span><span class=o>.</span><span class=n>include?</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>arr</span><span class=o>.</span><span class=n>push</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>arr</span><span class=o>.</span><span class=n>pop</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=loop--control-flow>loop / control flow</h3><h4 id=條件式>條件式</h4><p>基本的 if / elseif / else 與三元判斷式</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=n>x</span><span class=o>.</span><span class=n>odd?</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is odd&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>elsif</span> <span class=n>x</span><span class=o>.</span><span class=n>even?</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is even&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>else</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;never happen&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=p>(</span><span class=n>x</span><span class=o>.</span><span class=n>odd?</span><span class=p>)</span> <span class=p>?</span> <span class=s2>&#34;x is odd&#34;</span><span class=ss>:&#34;x is even&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=switch-case>switch case</h4><ol><li>採用 case / when / else 語法，不用加 break</li><li>case 如果沒有接參數，則 when 條件可以放 statement / 如果有接參數，則 when 條件放常數</li><li>如果希望 case when 結果賦值給變數，可以用 when &mldr; then</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>x</span> <span class=o>=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>case</span>
+</span></span><span class=line><span class=cl><span class=k>when</span> <span class=n>x</span><span class=o>.</span><span class=n>odd?</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is odd&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>when</span> <span class=n>x</span><span class=o>.</span><span class=n>even?</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is even&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>else</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;never happen&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>case</span> <span class=n>x</span>
+</span></span><span class=line><span class=cl><span class=k>when</span> <span class=mi>1</span><span class=o>..</span><span class=mi>10</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is in 1 to 10&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>else</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;x is not in 1 to 10&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>val</span> <span class=o>=</span> <span class=k>case</span> <span class=n>x</span>
+</span></span><span class=line><span class=cl><span class=k>when</span> <span class=mi>1</span><span class=o>..</span><span class=mi>10</span>
+</span></span><span class=line><span class=cl>  <span class=k>then</span> <span class=s2>&#34;x is in 1 to 10&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>else</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;x is not in 1 to 10&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=c1># val = &#34;x is in 1 to 10&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=迴圈>迴圈</h4><p>方式很多種</p><ol><li>先檢查條件的 for in / while / until</li><li>後檢查條件的 begin &mldr; (when/until)</li><li>Enumerable 物件可以用 each</li></ol><p>但<code>沒有常見 for(initialExpression; conditionExpression; incrementExpression)</code> 宣告</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>arr</span> <span class=o>=</span> <span class=o>[</span><span class=mi>1</span><span class=p>,</span><span class=mi>2</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span><span class=mi>4</span><span class=p>,</span><span class=mi>5</span><span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>while</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>arr</span><span class=o>.</span><span class=n>size</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=n>arr</span><span class=o>[</span><span class=n>i</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=n>i</span> <span class=o>+=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>i</span><span class=o>=</span><span class=mi>0</span>
+</span></span><span class=line><span class=cl><span class=k>until</span> <span class=n>i</span> <span class=o>&gt;=</span> <span class=n>arr</span><span class=o>.</span><span class=n>size</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=n>arr</span><span class=o>[</span><span class=n>i</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=n>i</span> <span class=o>+=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>i</span><span class=o>=</span><span class=mi>0</span>
+</span></span><span class=line><span class=cl><span class=k>begin</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=n>arr</span><span class=o>[</span><span class=n>i</span><span class=o>]</span>
+</span></span><span class=line><span class=cl>  <span class=n>i</span> <span class=o>+=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl><span class=k>end</span> <span class=k>while</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>arr</span><span class=o>.</span><span class=n>size</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>for</span> <span class=n>i</span> <span class=k>in</span> <span class=n>arr</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=n>i</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>arr</span><span class=o>.</span><span class=n>each</span> <span class=p>{</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span> <span class=nb>puts</span> <span class=n>x</span> <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=error-handling>Error handling</h4><ol><li>透過 raise 拋出錯誤</li><li>透過 rescue 接錯誤，可以更進階指定錯誤類型</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>begin</span>
+</span></span><span class=line><span class=cl>  <span class=c1>#... process, may raise an exception</span>
+</span></span><span class=line><span class=cl>  <span class=k>raise</span> <span class=no>ArgumentError</span>
+</span></span><span class=line><span class=cl><span class=k>rescue</span> <span class=no>ArgumentError</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;ArgumentError&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>rescue</span> <span class=o>=&gt;</span> <span class=n>error</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=n>error</span>
+</span></span><span class=line><span class=cl>  <span class=c1>#... error handler</span>
+</span></span><span class=line><span class=cl><span class=k>else</span>
+</span></span><span class=line><span class=cl>  <span class=c1>#... executes when no error</span>
+</span></span><span class=line><span class=cl><span class=k>ensure</span>
+</span></span><span class=line><span class=cl>  <span class=c1>#... always executed</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>進階資料請參考 <a class=link href=https://stackify.com/rescue-exceptions-ruby/ target=_blank rel=noopener>How to Rescue Exceptions in Ruby</a></p><h3 id=function>Function</h3><ol><li>function 不用定義回傳值</li><li>呼叫可以省略括號</li><li>預設最後一行會回傳，不用在顯示宣告 return</li><li>如果呼叫的參數數量跟宣告不同會拋出錯誤</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>def</span> <span class=nf>add</span> <span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>a</span> <span class=o>+</span> <span class=n>b</span> <span class=c1># 等同於 return a + b</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>add</span> <span class=mi>1</span><span class=p>,</span><span class=mi>2</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=class>Class</h3><ol><li>預設 Class 名稱開頭大寫</li><li>支援繼承 <code>Successor &lt; Predecessor</code></li><li>要建立 instance 透過 <code>Class.new</code>，會呼叫 class 中的 private method <code>initialize</code></li><li>宣告 instance 變數以 <code>@</code> 開頭 / 宣告 class static 變數用 <code>@@</code></li><li>需要顯式指定針對 instance 變數的 getter/setter，或是用 <code>attr_accessor/attr_writer/attr_reader</code> 增加</li><li>支援 public/protected/private，但跟其他語言的 private 不太同，以下節錄自高見龍大大的文章</li></ol><blockquote><p>因為在 Ruby 裡所謂的 private 方法的使用規定很簡單，就只有一條：「不能明確的指出 receiver」。用白話文講，就是「在呼叫 private 方法的時候，前面不可以有小數點」。也就是因為這樣，在 Ruby 的 private 方法其實不只類別自己內部可以存取，它的子類別也可以，並沒有像其它程式語言一樣的繼承限制</p></blockquote><ol start=7><li>定義 static method 可以用 <code>def self.method</code>，或是用 <code>class &lt;&lt; self</code></li><li><code>沒有 interface / method overloading / polymorphism</code></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>Person</span>
+</span></span><span class=line><span class=cl>  <span class=kp>attr_accessor</span> <span class=ss>:name</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=nb>name</span><span class=p>,</span> <span class=n>age</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@name</span> <span class=o>=</span> <span class=nb>name</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@age</span> <span class=o>=</span> <span class=n>age</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>hello</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=s2>&#34;Hello, my name is </span><span class=si>#{</span><span class=vi>@name</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nc>self</span><span class=o>.</span><span class=nf>show_specy</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=s2>&#34;we are Mammals&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>=begin 等同於上者，此方法適和於大量定義
+</span></span></span><span class=line><span class=cl><span class=cm>  class &lt;&lt; self
+</span></span></span><span class=line><span class=cl><span class=cm>    def show_specy
+</span></span></span><span class=line><span class=cl><span class=cm>        puts &#34;we are Mammals&#34;
+</span></span></span><span class=line><span class=cl><span class=cm>    end
+</span></span></span><span class=line><span class=cl><span class=cm>  end 
+</span></span></span><span class=line><span class=cl><span class=cm>=end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=kp>protected</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>my_protected_method</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=s2>&#34;my protected method&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=kp>private</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>my_little_secret</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=s2>&#34;private methods&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=no>Person</span><span class=o>.</span><span class=n>show_specy</span>
+</span></span><span class=line><span class=cl><span class=n>p1</span> <span class=o>=</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;yoyo&#34;</span><span class=p>,</span> <span class=mi>10</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>p1</span><span class=o>.</span><span class=n>name</span>
+</span></span><span class=line><span class=cl><span class=n>p1</span><span class=o>.</span><span class=n>name</span> <span class=o>=</span> <span class=s2>&#34;hello&#34;</span>
+</span></span><span class=line><span class=cl><span class=c1># puts p1.age 對應第5點，不能直接呼叫 .age 取得 age 變數</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>Teacher</span> <span class=o>&lt;</span> <span class=no>Person</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=nb>name</span><span class=p>,</span> <span class=n>age</span><span class=p>,</span> <span class=n>major</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>super</span><span class=p>(</span><span class=nb>name</span><span class=p>,</span> <span class=n>age</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@major</span> <span class=o>=</span> <span class=n>major</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>can_access_parent_private_method</span>
+</span></span><span class=line><span class=cl>    <span class=nb>self</span><span class=o>.</span><span class=n>my_protected_method</span>
+</span></span><span class=line><span class=cl>    <span class=n>my_little_secret</span> <span class=c1># 這樣可以讀取 parent private method</span>
+</span></span><span class=line><span class=cl>    <span class=c1>#self.my_little_secret </span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>t1</span> <span class=o>=</span> <span class=no>Teacher</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;Mark&#34;</span><span class=p>,</span> <span class=mi>10</span><span class=p>,</span> <span class=s2>&#34;English&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>t1</span><span class=o>.</span><span class=n>hello</span>
+</span></span><span class=line><span class=cl><span class=n>t1</span><span class=o>.</span><span class=n>can_access_parent_private_method</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>t1</span><span class=o>.</span><span class=n>send</span> <span class=ss>:my_little_secret</span>
+</span></span><span class=line><span class=cl><span class=n>t1</span><span class=o>.</span><span class=n>send</span> <span class=ss>:my_protected_method</span>
+</span></span></code></pre></td></tr></table></div></div><p>Ruby 物件比想像中複雜，尤其是支援 Meta programming，進階資料可以參考 <a class=link href=https://spreered.medium.com/ruby-%E7%9A%84%E7%B9%BC%E6%89%BF%E9%8D%8A-1-%E7%89%A9%E4%BB%B6%E5%B0%8E%E5%90%91%E5%A6%82%E4%BD%95%E5%AF%A6%E8%B8%90-10324ec7546d target=_blank rel=noopener>Ruby 的繼承鍊 (1) 物件導向如何實踐</a></p><h3 id=匿名函式-block--proc--lambda>匿名函式 block / Proc / lambda</h3><ol><li>block 代表程式碼區塊，少數 Ruby 中<code>不是物件</code>的存在，必須依附在 function 上，透過 yeild 呼叫 block 執行，單行宣告用 <code>{...}</code>，多行用 <code>do ... end</code></li><li>Proc 是物件，不限制參數，return 時是代表當時的 context return，透過 proc.call 執行</li><li>lambda 是特殊的 Proc，會嚴格檢查參數，return 就如同一般的 function return</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=mi>1</span><span class=o>.</span><span class=n>upto</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span><span class=o>.</span><span class=n>map</span> <span class=p>{</span><span class=o>|</span><span class=n>ele</span><span class=o>|</span> <span class=nb>puts</span> <span class=n>ele</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 可以判斷是不是有 block 被傳入，如果有則用 yeild 呼叫執行</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>hello</span>
+</span></span><span class=line><span class=cl>  <span class=k>if</span> <span class=nb>block_given?</span>
+</span></span><span class=line><span class=cl>    <span class=k>yield</span><span class=p>(</span><span class=s2>&#34;world&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>hello</span> <span class=k>do</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;message from hello: </span><span class=si>#{</span><span class=n>x</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># Proc / lambda 可以儲存於變數備用</span>
+</span></span><span class=line><span class=cl><span class=n>my_proc</span> <span class=o>=</span> <span class=no>Proc</span><span class=o>.</span><span class=n>new</span><span class=p>{</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=nb>puts</span> <span class=s2>&#34;from proc </span><span class=si>#{</span><span class=n>x</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>my_lambda</span> <span class=o>=</span> <span class=nb>lambda</span> <span class=p>{</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;from lambda </span><span class=si>#{</span><span class=n>x</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>func</span><span class=p>(</span><span class=n>block</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;before call&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=n>block</span><span class=o>.</span><span class=n>call</span><span class=p>(</span><span class=s2>&#34;func&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;after call&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>func</span><span class=p>(</span><span class=n>my_lambda</span><span class=p>)</span> <span class=c1># before call/n from lambda func/n after call</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># proc 宣告於最上層 context，所以 return 時會連帶結束整個程式</span>
+</span></span><span class=line><span class=cl><span class=n>func</span><span class=p>(</span><span class=n>my_proc</span><span class=p>)</span> <span class=c1># before call/n from proc func</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=有趣的語法-symbol>有趣的語法 <code>&:symbol</code></h4><p>網路上有些說法是 <code>{|x| x[:symbol]}</code> 的縮寫，讓我們看下去</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>Person</span>
+</span></span><span class=line><span class=cl>  <span class=kp>attr_reader</span> <span class=ss>:name</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=nb>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@name</span> <span class=o>=</span> <span class=nb>name</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>a</span> <span class=o>=</span> <span class=o>[</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;123&#34;</span><span class=p>),</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;2222&#34;</span><span class=p>)</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>name_list</span> <span class=o>=</span> <span class=n>a</span><span class=o>.</span><span class=n>map</span> <span class=p>{</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span> <span class=n>x</span><span class=o>.</span><span class=n>name</span> <span class=p>}</span> <span class=c1># 兩者相同</span>
+</span></span><span class=line><span class=cl><span class=n>name_list</span> <span class=o>=</span> <span class=n>a</span><span class=o>.</span><span class=n>map</span><span class=p>(</span><span class=o>&amp;</span><span class=ss>:name</span><span class=p>)</span> 
+</span></span><span class=line><span class=cl><span class=nb>p</span> <span class=n>name_list</span>
+</span></span></code></pre></td></tr></table></div></div><ol><li>參數用 & 開頭代表參數是以 Proc 傳入，他跟一般的參數 args是切開的</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>def</span> <span class=nf>some_method</span><span class=p>(</span><span class=o>*</span><span class=n>args</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>block</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;args: </span><span class=si>#{</span><span class=n>args</span><span class=o>.</span><span class=n>inspect</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=nb>puts</span> <span class=s2>&#34;block: </span><span class=si>#{</span><span class=n>block</span><span class=o>.</span><span class=n>inspect</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=n>some_method</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span><span class=mi>2</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span> <span class=ss>:whatever</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=c1># args: [1,2,3, :whatever]</span>
+</span></span><span class=line><span class=cl><span class=c1># block: nil</span>
+</span></span><span class=line><span class=cl><span class=n>some_method</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span><span class=mi>2</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span> <span class=o>&amp;</span><span class=ss>:whatever</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=c1># args: [1,2,3]</span>
+</span></span><span class=line><span class=cl><span class=c1># block: #&lt;Proc:0x007fd23d010da8&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=2><li>在 Ruby 呼叫 object method 可以用 send 的方式</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>Person</span>
+</span></span><span class=line><span class=cl>  <span class=kp>attr_reader</span> <span class=ss>:name</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=nb>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@name</span> <span class=o>=</span> <span class=nb>name</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=nb>p</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;123&#34;</span><span class=p>)</span><span class=o>.</span><span class=n>name</span> <span class=o>==</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;123&#34;</span><span class=p>)</span><span class=o>.</span><span class=n>send</span><span class=p>(</span><span class=ss>:name</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=3><li>&:symbol 實際上會去呼叫 :symbol#to_proc ，而在 Symbol 中有定義 to_proc 行為，也會有人去自定義 class 中的 to_proc 方法</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>Symbol</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>to_proc</span>
+</span></span><span class=line><span class=cl>    <span class=no>Proc</span><span class=o>.</span><span class=n>new</span> <span class=k>do</span> <span class=o>|</span><span class=n>receiver</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=n>receiver</span><span class=o>.</span><span class=n>send</span> <span class=nb>self</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><p>綜合上述，可以拆解成</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=n>a</span> <span class=o>=</span> <span class=o>[</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;123&#34;</span><span class=p>),</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;2222&#34;</span><span class=p>)</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>a</span><span class=o>.</span><span class=n>map</span><span class=p>(</span><span class=o>&amp;</span><span class=ss>:name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=c1># 可以拆解成下者</span>
+</span></span><span class=line><span class=cl><span class=nb>puts</span> <span class=n>a</span><span class=o>.</span><span class=n>map</span> <span class=p>{</span> <span class=o>|</span><span class=n>x</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=n>x</span><span class=o>.</span><span class=n>send</span><span class=p>(</span><span class=ss>:name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>也就是 receiver 會收到 symbol 的方法呼叫，參考自 <a class=link href=https://stackoverflow.com/questions/1217088/what-does-mapname-mean-in-ruby target=_blank rel=noopener>What does map(&:name) mean in Ruby?</a></p><p>其他優秀的資訊</p><ol><li><a class=link href=https://5xruby.tw/post/discover-ruby-block target=_blank rel=noopener>Ruby 探索：Blocks 深入淺出</a></li><li><a class=link href=https://medium.com/@jinghua.shih/ruby-%E5%A6%82%E4%BD%95%E7%90%86%E8%A7%A3-ruby-block-2387b74f188b target=_blank rel=noopener>[Ruby] 如何理解 Ruby Block</a></li></ol><h3 id=concurrency--parallelism>Concurrency & Parallelism</h3><ol><li>Ruby 支援 Process ，可用於處理 CPU-Heavy issue</li></ol><blockquote><p>Ruby 在 2.0 導入 Cope on Write，當 process fork 時如果 value 沒有改動則使用同一份記憶體空間，降低 fork 對於記憶體資源無謂的佔用</p></blockquote><ol start=2><li>Ruby 支援 Thread，適用於處理 IO Event，但如果是 CPU-Heavy issue 則沒有幫助，因為 Ruby 有 GIL (Global Interpreter Lokc) 所以<code>無法併發，一次只能執行一個 thread</code>，這跟 Ruby VM 實作有關，如果是 <code>JRuby 則沒有此問題</code></li></ol><blockquote><p>Thread releases GIL when it hits blocking I/O operations such as HTTP requests, DB queries, writing / reading from disk and even sleep</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=nb>require</span> <span class=s1>&#39;benchmark&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=no>ELE_AMOUNT</span> <span class=o>=</span> <span class=mi>1000</span>
+</span></span><span class=line><span class=cl><span class=no>PROCESS_NUM</span> <span class=o>=</span> <span class=mi>2</span>
+</span></span><span class=line><span class=cl><span class=n>arr</span> <span class=o>=</span> <span class=nb>Array</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=no>ELE_AMOUNT</span><span class=p>)</span> <span class=p>{</span> <span class=nb>Array</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=no>ELE_AMOUNT</span><span class=p>){</span><span class=nb>rand</span><span class=p>(</span><span class=mi>1</span><span class=o>...</span><span class=mi>9</span><span class=p>)}}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=no>Benchmark</span><span class=o>.</span><span class=n>bm</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span> <span class=k>do</span> <span class=o>|</span><span class=n>bm</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=n>bm</span><span class=o>.</span><span class=n>report</span><span class=p>(</span><span class=s2>&#34;seq&#34;</span><span class=p>)</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>total</span> <span class=o>=</span> <span class=n>arr</span><span class=o>.</span><span class=n>reduce</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=k>do</span> <span class=o>|</span><span class=n>sum</span><span class=p>,</span> <span class=n>ele</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=n>sum</span> <span class=o>+</span> <span class=n>ele</span><span class=o>.</span><span class=n>sum</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>bm</span><span class=o>.</span><span class=n>report</span><span class=p>(</span><span class=s2>&#34;parallel&#34;</span><span class=p>)</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>read</span><span class=p>,</span> <span class=n>write</span> <span class=o>=</span> <span class=no>IO</span><span class=o>.</span><span class=n>pipe</span>
+</span></span><span class=line><span class=cl>    <span class=mi>1</span><span class=o>.</span><span class=n>upto</span><span class=p>(</span><span class=no>PROCESS_NUM</span><span class=p>)</span><span class=o>.</span><span class=n>map</span> <span class=k>do</span> <span class=o>|</span><span class=n>i</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=no>Process</span><span class=o>.</span><span class=n>fork</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>        <span class=nb>p</span> <span class=n>i</span>
+</span></span><span class=line><span class=cl>        <span class=n>step</span> <span class=o>=</span> <span class=p>(</span><span class=no>ELE_AMOUNT</span> <span class=o>*</span> <span class=mi>1</span><span class=o>.</span><span class=mi>0</span> <span class=o>/</span> <span class=no>PROCESS_NUM</span><span class=p>)</span><span class=o>.</span><span class=n>ceil</span>
+</span></span><span class=line><span class=cl>        <span class=n>start_ele</span> <span class=o>=</span> <span class=n>step</span> <span class=o>*</span> <span class=p>(</span><span class=n>i</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>total</span> <span class=o>=</span> <span class=n>arr</span><span class=o>[</span><span class=n>start_ele</span><span class=p>,</span> <span class=n>step</span><span class=o>].</span><span class=n>reduce</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=k>do</span> <span class=o>|</span><span class=n>sum</span><span class=p>,</span> <span class=n>ele</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>          <span class=n>sum</span> <span class=o>+</span> <span class=n>ele</span><span class=o>.</span><span class=n>sum</span>
+</span></span><span class=line><span class=cl>        <span class=k>end</span>
+</span></span><span class=line><span class=cl>        <span class=n>write</span><span class=o>.</span><span class=n>puts</span> <span class=n>total</span>
+</span></span><span class=line><span class=cl>      <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=no>Process</span><span class=o>.</span><span class=n>wait</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>bm</span><span class=o>.</span><span class=n>report</span><span class=p>(</span><span class=s2>&#34;thread&#34;</span><span class=p>)</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>total</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>    <span class=n>threads</span> <span class=o>=</span> <span class=o>[]</span>
+</span></span><span class=line><span class=cl>    <span class=mi>1</span><span class=o>.</span><span class=n>upto</span><span class=p>(</span><span class=no>PROCESS_NUM</span><span class=p>)</span><span class=o>.</span><span class=n>map</span> <span class=k>do</span> <span class=o>|</span><span class=n>i</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>      <span class=n>t</span> <span class=o>=</span> <span class=no>Thread</span><span class=o>.</span><span class=n>new</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>        <span class=n>step</span> <span class=o>=</span> <span class=p>(</span><span class=no>ELE_AMOUNT</span> <span class=o>*</span> <span class=mi>1</span><span class=o>.</span><span class=mi>0</span> <span class=o>/</span> <span class=no>PROCESS_NUM</span><span class=p>)</span><span class=o>.</span><span class=n>ceil</span>
+</span></span><span class=line><span class=cl>        <span class=n>start_ele</span> <span class=o>=</span> <span class=n>step</span> <span class=o>*</span> <span class=p>(</span><span class=n>i</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>total</span> <span class=o>+=</span> <span class=n>arr</span><span class=o>[</span><span class=n>start_ele</span><span class=p>,</span> <span class=n>step</span><span class=o>].</span><span class=n>reduce</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=k>do</span> <span class=o>|</span><span class=n>sum</span><span class=p>,</span> <span class=n>ele</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>          <span class=n>sum</span> <span class=o>+</span> <span class=n>ele</span><span class=o>.</span><span class=n>sum</span>
+</span></span><span class=line><span class=cl>        <span class=k>end</span>
+</span></span><span class=line><span class=cl>      <span class=k>end</span>
+</span></span><span class=line><span class=cl>      <span class=n>threads</span> <span class=o>&lt;&lt;</span> <span class=n>t</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>
+</span></span><span class=line><span class=cl>    <span class=n>threads</span><span class=o>.</span><span class=n>each</span><span class=p>(</span><span class=o>&amp;</span><span class=ss>:join</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=3><li>Fiber 是類似於 goroutine 的概念，更輕量的 user space thread，主要用來非同步的排程，適用於結合 Non-blocking IO，因為 Fiber 在 Context Switch 比 Thread 更為輕量<br>範例來源：<a class=link href=https://engineering.universe.com/introduction-to-concurrency-models-with-ruby-part-i-550d0dbb970 target=_blank rel=noopener>Introduction to Concurrency Models with Ruby. Part I</a></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=no>EventMachine</span><span class=o>.</span><span class=n>run</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=no>Fiber</span><span class=o>.</span><span class=n>new</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>page</span> <span class=o>=</span> <span class=n>http_get</span><span class=p>(</span><span class=s1>&#39;http://www.google.com/&#39;</span><span class=p>)</span>     
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>page</span><span class=o>.</span><span class=n>response_header</span><span class=o>.</span><span class=n>status</span> <span class=o>==</span> <span class=mi>200</span>
+</span></span><span class=line><span class=cl>      <span class=n>about</span> <span class=o>=</span> <span class=n>http_get</span><span class=p>(</span><span class=s1>&#39;https://google.ca/search?q=universe.com&#39;</span><span class=p>)</span> 
+</span></span><span class=line><span class=cl>      <span class=c1># ... </span>
+</span></span><span class=line><span class=cl>    <span class=k>else</span> 
+</span></span><span class=line><span class=cl>      <span class=nb>puts</span> <span class=s2>&#34;Google is down&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>end</span>  
+</span></span><span class=line><span class=cl>  <span class=p>}</span><span class=o>.</span><span class=n>resume</span> 
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>http_get</span><span class=p>(</span><span class=n>url</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=n>current_fiber</span> <span class=o>=</span> <span class=no>Fiber</span><span class=o>.</span><span class=n>current</span>
+</span></span><span class=line><span class=cl>  <span class=n>http</span> <span class=o>=</span> <span class=no>EM</span><span class=o>::</span><span class=no>HttpRequest</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>url</span><span class=p>)</span><span class=o>.</span><span class=n>get</span>    
+</span></span><span class=line><span class=cl>  <span class=n>http</span><span class=o>.</span><span class=n>callback</span> <span class=p>{</span> <span class=n>current_fiber</span><span class=o>.</span><span class=n>resume</span><span class=p>(</span><span class=n>http</span><span class=p>)</span> <span class=p>}</span>   
+</span></span><span class=line><span class=cl>  <span class=n>http</span><span class=o>.</span><span class=n>errback</span>  <span class=p>{</span> <span class=n>current_fiber</span><span class=o>.</span><span class=n>resume</span><span class=p>(</span><span class=n>http</span><span class=p>)</span> <span class=p>}</span>    
+</span></span><span class=line><span class=cl>  <span class=no>Fiber</span><span class=o>.</span><span class=n>yield</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=4><li>Ruby 3.0 導入了基於 Actor 模式的 <code>Ractor</code> ，真正能做到利用 Thread 達成 Parallelism，以前會需要 GIL 是為了避免 multi thread 之下的 deadlock / race condition 狀況，但是在 Ractor 中基本上 Object 都不會被共享，參考 <a class=link href=https://blog.golang.org/codelab-share target=_blank rel=noopener>Share Memory By Communicating</a>
+有些文章會寫 Guild，但我查 Ruby 官方文件只有看到 Ractor</li></ol><blockquote><p><code>Do not communicate by sharing memory; instead, share memory by communicating.</code><br>意即如果希望在多個 Thread 中共享資訊，不要透過共享記憶體來溝通，而是透過通信交換資料達到共享資料的目的<br>因為共享記憶體就必須處理 lock，接著就要擔心 dead lock 等問題<br>如果不共享記憶體，直接將資料透過通道等方式傳遞，就不用擔心以上的問題，也可以更好的並行運算</p></blockquote><p>優良的資源參考</p><ol><li><a class=link href=https://www.toptal.com/ruby/ruby-concurrency-and-parallelism-a-practical-primer target=_blank rel=noopener>Ruby Concurrency and Parallelism: A Practical Tutorial</a></li><li><a class=link href=https://engineering.universe.com/introduction-to-concurrency-models-with-ruby-part-i-550d0dbb970 target=_blank rel=noopener>Introduction to Concurrency Models with Ruby. Part I / II</a></li><li><a class=link href="https://www.youtube.com/watch?v=Dtn9Uudw4Mo" target=_blank rel=noopener>RubyConf Taiwan 2019 - The Journey to One Million by Samuel Williams</a></li></ol><h2 id=module>Module</h2><ol><li>Module 提供類似於 Namespace 角色，可以自定義方法與常數不用擔心與其他人衝突</li><li>Module 不能被實體化 (也就是不能被 new)，主要透過 mixin 擴充 Class
+在共享實作方面，Ruby 一個 Class 只能繼承一個 Parent，但是 Module 可以 mixin 多個，在沒有直接關係的情況下想要跨多個 Class 共享某些特定的方法，Module 是不錯的選擇</li><li>使用 Mixin 要小心多個 Module 可能會有不預期的互相干擾，例如修改同一個 instance 變數，有狀態要紀錄記得取一個比較特殊的名稱</li><li>如果 Module 中有 Class 宣告，要指定該 Class 可以用雙冒號 <code>::</code> 連接例如 <code>Module Name::Class Name</code></li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=c1>##### calculator.rb</span>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=nn>Greeting</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>sayhi</span>
+</span></span><span class=line><span class=cl>    <span class=nb>puts</span> <span class=s2>&#34;hello, </span><span class=si>#{</span><span class=vi>@name</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  
+</span></span><span class=line><span class=cl>  <span class=k>class</span> <span class=nc>Hi</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>###### main.rb</span>
+</span></span><span class=line><span class=cl><span class=n>require_relative</span> <span class=s1>&#39;./calculator&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>Person</span> <span class=o>&lt;</span> <span class=no>Greeting</span><span class=o>::</span><span class=no>Hi</span>
+</span></span><span class=line><span class=cl>  <span class=c1># 透過 include 達到 mixin 效果</span>
+</span></span><span class=line><span class=cl>  <span class=kp>include</span> <span class=no>Greeting</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>initialize</span><span class=p>(</span><span class=nb>name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@name</span> <span class=o>=</span> <span class=nb>name</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>p</span> <span class=o>=</span> <span class=no>Person</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=s2>&#34;yoyo&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>p</span><span class=o>.</span><span class=n>sayhi</span>
+</span></span></code></pre></td></tr></table></div></div><p>Module 除了可以被 include 外，還有 extend 跟 prepend，請參考 <a class=link href=https://spreered.medium.com/ruby-%E7%9A%84%E7%B9%BC%E6%89%BF%E9%8D%8A-2-module-%E7%9A%84-include-prepend-%E5%92%8C-extend-ae4e1c940097 target=_blank rel=noopener>Ruby 的繼承鍊 (2) — Module 的 include、prepend 和 extend</a></p><h3 id=程式碼拆分檔案>程式碼拆分檔案</h3><p>把全部程式碼塞在同一個檔案十分的可怕，透過適時的拆分可以讓程式碼更好維護，在 Ruby 中如果要 include 其他檔案的宣告，可以用 <code>require_relative '檔案本身的相對路徑'</code>的方式<br>目前看起來只有常數、Module、Class 會被自動 export，還再找到相關的文件說明</p><p>require 總共有幾種</p><ol><li><code>require</code>：</li></ol><ul><li>如果是相對路徑，則根據 <code>$LOCAL_PAHT</code> 設定去找對應的 library，通常是用來找外部相依或是 gem</li><li>如果是絕對路徑，則直接載入對應檔案</li></ul><ol start=2><li><code>require_local</code>:<br>透過檔案的相對路徑找到檔案，主要是用於在自己專案中的其他檔案</li></ol><h2 id=testing>Testing</h2><p>Ruby 並沒有內建的 Test Framework，評估後選用 RSpec，提供 TDD/BDD Style 語法，透過 describe / it 組合測試案例</p><ol><li>慣例是專案根目錄建立 spec 目錄，待測項目對應檔案名加上 _spec 結尾</li></ol><h3 id=unit-test>Unit Test</h3><ol><li>支援 before / after / around(before + each)，執行頻率分成 each / all / suite</li></ol><blockquote><p>suite 是在整個 test file 只會跑一次，all 則是每個 describe 都會執行一次</p></blockquote><ol start=2><li>如果是有變數要在每一次 test case 前執行，可以用 before(:each)，或是用 <code>let(變數名稱){回傳值}</code></li></ol><p>以下是一個簡單的運費計算</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=nb>require</span><span class=p>(</span><span class=s1>&#39;rspec&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>require_relative</span> <span class=s1>&#39;../calculator&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>describe</span> <span class=no>Calculator</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=n>let</span><span class=p>(</span><span class=ss>:calculator</span><span class=p>)</span> <span class=p>{</span> <span class=no>Calculator</span><span class=o>.</span><span class=n>new</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s1>&#39;small package should get $100 fee&#39;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=n>calculator</span><span class=o>.</span><span class=n>fee</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=mi>5</span><span class=p>))</span><span class=o>.</span><span class=n>to</span> <span class=n>eq</span><span class=p>(</span><span class=mi>100</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s1>&#39;medium size should get $500 fee&#39;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=n>calculator</span><span class=o>.</span><span class=n>fee</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>5</span><span class=p>))</span><span class=o>.</span><span class=n>to</span> <span class=n>eq</span><span class=p>(</span><span class=mi>500</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>before</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=vi>@calculator</span> <span class=o>=</span> <span class=no>Calculator</span><span class=o>.</span><span class=n>new</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=n>around</span> <span class=k>do</span> <span class=o>|</span><span class=n>t</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>    <span class=nb>p</span> <span class=s2>&#34;before each test&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>t</span><span class=o>.</span><span class=n>run</span>
+</span></span><span class=line><span class=cl>    <span class=nb>p</span> <span class=s2>&#34;after each test&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s1>&#39;large size should get $700 fee&#39;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=vi>@calculator</span><span class=o>.</span><span class=n>fee</span><span class=p>(</span><span class=mi>100</span><span class=p>,</span> <span class=mi>10</span><span class=p>))</span><span class=o>.</span><span class=n>to</span> <span class=n>eq</span><span class=p>(</span><span class=mi>750</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=stub--mock--spy>Stub / Mock / Spy</h3><p>RSpec 提供 mock 方法叫做 double (出自於 stunt double 演員替身)</p><ol><li>double 可以憑空產生物件，可以自定義 function 與回傳值</li><li>double 可以只覆寫特定方法的回傳值 <code>allow(instance).to receive(method).and_return(value)</code></li><li>spy 不改方法的實作，只確認有沒有被呼叫，以及確認傳入的參數以及呼叫順序是否如預期</li><li>每一個 test case 後都會被自動 restore</li><li>因為是動態語言，所以要 &ldquo;double(string)&rdquo; 等方法都是可以的</li></ol><p>運費計算加上一個 VIP 檢查</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=k>class</span> <span class=nc>VIP_Service</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>is_vip?</span>
+</span></span><span class=line><span class=cl>    <span class=k>raise</span> <span class=s2>&#34;do some query&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>describe</span> 
+</span></span><span class=line><span class=cl>  <span class=n>let</span><span class=p>(</span><span class=ss>:calculator</span><span class=p>)</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>vip_service</span> <span class=o>=</span> <span class=no>VIP_Service</span><span class=o>.</span><span class=n>new</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 這裡透過 mock 動態改變</span>
+</span></span><span class=line><span class=cl>    <span class=n>allow</span><span class=p>(</span><span class=n>vip_service</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>receive</span><span class=p>(</span><span class=ss>:is_vip?</span><span class=p>)</span><span class=o>.</span><span class=n>and_return</span><span class=p>(</span><span class=kp>false</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=no>Calculator</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>vip_service</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span> 
+</span></span></code></pre></td></tr></table></div></div><p>spy 的案例請看官方文件範例</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=nb>require</span> <span class=s1>&#39;rspec&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>Invitation</span>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>deliver</span><span class=p>(</span><span class=n>email</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nb>p</span> <span class=n>email</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>describe</span> <span class=s2>&#34;Invitation&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=n>let</span><span class=p>(</span><span class=ss>:invitation</span><span class=p>)</span> <span class=p>{</span> <span class=n>spy</span><span class=p>(</span><span class=s2>&#34;invitation&#34;</span><span class=p>)</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>before</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=n>invitation</span><span class=o>.</span><span class=n>deliver</span><span class=p>(</span><span class=s2>&#34;foo@example.com&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>invitation</span><span class=o>.</span><span class=n>deliver</span><span class=p>(</span><span class=s2>&#34;bar@example.com&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s2>&#34;passes when a count constraint is satisfied&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 透過 have_recieved 看方法有沒有被呼叫</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=n>invitation</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>have_received</span><span class=p>(</span><span class=ss>:deliver</span><span class=p>)</span><span class=o>.</span><span class=n>twice</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>it</span> <span class=s2>&#34;passes when an order constraint is satisifed&#34;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  <span class=c1># 加上 with 檢查方法呼叫時傳入的參數</span>
+</span></span><span class=line><span class=cl>  <span class=c1># 加上 ordered 代表要按照此順序呼叫</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=n>invitation</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>have_received</span><span class=p>(</span><span class=ss>:deliver</span><span class=p>)</span><span class=o>.</span><span class=n>with</span><span class=p>(</span><span class=s2>&#34;foo@example.com&#34;</span><span class=p>)</span><span class=o>.</span><span class=n>ordered</span>
+</span></span><span class=line><span class=cl>    <span class=n>expect</span><span class=p>(</span><span class=n>invitation</span><span class=p>)</span><span class=o>.</span><span class=n>to</span> <span class=n>have_received</span><span class=p>(</span><span class=ss>:deliver</span><span class=p>)</span><span class=o>.</span><span class=n>with</span><span class=p>(</span><span class=s2>&#34;bar@example.com&#34;</span><span class=p>)</span><span class=o>.</span><span class=n>ordered</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=k>end</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=http-request--api-server>HTTP Request & API Server</h2><p>Ruby 並沒有提供 http server 的封裝，只有 tcp server，所以我們選用 <a class=link href=https://github.com/rack/rack target=_blank rel=noopener>Rack</a> 這一套 library，他被 Ruby 生態圈廣泛採用的底層框架，如 RoR 也是</p><blockquote><p>Rack provides a minimal, modular, and adaptable interface for developing web applications in Ruby.</p></blockquote><h3 id=api-server>API Server</h3><p>新增 server.ru，透過 <code>$rackup server.ru</code> 啟動</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=nb>require</span> <span class=s1>&#39;rack&#39;</span>
+</span></span><span class=line><span class=cl><span class=nb>require</span> <span class=s1>&#39;json&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>rack_proc</span> <span class=o>=</span> <span class=nb>lambda</span> <span class=p>{</span> <span class=o>|</span><span class=n>env</span><span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=n>req</span> <span class=o>=</span> <span class=no>Rack</span><span class=o>::</span><span class=no>Request</span><span class=o>.</span><span class=n>new</span><span class=p>(</span><span class=n>env</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>case</span> <span class=n>req</span><span class=o>.</span><span class=n>request_method</span> <span class=o>+</span> <span class=s2>&#34;:&#34;</span> <span class=o>+</span> <span class=n>req</span><span class=o>.</span><span class=n>path_info</span>
+</span></span><span class=line><span class=cl>  <span class=k>when</span> <span class=s2>&#34;GET:/hello&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>[</span><span class=mi>200</span><span class=p>,</span> <span class=p>{</span> <span class=s2>&#34;content-type&#34;</span><span class=o>=&gt;</span> <span class=s2>&#34;application/json&#34;</span> <span class=p>},</span> <span class=o>[</span> <span class=p>{</span> <span class=s2>&#34;hello&#34;</span> <span class=o>=&gt;</span> <span class=n>req</span><span class=o>.</span><span class=n>params</span><span class=o>[</span><span class=s2>&#34;name&#34;</span><span class=o>]</span> <span class=p>}</span><span class=o>.</span><span class=n>to_json</span> <span class=o>]]</span>
+</span></span><span class=line><span class=cl>  <span class=k>when</span> <span class=s2>&#34;POST:/world&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>body</span> <span class=o>=</span> <span class=no>JSON</span><span class=o>.</span><span class=n>parse</span> <span class=n>req</span><span class=o>.</span><span class=n>body</span><span class=o>.</span><span class=n>gets</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>[</span><span class=mi>200</span><span class=p>,</span> <span class=p>{</span> <span class=s2>&#34;content-type&#34;</span><span class=o>=&gt;</span> <span class=s2>&#34;application/json&#34;</span> <span class=p>},</span> <span class=o>[</span> <span class=p>{</span> <span class=s2>&#34;hello&#34;</span> <span class=o>=&gt;</span> <span class=n>body</span><span class=o>[</span><span class=s2>&#34;name&#34;</span><span class=o>]</span><span class=p>}</span><span class=o>.</span><span class=n>to_json</span> <span class=o>]]</span>
+</span></span><span class=line><span class=cl>  <span class=k>else</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>[</span><span class=mi>406</span><span class=p>,</span> <span class=p>{</span> <span class=s2>&#34;content-type&#34;</span><span class=o>=&gt;</span> <span class=s2>&#34;html/txt&#34;</span> <span class=p>},</span> <span class=o>[</span><span class=s1>&#39;not_implemented_yet&#39;</span><span class=o>]]</span>
+</span></span><span class=line><span class=cl>  <span class=k>end</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=n>run</span> <span class=n>rack_proc</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=http-request>HTTP Request</h3><p>參考 <a class=link href=https://www.twilio.com/blog/5-ways-make-http-requests-ruby target=_blank rel=noopener>5 ways to make HTTP requests in Ruby</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ruby data-lang=ruby><span class=line><span class=cl><span class=nb>require</span> <span class=s2>&#34;http&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>response</span> <span class=o>=</span> <span class=no>HTTP</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=s2>&#34;http://localhost:9292/hello&#34;</span><span class=p>,</span> <span class=ss>:params</span> <span class=o>=&gt;</span> <span class=p>{</span><span class=ss>:name</span> <span class=o>=&gt;</span> <span class=s2>&#34;world&#34;</span><span class=p>})</span>
+</span></span><span class=line><span class=cl><span class=nb>p</span> <span class=n>response</span><span class=o>.</span><span class=n>parse</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>response</span> <span class=o>=</span> <span class=no>HTTP</span><span class=o>.</span><span class=n>post</span><span class=p>(</span><span class=s2>&#34;http://localhost:9292/world&#34;</span><span class=p>,</span> <span class=ss>:body</span> <span class=o>=&gt;</span> <span class=p>{</span><span class=ss>:name</span> <span class=o>=&gt;</span> <span class=s2>&#34;jojo&#34;</span> <span class=p>}</span><span class=o>.</span><span class=n>to_json</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nb>p</span> <span class=n>response</span><span class=o>.</span><span class=n>parse</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=結語>結語</h2><p>寫過最長的文章，整理了這一個禮拜上手 Ruby 的過程，Ruby 實際上還有非常多的 <code>黑魔法</code>，跟新同事們一起上手的過程不斷發現驚喜(恐?!)<br>必須坦白說上手到現在沒有很愛 Ruby，因為太自由了，又有太多關鍵字跟寫法，可能要在一段時間熟悉，之後再來慢慢補充</p></section><footer class=article-footer><section class=article-copyright><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg><span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/2021/2021-05-01-refactoring-ruby-edition%E4%B8%80-%E9%AB%94%E9%A9%97%E9%87%8D%E6%A7%8B/><div class=article-details><h2 class=article-title>【Refactoring Ruby Edition】(一) 體驗重構</h2></div></a></article><article><a href=/posts/2023/2023-04-27-%E6%8E%A2%E8%A8%8E-golang-%E5%AF%A6%E4%BD%9C%E9%A1%9E%E4%BC%BC%E7%B9%BC%E6%89%BF%E7%9A%84%E4%B8%8D%E5%90%8C%E5%81%9A%E6%B3%95/><div class=article-details><h2 class=article-title>探討 Golang 實作類似繼承的不同做法</h2></div></a></article><article><a href=/posts/2021/2021-09-05-%E4%BD%BF%E7%94%A8-inversifyjs-%E9%81%94%E5%88%B0-iversion-of-control-%E6%8E%A7%E5%88%B6%E5%8F%8D%E8%BD%89/><div class=article-details><h2 class=article-title>使用 InversifyJS 達到 Iversion of Control 控制反轉</h2></div></a></article><article><a href=/posts/2021/2021-07-10-nodejs-/-ruby-/-golang-%E5%A5%97%E4%BB%B6%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86%E5%B7%AE%E7%95%B0%E6%AF%94%E5%B0%8D-npm-%E8%88%87-bundler/><div class=article-details><h2 class=article-title>Nodejs / Ruby / Golang 套件版本管理差異：比對 NPM 與 Bundler</h2></div></a></article><article><a href=/posts/2021/2021-06-15-youtube-%E7%9B%B4%E6%92%ADfred%E8%81%8A%E8%81%8Asolid%E8%A8%AD%E8%A8%88%E5%8E%9F%E5%89%87%E6%95%B4%E7%90%86/><div class=article-details><h2 class=article-title>Youtube 直播「Fred聊聊SOLID設計原則」整理</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script type=application/javascript>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//yuanchieh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2023 Yuanchieh</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.17.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.js defer></script>
+<script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

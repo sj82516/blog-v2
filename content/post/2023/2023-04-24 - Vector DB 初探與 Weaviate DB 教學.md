@@ -94,7 +94,7 @@ Class schema 是靜態的，如果要增減欄位需要透過 API 修改，而�
 version: '3.4'
 services:
   weaviate:
-    image: semitechnologies/weaviate:1.18.3
+    image: cr.weaviate.io/semitechnologies/weaviate:1.18.3
     ports:
       - "8080:8080"
     environment:
